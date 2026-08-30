@@ -16,6 +16,10 @@ class PlayerViewModel : ViewModel() {
 
     private val player: VideoPlayer = MpvPlayer()
 
+    init {
+        player.initialize()
+    }
+
     private val _uiState = MutableStateFlow(PlayerUiState())
 
     val uiState: StateFlow<PlayerUiState> =

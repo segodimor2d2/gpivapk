@@ -2,6 +2,8 @@ package com.rec.gpiv.player
 
 interface VideoPlayer {
 
+    fun initialize()
+
     fun load(filename: String)
 
     fun play()

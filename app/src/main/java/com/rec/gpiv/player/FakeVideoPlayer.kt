@@ -2,6 +2,10 @@ package com.rec.gpiv.player
 
 class FakeVideoPlayer : VideoPlayer {
 
+    override fun initialize() {
+        println("FakeVideoPlayer: initialize()")
+    }
+
     override fun load(filename: String) {
         println("FakeVideoPlayer: load($filename)")
     }

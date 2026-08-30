@@ -2,6 +2,10 @@ package com.rec.gpiv.player
 
 class MpvPlayer : VideoPlayer {
 
+    override fun initialize() {
+        println("MpvPlayer: initialize()")
+    }
+
     override fun load(filename: String) {
         println("MpvPlayer: load($filename)")
     }
