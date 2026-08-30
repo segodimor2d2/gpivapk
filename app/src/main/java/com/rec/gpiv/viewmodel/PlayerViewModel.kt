@@ -2,21 +2,13 @@ package com.rec.gpiv.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rec.gpiv.model.PlayerUiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-
-data class PlayerUiState(
-    val playing: Boolean = false,
-    val filename: String? = "video.mp4",
-    val position: Double = 37.5,
-    val duration: Double = 252.0,
-    val volume: Double = 100.0,
-    val loading: Boolean = false
-)
 
 class PlayerViewModel : ViewModel() {
 
