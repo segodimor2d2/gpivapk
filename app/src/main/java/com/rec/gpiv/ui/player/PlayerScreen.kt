@@ -8,10 +8,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.rec.gpiv.viewmodel.PlayerUiState
 
 @Composable
 fun PlayerScreen(
-    playing: Boolean,
+    uiState: PlayerUiState,
     onTogglePlayPause: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -21,7 +22,7 @@ fun PlayerScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = if (playing) {
+            text = if (uiState.playing) {
                 "Estado: Reproduzindo"
             } else {
                 "Estado: Pausado"
@@ -32,7 +33,7 @@ fun PlayerScreen(
             onClick = onTogglePlayPause
         ) {
             Text(
-                text = if (playing) {
+                text = if (uiState.playing) {
                     "PAUSAR"
                 } else {
                     "PLAY"

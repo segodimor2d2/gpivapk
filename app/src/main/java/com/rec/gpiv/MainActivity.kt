@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
                         .collectAsStateWithLifecycle()
 
                     PlayerScreen(
-                        playing = uiState.playing,
+                        uiState = uiState,
                         onTogglePlayPause = viewModel::togglePlayPause,
                         modifier = Modifier.padding(innerPadding)
                     )
