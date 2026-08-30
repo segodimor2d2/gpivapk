@@ -36,6 +36,8 @@ class MainActivity : ComponentActivity() {
                     PlayerScreen(
                         uiState = uiState,
                         onTogglePlayPause = viewModel::togglePlayPause,
+                        onSeekBackward = viewModel::seekBackward,
+                        onSeekForward = viewModel::seekForward,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
