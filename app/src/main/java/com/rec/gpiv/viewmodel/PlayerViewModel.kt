@@ -3,7 +3,7 @@ package com.rec.gpiv.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rec.gpiv.model.PlayerUiState
-import com.rec.gpiv.player.FakeVideoPlayer
+import com.rec.gpiv.player.MpvPlayer
 import com.rec.gpiv.player.VideoPlayer
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 class PlayerViewModel : ViewModel() {
 
-    private val player: VideoPlayer = FakeVideoPlayer()
+    private val player: VideoPlayer = MpvPlayer()
 
     private val _uiState = MutableStateFlow(PlayerUiState())
 
