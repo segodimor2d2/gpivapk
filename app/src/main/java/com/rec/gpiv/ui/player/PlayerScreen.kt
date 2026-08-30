@@ -22,6 +22,18 @@ fun PlayerScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
+            text = uiState.filename ?: "Nenhum arquivo"
+        )
+
+        Text(
+            text = "Posição: ${uiState.position} s"
+        )
+
+        Text(
+            text = "Duração: ${uiState.duration} s"
+        )
+
+        Text(
             text = if (uiState.playing) {
                 "Estado: Reproduzindo"
             } else {
