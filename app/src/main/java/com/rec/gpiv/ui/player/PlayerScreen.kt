@@ -18,6 +18,9 @@ fun PlayerScreen(
     onTogglePlayPause: () -> Unit,
     onSeekBackward: (Double) -> Unit,
     onSeekForward: (Double) -> Unit,
+    onVolumeDown: () -> Unit,
+    onVolumeUp: () -> Unit,
+    onMute: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -38,7 +41,13 @@ fun PlayerScreen(
         )
 
         Text(
-            text = if (uiState.playing) {
+            text = "Volume: ${uiState.volume}%"
+        )
+
+        Text(
+            text = if (uiState.loading) {
+                "Carregando..."
+            } else if (uiState.playing) {
                 "Estado: Reproduzindo"
             } else {
                 "Estado: Pausado"
@@ -64,18 +73,39 @@ fun PlayerScreen(
                         "PAUSAR"
                     } else {
                         "PLAY"
-                  }
-              )
-          }
+                    }
+                )
+            }
 
-          Button(
-              onClick = {
-                  onSeekForward(5.0)
-              }
-          ) {
-              Text("+5s")
-          }
-      }
+            Button(
+                onClick = {
+                    onSeekForward(5.0)
+                }
+            ) {
+                Text("+5s")
+            }
+        }
 
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = onVolumeDown
+            ) {
+                Text("VOL -")
+            }
+
+            Button(
+                onClick = onMute
+            ) {
+                Text("MUTE")
+            }
+
+            Button(
+                onClick = onVolumeUp
+            ) {
+                Text("VOL +")
+            }
+        }
     }
 }

@@ -38,6 +38,9 @@ class MainActivity : ComponentActivity() {
                         onTogglePlayPause = viewModel::togglePlayPause,
                         onSeekBackward = viewModel::seekBackward,
                         onSeekForward = viewModel::seekForward,
+                        onVolumeDown = viewModel::volumeDown,
+                        onVolumeUp = viewModel::volumeUp,
+                        onMute = viewModel::mute,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

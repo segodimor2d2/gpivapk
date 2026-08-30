@@ -13,7 +13,9 @@ data class PlayerUiState(
     val playing: Boolean = false,
     val filename: String? = "video.mp4",
     val position: Double = 37.5,
-    val duration: Double = 252.0
+    val duration: Double = 252.0,
+    val volume: Double = 100.0,
+    val loading: Boolean = false
 )
 
 class PlayerViewModel : ViewModel() {
@@ -31,33 +33,6 @@ class PlayerViewModel : ViewModel() {
         } else {
             play()
         }
-    }
-
-
-    fun seekForward(seconds: Double) {
-        val state = _uiState.value
-
-        val newPosition = minOf(
-            state.position + seconds,
-            state.duration
-        )
-
-        _uiState.value = state.copy(
-            position = newPosition
-        )
-    }
-
-    fun seekBackward(seconds: Double) {
-        val state = _uiState.value
-
-        val newPosition = maxOf(
-            state.position - seconds,
-            0.0
-        )
-
-        _uiState.value = state.copy(
-            position = newPosition
-        )
     }
 
     private fun play() {
@@ -100,6 +75,60 @@ class PlayerViewModel : ViewModel() {
 
         playbackJob?.cancel()
         playbackJob = null
+    }
+
+    fun seekForward(seconds: Double) {
+        val state = _uiState.value
+
+        val newPosition = minOf(
+            state.position + seconds,
+            state.duration
+        )
+
+        _uiState.value = state.copy(
+            position = newPosition
+        )
+    }
+
+    fun seekBackward(seconds: Double) {
+        val state = _uiState.value
+
+        val newPosition = maxOf(
+            state.position - seconds,
+            0.0
+        )
+
+        _uiState.value = state.copy(
+            position = newPosition
+        )
+    }
+
+    fun volumeUp(amount: Double = 5.0) {
+        val state = _uiState.value
+
+        _uiState.value = state.copy(
+            volume = minOf(
+                state.volume + amount,
+                100.0
+            )
+        )
+    }
+
+    fun volumeDown(amount: Double = 5.0) {
+        val state = _uiState.value
+
+        _uiState.value = state.copy(
+            volume = maxOf(
+                state.volume - amount,
+                0.0
+            )
+        )
+    }
+
+    fun mute() {
+        _uiState.value = _uiState.value.copy(
+            volume = 0.0
+        )
     }
 
     override fun onCleared() {
