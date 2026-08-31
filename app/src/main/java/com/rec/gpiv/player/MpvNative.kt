@@ -8,8 +8,32 @@ class MpvNative {
         }
     }
 
+    private var nativeHandle: Long = 0L
+
     fun initialize() {
-        nativeInitialize()
+
+        nativeHandle = nativeCreate()
+
+        if (nativeHandle == 0L) {
+            throw IllegalStateException(
+                "Não foi possível criar o contexto nativo"
+            )
+        }
+
+        nativeInitialize(nativeHandle)
+
+        val version = nativeGetVersion()
+
+        println(
+            "MpvNative: native version = $version"
+        )
+
+        val testValue =
+            nativeGetTestValue(nativeHandle)
+
+        println(
+            "MpvNative: testValue = $testValue"
+        )
     }
 
     fun getVersion(): String {
@@ -17,11 +41,24 @@ class MpvNative {
     }
 
     fun load(uri: String) {
+        checkInitialized()
+
         nativeLoad(uri)
     }
 
+    fun loadFd(fd: Int) {
+        checkInitialized()
+
+        nativeLoadFd(
+            nativeHandle,
+            fd
+        )
+    }
+
     fun play() {
-        nativePlay()
+        checkInitialized()
+
+        nativePlay(nativeHandle)
     }
 
     fun pause() {
@@ -29,15 +66,24 @@ class MpvNative {
     }
 
     fun seekForward(seconds: Double) {
-        nativeSeekForward(seconds)
+        checkInitialized()
+
+        nativeSeekForward(
+            nativeHandle,
+            seconds
+        )
     }
 
     fun seekBackward(seconds: Double) {
-        println("MpvNative: seekBackward($seconds)")
+        println(
+            "MpvNative: seekBackward($seconds)"
+        )
     }
 
     fun setVolume(volume: Double) {
-        println("MpvNative: setVolume($volume)")
+        println(
+            "MpvNative: setVolume($volume)"
+        )
     }
 
     fun mute() {
@@ -57,16 +103,59 @@ class MpvNative {
     }
 
     fun release() {
+
+        if (nativeHandle != 0L) {
+
+            nativeDestroy(
+                nativeHandle
+            )
+
+            nativeHandle = 0L
+        }
+
         println("MpvNative: release()")
     }
 
-    private external fun nativeInitialize()
+    private fun checkInitialized() {
+
+        if (nativeHandle == 0L) {
+            throw IllegalStateException(
+                "MpvNative não foi inicializado"
+            )
+        }
+    }
+
+    private external fun nativeCreate(): Long
+
+    private external fun nativeInitialize(
+        handle: Long
+    )
+
+    private external fun nativeGetTestValue(
+        handle: Long
+    ): Int
+
+    private external fun nativeDestroy(
+        handle: Long
+    )
 
     private external fun nativeGetVersion(): String
 
-    private external fun nativePlay()
+    private external fun nativeLoad(
+        uri: String
+    )
 
-    private external fun nativeSeekForward(seconds: Double)
+    private external fun nativeLoadFd(
+        handle: Long,
+        fd: Int
+    )
 
-    private external fun nativeLoad(uri: String)
+    private external fun nativePlay(
+        handle: Long
+    )
+
+    private external fun nativeSeekForward(
+        handle: Long,
+        seconds: Double
+    )
 }

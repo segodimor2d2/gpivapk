@@ -10,7 +10,7 @@ class MpvPlayer(
     private val native = MpvNative()
 
     private val videoSource =
-        AndroidVideoSource(contentResolver)
+        VideoSource(contentResolver)
 
     override fun initialize() {
         println("MpvPlayer: initialize()")
@@ -19,28 +19,34 @@ class MpvPlayer(
 
         val version = native.getVersion()
 
-        println("MpvPlayer: native version = $version")
+        println(
+            "MpvPlayer: native version = $version"
+        )
     }
 
     override fun load(uri: Uri) {
         println("MpvPlayer: load($uri)")
 
-        val fileDescriptor =
-            videoSource.open(uri)
+        val opened = videoSource.open(uri)
 
-        if (fileDescriptor == null) {
-            println("MpvPlayer: não foi possível abrir o Uri")
+        if (!opened) {
+            println(
+                "MpvPlayer: não foi possível abrir o Uri"
+            )
             return
         }
 
+        val fd = videoSource.getFileDescriptor()
+
         println(
-            "MpvPlayer: file descriptor = " +
-                fileDescriptor.fd
+            "MpvPlayer: file descriptor = $fd"
         )
 
-        native.load(uri.toString())
+        if (fd != null) {
+            native.loadFd(fd)
+        }
 
-        fileDescriptor.close()
+        native.load(uri.toString())
     }
 
     override fun play() {
@@ -54,17 +60,26 @@ class MpvPlayer(
     }
 
     override fun seekForward(seconds: Double) {
-        println("MpvPlayer: seekForward($seconds)")
+        println(
+            "MpvPlayer: seekForward($seconds)"
+        )
+
         native.seekForward(seconds)
     }
 
     override fun seekBackward(seconds: Double) {
-        println("MpvPlayer: seekBackward($seconds)")
+        println(
+            "MpvPlayer: seekBackward($seconds)"
+        )
+
         native.seekBackward(seconds)
     }
 
     override fun setVolume(volume: Double) {
-        println("MpvPlayer: setVolume($volume)")
+        println(
+            "MpvPlayer: setVolume($volume)"
+        )
+
         native.setVolume(volume)
     }
 
@@ -90,6 +105,9 @@ class MpvPlayer(
 
     override fun release() {
         println("MpvPlayer: release()")
+
+        videoSource.close()
+
         native.release()
     }
 }

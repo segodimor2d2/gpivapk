@@ -6,6 +6,7 @@ add_library(
     gpiv_native
     SHARED
     mpv_native.cpp
+    mpv_context.cpp
 )
 
 find_library(
