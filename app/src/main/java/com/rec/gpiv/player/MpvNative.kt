@@ -16,8 +16,8 @@ class MpvNative {
         return nativeGetVersion()
     }
 
-    fun load(filename: String) {
-        nativeLoad(filename)
+    fun load(uri: String) {
+        nativeLoad(uri)
     }
 
     fun play() {
@@ -68,6 +68,5 @@ class MpvNative {
 
     private external fun nativeSeekForward(seconds: Double)
 
-    private external fun nativeLoad(filename: String)
-
+    private external fun nativeLoad(uri: String)
 }

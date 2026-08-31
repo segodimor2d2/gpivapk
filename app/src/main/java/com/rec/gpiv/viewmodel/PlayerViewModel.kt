@@ -1,5 +1,6 @@
 package com.rec.gpiv.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rec.gpiv.model.PlayerUiState
@@ -16,16 +17,24 @@ class PlayerViewModel : ViewModel() {
 
     private val player: VideoPlayer = MpvPlayer()
 
-    init {
-        player.initialize()
-    }
-
     private val _uiState = MutableStateFlow(PlayerUiState())
 
     val uiState: StateFlow<PlayerUiState> =
         _uiState.asStateFlow()
 
     private var playbackJob: Job? = null
+
+    init {
+        player.initialize()
+    }
+
+    fun load(uri: Uri) {
+        player.load(uri)
+
+        _uiState.value = _uiState.value.copy(
+            filename = uri.lastPathSegment
+        )
+    }
 
     fun togglePlayPause() {
         if (_uiState.value.playing) {

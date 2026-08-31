@@ -1,5 +1,7 @@
 package com.rec.gpiv.player
 
+import android.net.Uri
+
 class MpvPlayer : VideoPlayer {
 
     private val native = MpvNative()
@@ -12,13 +14,11 @@ class MpvPlayer : VideoPlayer {
         val version = native.getVersion()
 
         println("MpvPlayer: native version = $version")
-
-        native.load("/storage/emulated/0/Movies/test.mp4")
     }
 
-    override fun load(filename: String) {
-        println("MpvPlayer: load($filename)")
-        native.load(filename)
+    override fun load(uri: Uri) {
+        println("MpvPlayer: load($uri)")
+        native.load(uri.toString())
     }
 
     override fun play() {

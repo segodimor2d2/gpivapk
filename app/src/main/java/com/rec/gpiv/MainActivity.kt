@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -18,6 +19,16 @@ import com.rec.gpiv.viewmodel.PlayerViewModel
 class MainActivity : ComponentActivity() {
 
     private val viewModel: PlayerViewModel by viewModels()
+
+    private val openVideoLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.OpenDocument()
+        ) { uri ->
+
+            if (uri != null) {
+                viewModel.load(uri)
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +46,11 @@ class MainActivity : ComponentActivity() {
 
                     PlayerScreen(
                         uiState = uiState,
+                        onOpenVideo = {
+                            openVideoLauncher.launch(
+                                arrayOf("video/*")
+                            )
+                        },
                         onTogglePlayPause = viewModel::togglePlayPause,
                         onSeekBackward = viewModel::seekBackward,
                         onSeekForward = viewModel::seekForward,

@@ -15,6 +15,7 @@ import com.rec.gpiv.model.PlayerUiState
 @Composable
 fun PlayerScreen(
     uiState: PlayerUiState,
+    onOpenVideo: () -> Unit,
     onTogglePlayPause: () -> Unit,
     onSeekBackward: (Double) -> Unit,
     onSeekForward: (Double) -> Unit,
@@ -28,6 +29,12 @@ fun PlayerScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Button(
+            onClick = onOpenVideo
+        ) {
+            Text("ABRIR VÍDEO")
+        }
+
         Text(
             text = uiState.filename ?: "Nenhum arquivo"
         )

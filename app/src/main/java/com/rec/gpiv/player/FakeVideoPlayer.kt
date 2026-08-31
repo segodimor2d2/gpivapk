@@ -1,13 +1,15 @@
 package com.rec.gpiv.player
 
+import android.net.Uri
+
 class FakeVideoPlayer : VideoPlayer {
 
     override fun initialize() {
         println("FakeVideoPlayer: initialize()")
     }
 
-    override fun load(filename: String) {
-        println("FakeVideoPlayer: load($filename)")
+    override fun load(uri: Uri) {
+        println("FakeVideoPlayer: load($uri)")
     }
 
     override fun play() {

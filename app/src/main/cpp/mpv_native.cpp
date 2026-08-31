@@ -52,12 +52,19 @@ JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeLoad(
     JNIEnv* env,
     jobject thiz,
-    jstring filename
+    jstring uri
 )
 {
-    const char* path = env->GetStringUTFChars(filename, nullptr);
+    const char* uriString =
+        env->GetStringUTFChars(
+            uri,
+            nullptr
+        );
 
-    LOGI("JNI: load(%s)", path);
+    LOGI("JNI: load(%s)", uriString);
 
-    env->ReleaseStringUTFChars(filename, path);
+    env->ReleaseStringUTFChars(
+        uri,
+        uriString
+    );
 }

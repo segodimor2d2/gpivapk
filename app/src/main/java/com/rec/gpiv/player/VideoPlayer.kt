@@ -1,10 +1,12 @@
 package com.rec.gpiv.player
 
+import android.net.Uri
+
 interface VideoPlayer {
 
     fun initialize()
 
-    fun load(filename: String)
+    fun load(uri: Uri)
 
     fun play()
 
