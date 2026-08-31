@@ -7,8 +7,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rec.gpiv.model.PlayerUiState
 import com.rec.gpiv.player.MpvPlayer
-import com.rec.gpiv.player.VideoPlayer
 import com.rec.gpiv.player.PlayerEvent
+import com.rec.gpiv.player.VideoPlayer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +29,12 @@ class PlayerViewModel(
     val uiState: StateFlow<PlayerUiState> =
         _uiState.asStateFlow()
 
+    init {
+
+        player.initialize()
+
+        observePlayerEvents()
+    }
 
     private fun observePlayerEvents() {
 
@@ -78,36 +84,30 @@ class PlayerViewModel(
         }
     }
 
-    init {
-        observePlayerEvents()
-        player.initialize()
-    }
-
     fun load(uri: Uri) {
 
         val filename = getFileName(uri)
 
-        _uiState.value = _uiState.value.copy(
-            filename = filename,
-            loading = true,
-            playing = false,
-            position = 0.0,
-            duration = 0.0
-        )
+        _uiState.value =
+            _uiState.value.copy(
+                filename = filename,
+                loading = true,
+                playing = false,
+                position = 0.0,
+                duration = 0.0
+            )
 
         try {
-            player.load(uri)
 
-            _uiState.value = _uiState.value.copy(
-                loading = false
-            )
+            player.load(uri)
 
         } catch (e: Exception) {
 
-            _uiState.value = _uiState.value.copy(
-                loading = false,
-                playing = false
-            )
+            _uiState.value =
+                _uiState.value.copy(
+                    loading = false,
+                    playing = false
+                )
 
             println(
                 "PlayerViewModel: erro ao carregar vídeo: ${e.message}"
@@ -117,7 +117,8 @@ class PlayerViewModel(
 
     private fun getFileName(uri: Uri): String {
 
-        val resolver = getApplication<Application>().contentResolver
+        val resolver =
+            getApplication<Application>().contentResolver
 
         resolver.query(
             uri,
@@ -136,7 +137,8 @@ class PlayerViewModel(
 
                 if (nameIndex >= 0) {
 
-                    val name = cursor.getString(nameIndex)
+                    val name =
+                        cursor.getString(nameIndex)
 
                     if (!name.isNullOrBlank()) {
                         return name
@@ -145,10 +147,12 @@ class PlayerViewModel(
             }
         }
 
-        return uri.lastPathSegment ?: "Nenhum arquivo"
+        return uri.lastPathSegment
+            ?: "Nenhum arquivo"
     }
 
     fun togglePlayPause() {
+
         if (_uiState.value.playing) {
             pause()
         } else {
@@ -157,18 +161,22 @@ class PlayerViewModel(
     }
 
     private fun play() {
+
         player.play()
     }
 
     private fun pause() {
+
         player.pause()
     }
 
     fun seekForward(seconds: Double) {
+
         player.seekForward(seconds)
     }
 
     fun seekBackward(seconds: Double) {
+
         player.seekBackward(seconds)
     }
 
@@ -176,47 +184,53 @@ class PlayerViewModel(
 
         val state = _uiState.value
 
-        val newVolume = minOf(
-            state.volume + amount,
-            100.0
-        )
+        val newVolume =
+            minOf(
+                state.volume + amount,
+                100.0
+            )
 
         player.setVolume(newVolume)
 
-        _uiState.value = state.copy(
-            volume = newVolume
-        )
+        _uiState.value =
+            state.copy(
+                volume = newVolume
+            )
     }
 
     fun volumeDown(amount: Double = 5.0) {
 
         val state = _uiState.value
 
-        val newVolume = maxOf(
-            state.volume - amount,
-            0.0
-        )
+        val newVolume =
+            maxOf(
+                state.volume - amount,
+                0.0
+            )
 
         player.setVolume(newVolume)
 
-        _uiState.value = state.copy(
-            volume = newVolume
-        )
+        _uiState.value =
+            state.copy(
+                volume = newVolume
+            )
     }
 
     fun mute() {
 
         player.mute()
 
-        _uiState.value = _uiState.value.copy(
-            volume = 0.0
-        )
+        _uiState.value =
+            _uiState.value.copy(
+                volume = 0.0,
+                muted = true
+            )
     }
 
     override fun onCleared() {
+
         player.release()
+
         super.onCleared()
     }
-
-
 }
