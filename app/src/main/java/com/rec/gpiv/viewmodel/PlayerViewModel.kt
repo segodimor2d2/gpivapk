@@ -79,6 +79,14 @@ class PlayerViewModel(
                                 filename = event.filename
                             )
                     }
+
+                    is PlayerEvent.LoadingChanged -> {
+
+                        _uiState.value =
+                            _uiState.value.copy(
+                                loading = event.loading
+                            )
+                    }
                 }
             }
         }

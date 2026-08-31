@@ -17,4 +17,8 @@ sealed interface PlayerEvent {
     data class FilenameChanged(
         val filename: String?
     ) : PlayerEvent
+
+    data class LoadingChanged(
+        val loading: Boolean
+    ) : PlayerEvent
 }

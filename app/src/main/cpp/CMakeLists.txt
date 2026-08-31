@@ -30,8 +30,14 @@ find_library(
     log
 )
 
+find_library(
+    android-lib
+    android
+)
+
 target_link_libraries(
     gpiv_native
     mpv
     ${log-lib}
+    ${android-lib}
 )

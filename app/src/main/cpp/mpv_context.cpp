@@ -329,6 +329,8 @@ MpvContext* mpv_context_create()
     context->onBooleanProperty = nullptr;
     context->onStringProperty = nullptr;
 
+    context->window = nullptr;
+
     return context;
 }
 
@@ -479,6 +481,54 @@ int mpv_context_initialize(
     return 0;
 }
 
+/* ============================================================
+ * SURFACE ANDROID
+ * ============================================================ */
+
+void mpv_context_set_surface(
+    MpvContext* context,
+    ANativeWindow* window
+)
+{
+    if (!context) {
+        return;
+    }
+
+    /*
+     * Libera a janela anterior.
+     */
+    if (context->window) {
+
+        ANativeWindow_release(
+            context->window
+        );
+
+        context->window = nullptr;
+    }
+
+    /*
+     * Instala a nova janela.
+     */
+    if (window) {
+
+        ANativeWindow_acquire(
+            window
+        );
+
+        context->window = window;
+
+        LOGI(
+            "Surface: ANativeWindow instalada: %p",
+            static_cast<void*>(context->window)
+        );
+
+    } else {
+
+        LOGI(
+            "Surface: removida"
+        );
+    }
+}
 
 /* ============================================================
  * DESTRUIÇÃO
@@ -552,6 +602,15 @@ void mpv_context_destroy(
 
             context->javaVm->DetachCurrentThread();
         }
+    }
+
+    if (context->window) {
+
+        ANativeWindow_release(
+            context->window
+        );
+
+        context->window = nullptr;
     }
 
     delete context;
