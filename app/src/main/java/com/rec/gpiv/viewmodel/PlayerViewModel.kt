@@ -1,7 +1,9 @@
 package com.rec.gpiv.viewmodel
 
+import android.app.Application
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import android.provider.OpenableColumns
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rec.gpiv.model.PlayerUiState
 import com.rec.gpiv.player.MpvPlayer
@@ -13,7 +15,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class PlayerViewModel : ViewModel() {
+class PlayerViewModel(
+    application: Application
+) : AndroidViewModel(application) {
 
     private val player: VideoPlayer = MpvPlayer()
 
@@ -29,11 +33,68 @@ class PlayerViewModel : ViewModel() {
     }
 
     fun load(uri: Uri) {
-        player.load(uri)
+
+        val filename = getFileName(uri)
 
         _uiState.value = _uiState.value.copy(
-            filename = uri.lastPathSegment
+            filename = filename,
+            loading = true,
+            playing = false,
+            position = 0.0,
+            duration = 0.0
         )
+
+        try {
+            player.load(uri)
+
+            _uiState.value = _uiState.value.copy(
+                loading = false
+            )
+
+        } catch (e: Exception) {
+
+            _uiState.value = _uiState.value.copy(
+                loading = false,
+                playing = false
+            )
+
+            println(
+                "PlayerViewModel: erro ao carregar vídeo: ${e.message}"
+            )
+        }
+    }
+
+    private fun getFileName(uri: Uri): String {
+
+        val resolver = getApplication<Application>().contentResolver
+
+        resolver.query(
+            uri,
+            arrayOf(OpenableColumns.DISPLAY_NAME),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+
+            if (cursor.moveToFirst()) {
+
+                val nameIndex =
+                    cursor.getColumnIndex(
+                        OpenableColumns.DISPLAY_NAME
+                    )
+
+                if (nameIndex >= 0) {
+
+                    val name = cursor.getString(nameIndex)
+
+                    if (!name.isNullOrBlank()) {
+                        return name
+                    }
+                }
+            }
+        }
+
+        return uri.lastPathSegment ?: "Nenhum arquivo"
     }
 
     fun togglePlayPause() {
