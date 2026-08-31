@@ -36,6 +36,10 @@ class PlayerViewModel(
 
             player.events.collect { event ->
 
+                println(
+                    "PlayerViewModel: event = $event"
+                )
+
                 when (event) {
 
                     is PlayerEvent.TimePositionChanged -> {
@@ -73,7 +77,6 @@ class PlayerViewModel(
             }
         }
     }
-
 
     init {
         observePlayerEvents()
