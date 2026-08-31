@@ -10,6 +10,15 @@ class MpvNative {
 
     private var nativeHandle: Long = 0L
 
+    private var propertyListener:
+        ((String, Double) -> Unit)? = null
+
+    private var booleanPropertyListener:
+        ((String, Boolean) -> Unit)? = null
+
+    private var stringPropertyListener:
+        ((String, String?) -> Unit)? = null
+
     fun initialize() {
 
         nativeHandle = nativeCreate()
@@ -27,6 +36,24 @@ class MpvNative {
         println(
             "MpvNative: native version = $version"
         )
+    }
+
+    fun setPropertyListener(
+        listener: (String, Double) -> Unit
+    ) {
+        propertyListener = listener
+    }
+
+    fun setBooleanPropertyListener(
+        listener: (String, Boolean) -> Unit
+    ) {
+        booleanPropertyListener = listener
+    }
+
+    fun setStringPropertyListener(
+        listener: (String, String?) -> Unit
+    ) {
+        stringPropertyListener = listener
     }
 
     fun getVersion(): String {
@@ -132,6 +159,10 @@ class MpvNative {
             nativeHandle = 0L
         }
 
+        propertyListener = null
+        booleanPropertyListener = null
+        stringPropertyListener = null
+
         println("MpvNative: release()")
     }
 
@@ -142,6 +173,55 @@ class MpvNative {
                 "MpvNative não foi inicializado"
             )
         }
+    }
+
+    /*
+     * Chamados pelo código nativo através de JNI.
+     */
+
+    private fun onNativeDoubleProperty(
+        name: String,
+        value: Double
+    ) {
+        println(
+            "MpvNative: double property " +
+                "$name = $value"
+        )
+
+        propertyListener?.invoke(
+            name,
+            value
+        )
+    }
+
+    private fun onNativeBooleanProperty(
+        name: String,
+        value: Boolean
+    ) {
+        println(
+            "MpvNative: boolean property " +
+                "$name = $value"
+        )
+
+        booleanPropertyListener?.invoke(
+            name,
+            value
+        )
+    }
+
+    private fun onNativeStringProperty(
+        name: String,
+        value: String?
+    ) {
+        println(
+            "MpvNative: string property " +
+                "$name = $value"
+        )
+
+        stringPropertyListener?.invoke(
+            name,
+            value
+        )
     }
 
     private external fun nativeCreate(): Long

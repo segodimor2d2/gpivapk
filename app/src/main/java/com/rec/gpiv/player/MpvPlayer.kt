@@ -13,7 +13,10 @@ class MpvPlayer(
         VideoSource(contentResolver)
 
     override fun initialize() {
+
         println("MpvPlayer: initialize()")
+
+        setupNativeListeners()
 
         native.initialize()
 
@@ -121,5 +124,32 @@ class MpvPlayer(
         videoSource.close()
 
         native.release()
+    }
+
+    private fun setupNativeListeners() {
+
+        native.setPropertyListener { name, value ->
+
+            println(
+                "MpvPlayer: double property " +
+                    "$name = $value"
+            )
+        }
+
+        native.setBooleanPropertyListener { name, value ->
+
+            println(
+                "MpvPlayer: boolean property " +
+                    "$name = $value"
+            )
+        }
+
+        native.setStringPropertyListener { name, value ->
+
+            println(
+                "MpvPlayer: string property " +
+                    "$name = $value"
+            )
+        }
     }
 }

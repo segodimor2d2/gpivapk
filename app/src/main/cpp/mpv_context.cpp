@@ -55,6 +55,7 @@ static void mpv_event_loop(
          * PROPERTY CHANGE
          * ==================================================== */
 
+
         if (
             event->event_id ==
             MPV_EVENT_PROPERTY_CHANGE
@@ -73,128 +74,180 @@ static void mpv_event_loop(
                 continue;
             }
 
+            JNIEnv* env = nullptr;
 
-            /* ================================================
-             * PROPRIEDADE DOUBLE
-             * ================================================ */
+            bool attached = false;
+
+            if (
+                context->javaVm->GetEnv(
+                    reinterpret_cast<void**>(&env),
+                    JNI_VERSION_1_6
+                ) != JNI_OK
+            ) {
+
+                if (
+                    context->javaVm->AttachCurrentThread(
+                        &env,
+                        nullptr
+                    ) != JNI_OK
+                ) {
+
+                    LOGI(
+                        "JNI: AttachCurrentThread() falhou"
+                    );
+
+                    continue;
+                }
+
+                attached = true;
+            }
+
+
+            /*
+             * ========================================================
+             * DOUBLE
+             * ========================================================
+             */
 
             if (
                 property->format ==
                 MPV_FORMAT_DOUBLE
             ) {
 
-                if (!property->data) {
-                    LOGI(
-                        "PROPERTY: %s -> unavailable",
-                        property->name
+                if (property->data) {
+
+                    double value =
+                        *static_cast<double*>(
+                            property->data
+                        );
+
+                    jstring name =
+                        env->NewStringUTF(
+                            property->name
+                        );
+
+                    env->CallVoidMethod(
+                        context->nativeObject,
+                        context->onDoubleProperty,
+                        name,
+                        static_cast<jdouble>(value)
                     );
 
-                    continue;
+                    env->DeleteLocalRef(name);
                 }
-
-                double value =
-                    *static_cast<double*>(
-                        property->data
-                    );
-
-                LOGI(
-                    "PROPERTY: %s = %f",
-                    property->name,
-                    value
-                );
-
-                continue;
             }
 
 
-            /* ================================================
-             * PROPRIEDADE FLAG
-             * ================================================ */
+            /*
+             * ========================================================
+             * FLAG
+             * ========================================================
+             */
 
-            if (
+            else if (
                 property->format ==
                 MPV_FORMAT_FLAG
             ) {
 
-                if (!property->data) {
-                    LOGI(
-                        "PROPERTY: %s -> unavailable",
-                        property->name
+                if (property->data) {
+
+                    int value =
+                        *static_cast<int*>(
+                            property->data
+                        );
+
+                    jstring name =
+                        env->NewStringUTF(
+                            property->name
+                        );
+
+                    env->CallVoidMethod(
+                        context->nativeObject,
+                        context->onBooleanProperty,
+                        name,
+                        static_cast<jboolean>(
+                            value ? JNI_TRUE : JNI_FALSE
+                        )
                     );
 
-                    continue;
+                    env->DeleteLocalRef(name);
                 }
-
-                int value =
-                    *static_cast<int*>(
-                        property->data
-                    );
-
-                LOGI(
-                    "PROPERTY: %s = %s",
-                    property->name,
-                    value ? "true" : "false"
-                );
-
-                continue;
             }
 
 
-            /* ================================================
-             * PROPRIEDADE STRING
-             * ================================================ */
+            /*
+             * ========================================================
+             * STRING
+             * ========================================================
+             */
 
-            if (
+            else if (
                 property->format ==
                 MPV_FORMAT_STRING
             ) {
 
-                if (!property->data) {
-                    LOGI(
-                        "PROPERTY: %s -> unavailable",
+                jstring name =
+                    env->NewStringUTF(
                         property->name
                     );
 
-                    continue;
+                jstring value = nullptr;
+
+                if (property->data) {
+
+                    char* stringValue =
+                        *static_cast<char**>(
+                            property->data
+                        );
+
+                    if (stringValue) {
+
+                        value =
+                            env->NewStringUTF(
+                                stringValue
+                            );
+                    }
                 }
 
-                char* value =
-                    *static_cast<char**>(
-                        property->data
-                    );
-
-                if (!value) {
-                    LOGI(
-                        "PROPERTY: %s = NULL",
-                        property->name
-                    );
-
-                    continue;
-                }
-
-                LOGI(
-                    "PROPERTY: %s = %s",
-                    property->name,
+                env->CallVoidMethod(
+                    context->nativeObject,
+                    context->onStringProperty,
+                    name,
                     value
                 );
 
-                continue;
+                env->DeleteLocalRef(name);
+
+                if (value) {
+                    env->DeleteLocalRef(value);
+                }
             }
 
 
-            /* ================================================
-             * OUTRO FORMATO
-             * ================================================ */
+            /*
+             * ========================================================
+             * EXCEPTION JNI
+             * ========================================================
+             */
 
-            LOGI(
-                "PROPERTY: %s format=%d",
-                property->name,
-                static_cast<int>(
-                    property->format
-                )
-            );
+            if (
+                env->ExceptionCheck()
+            ) {
+
+                LOGI(
+                    "JNI: exceção durante callback"
+                );
+
+                env->ExceptionDescribe();
+                env->ExceptionClear();
+            }
+
+
+            if (attached) {
+
+                context->javaVm->DetachCurrentThread();
+            }
         }
-
 
         /* ====================================================
          * END FILE
@@ -267,8 +320,14 @@ MpvContext* mpv_context_create()
         return nullptr;
     }
 
-    context->eventLoopRunning =
-        false;
+    context->eventLoopRunning = false;
+
+    context->javaVm = nullptr;
+    context->nativeObject = nullptr;
+
+    context->onDoubleProperty = nullptr;
+    context->onBooleanProperty = nullptr;
+    context->onStringProperty = nullptr;
 
     return context;
 }
@@ -445,6 +504,7 @@ void mpv_context_destroy(
         if (
             context->eventThread.joinable()
         ) {
+
             context->eventThread.join();
         }
 
@@ -455,5 +515,46 @@ void mpv_context_destroy(
         context->mpv = nullptr;
     }
 
+    if (
+        context->javaVm &&
+        context->nativeObject
+    ) {
+
+        JNIEnv* env = nullptr;
+
+        bool attached = false;
+
+        if (
+            context->javaVm->GetEnv(
+                reinterpret_cast<void**>(&env),
+                JNI_VERSION_1_6
+            ) != JNI_OK
+        ) {
+
+            if (
+                context->javaVm->AttachCurrentThread(
+                    &env,
+                    nullptr
+                ) == JNI_OK
+            ) {
+                attached = true;
+            }
+        }
+
+        if (env) {
+
+            env->DeleteGlobalRef(
+                context->nativeObject
+            );
+        }
+
+        if (attached) {
+
+            context->javaVm->DetachCurrentThread();
+        }
+    }
+
     delete context;
 }
+
+

@@ -47,8 +47,84 @@ Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
         reinterpret_cast<MpvContext*>(handle);
 
     if (!context) {
+
         LOGI(
             "JNI: nativeInitialize() -> NULL"
+        );
+
+        return;
+    }
+
+    JavaVM* vm = nullptr;
+
+    if (
+        env->GetJavaVM(&vm)
+        != JNI_OK
+    ) {
+        LOGI(
+            "JNI: GetJavaVM() falhou"
+        );
+
+        return;
+    }
+
+    context->javaVm = vm;
+
+    context->nativeObject =
+        env->NewGlobalRef(thiz);
+
+    if (!context->nativeObject) {
+
+        LOGI(
+            "JNI: NewGlobalRef() falhou"
+        );
+
+        return;
+    }
+
+    jclass clazz =
+        env->GetObjectClass(thiz);
+
+    if (!clazz) {
+
+        LOGI(
+            "JNI: GetObjectClass() falhou"
+        );
+
+        return;
+    }
+
+    context->onDoubleProperty =
+        env->GetMethodID(
+            clazz,
+            "onNativeDoubleProperty",
+            "(Ljava/lang/String;D)V"
+        );
+
+    context->onBooleanProperty =
+        env->GetMethodID(
+            clazz,
+            "onNativeBooleanProperty",
+            "(Ljava/lang/String;Z)V"
+        );
+
+    context->onStringProperty =
+        env->GetMethodID(
+            clazz,
+            "onNativeStringProperty",
+            "(Ljava/lang/String;Ljava/lang/String;)V"
+        );
+
+    env->DeleteLocalRef(clazz);
+
+    if (
+        !context->onDoubleProperty ||
+        !context->onBooleanProperty ||
+        !context->onStringProperty
+    ) {
+
+        LOGI(
+            "JNI: não foi possível localizar callbacks"
         );
 
         return;

@@ -3,14 +3,28 @@
 
 #include <mpv/client.h>
 
+#include <jni.h>
+
 #include <atomic>
 #include <thread>
 
 struct MpvContext {
+
     mpv_handle* mpv;
 
     std::atomic<bool> eventLoopRunning;
+
     std::thread eventThread;
+
+    JavaVM* javaVm;
+
+    jobject nativeObject;
+
+    jmethodID onDoubleProperty;
+
+    jmethodID onBooleanProperty;
+
+    jmethodID onStringProperty;
 };
 
 MpvContext* mpv_context_create();
