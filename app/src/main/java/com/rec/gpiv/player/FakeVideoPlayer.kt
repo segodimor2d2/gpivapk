@@ -1,8 +1,13 @@
 package com.rec.gpiv.player
 
 import android.net.Uri
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 class FakeVideoPlayer : VideoPlayer {
+
+    override val events: Flow<PlayerEvent> =
+        emptyFlow()
 
     override fun initialize() {
         println("FakeVideoPlayer: initialize()")

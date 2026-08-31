@@ -2,6 +2,8 @@ package com.rec.gpiv.player
 
 import android.content.ContentResolver
 import android.net.Uri
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 class MpvPlayer(
     contentResolver: ContentResolver
@@ -11,6 +13,14 @@ class MpvPlayer(
 
     private val videoSource =
         VideoSource(contentResolver)
+
+    private val _events =
+        MutableSharedFlow<PlayerEvent>(
+            extraBufferCapacity = 64
+        )
+
+    override val events =
+        _events.asSharedFlow()
 
     override fun initialize() {
 
@@ -134,6 +144,27 @@ class MpvPlayer(
                 "MpvPlayer: double property " +
                     "$name = $value"
             )
+
+            when (name) {
+
+                "time-pos" -> {
+
+                    _events.tryEmit(
+                        PlayerEvent.TimePositionChanged(
+                            position = value
+                        )
+                    )
+                }
+
+                "duration" -> {
+
+                    _events.tryEmit(
+                        PlayerEvent.DurationChanged(
+                            duration = value
+                        )
+                    )
+                }
+            }
         }
 
         native.setBooleanPropertyListener { name, value ->
@@ -142,6 +173,18 @@ class MpvPlayer(
                 "MpvPlayer: boolean property " +
                     "$name = $value"
             )
+
+            when (name) {
+
+                "pause" -> {
+
+                    _events.tryEmit(
+                        PlayerEvent.PauseChanged(
+                            paused = value
+                        )
+                    )
+                }
+            }
         }
 
         native.setStringPropertyListener { name, value ->
@@ -150,6 +193,18 @@ class MpvPlayer(
                 "MpvPlayer: string property " +
                     "$name = $value"
             )
+
+            when (name) {
+
+                "filename" -> {
+
+                    _events.tryEmit(
+                        PlayerEvent.FilenameChanged(
+                            filename = value
+                        )
+                    )
+                }
+            }
         }
     }
 }

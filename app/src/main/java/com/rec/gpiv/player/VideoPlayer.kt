@@ -1,8 +1,11 @@
 package com.rec.gpiv.player
 
 import android.net.Uri
+import kotlinx.coroutines.flow.Flow
 
 interface VideoPlayer {
+
+    val events: Flow<PlayerEvent>
 
     fun initialize()
 

@@ -8,8 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.rec.gpiv.model.PlayerUiState
 import com.rec.gpiv.player.MpvPlayer
 import com.rec.gpiv.player.VideoPlayer
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import com.rec.gpiv.player.PlayerEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,9 +29,54 @@ class PlayerViewModel(
     val uiState: StateFlow<PlayerUiState> =
         _uiState.asStateFlow()
 
-    private var playbackJob: Job? = null
+
+    private fun observePlayerEvents() {
+
+        viewModelScope.launch {
+
+            player.events.collect { event ->
+
+                when (event) {
+
+                    is PlayerEvent.TimePositionChanged -> {
+
+                        _uiState.value =
+                            _uiState.value.copy(
+                                position = event.position
+                            )
+                    }
+
+                    is PlayerEvent.DurationChanged -> {
+
+                        _uiState.value =
+                            _uiState.value.copy(
+                                duration = event.duration
+                            )
+                    }
+
+                    is PlayerEvent.PauseChanged -> {
+
+                        _uiState.value =
+                            _uiState.value.copy(
+                                playing = !event.paused
+                            )
+                    }
+
+                    is PlayerEvent.FilenameChanged -> {
+
+                        _uiState.value =
+                            _uiState.value.copy(
+                                filename = event.filename
+                            )
+                    }
+                }
+            }
+        }
+    }
+
 
     init {
+        observePlayerEvents()
         player.initialize()
     }
 
@@ -110,85 +154,19 @@ class PlayerViewModel(
     }
 
     private fun play() {
-
-        if (playbackJob?.isActive == true) {
-            return
-        }
-
         player.play()
-
-        _uiState.value = _uiState.value.copy(
-            playing = true
-        )
-
-        playbackJob = viewModelScope.launch {
-
-            while (_uiState.value.playing) {
-
-                delay(100)
-
-                val currentState = _uiState.value
-                val newPosition = currentState.position + 0.1
-
-                if (newPosition >= currentState.duration) {
-
-                    _uiState.value = currentState.copy(
-                        position = currentState.duration,
-                        playing = false
-                    )
-
-                    break
-                }
-
-                _uiState.value = currentState.copy(
-                    position = newPosition
-                )
-            }
-        }
     }
 
     private fun pause() {
-
         player.pause()
-
-        _uiState.value = _uiState.value.copy(
-            playing = false
-        )
-
-        playbackJob?.cancel()
-        playbackJob = null
     }
 
     fun seekForward(seconds: Double) {
-
         player.seekForward(seconds)
-
-        val state = _uiState.value
-
-        val newPosition = minOf(
-            state.position + seconds,
-            state.duration
-        )
-
-        _uiState.value = state.copy(
-            position = newPosition
-        )
     }
 
     fun seekBackward(seconds: Double) {
-
         player.seekBackward(seconds)
-
-        val state = _uiState.value
-
-        val newPosition = maxOf(
-            state.position - seconds,
-            0.0
-        )
-
-        _uiState.value = state.copy(
-            position = newPosition
-        )
     }
 
     fun volumeUp(amount: Double = 5.0) {
@@ -233,11 +211,9 @@ class PlayerViewModel(
     }
 
     override fun onCleared() {
-
-        playbackJob?.cancel()
-
         player.release()
-
         super.onCleared()
     }
+
+
 }
