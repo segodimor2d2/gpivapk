@@ -22,6 +22,18 @@ class MpvPlayer(
         println(
             "MpvPlayer: native version = $version"
         )
+
+        loadLocalTestPath(
+            "/data/user/0/com.rec.gpiv/files/test.mp4"
+        )
+    }
+
+    fun loadLocalTestPath(path: String) {
+        println(
+            "MpvPlayer: loadLocalTestPath($path)"
+        )
+
+        native.loadLocalPath(path)
     }
 
     override fun load(uri: Uri) {

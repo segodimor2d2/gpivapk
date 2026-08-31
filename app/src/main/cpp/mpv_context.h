@@ -3,8 +3,14 @@
 
 #include <mpv/client.h>
 
+#include <atomic>
+#include <thread>
+
 struct MpvContext {
     mpv_handle* mpv;
+
+    std::atomic<bool> eventLoopRunning;
+    std::thread eventThread;
 };
 
 MpvContext* mpv_context_create();

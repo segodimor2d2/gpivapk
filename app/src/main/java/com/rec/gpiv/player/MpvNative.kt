@@ -20,9 +20,7 @@ class MpvNative {
             )
         }
 
-        nativeInitialize(
-            nativeHandle
-        )
+        nativeInitialize(nativeHandle)
 
         val version = nativeGetVersion()
 
@@ -39,6 +37,15 @@ class MpvNative {
         checkInitialized()
 
         nativeLoad(uri)
+    }
+
+    fun loadLocalPath(path: String) {
+        checkInitialized()
+
+        nativeLoadLocalPath(
+            nativeHandle,
+            path
+        )
     }
 
     fun loadFd(fd: Int) {
@@ -68,21 +75,21 @@ class MpvNative {
         )
     }
 
-    fun seekForward(seconds: Double) {
-        checkInitialized()
-
-        nativeSeekForward(
-            nativeHandle,
-            seconds
-        )
-    }
-
     fun setPause(paused: Boolean) {
         checkInitialized()
 
         nativeSetPause(
             nativeHandle,
             paused
+        )
+    }
+
+    fun seekForward(seconds: Double) {
+        checkInitialized()
+
+        nativeSeekForward(
+            nativeHandle,
+            seconds
         )
     }
 
@@ -153,22 +160,23 @@ class MpvNative {
         uri: String
     )
 
+    private external fun nativeLoadLocalPath(
+        handle: Long,
+        path: String
+    )
+
     private external fun nativeLoadFd(
         handle: Long,
         fd: Int
     )
 
-    private external fun nativePlay(
-        handle: Long
+    private external fun nativeSetPause(
+        handle: Long,
+        paused: Boolean
     )
 
     private external fun nativeSeekForward(
         handle: Long,
         seconds: Double
-    )
-
-    private external fun nativeSetPause(
-        handle: Long,
-        paused: Boolean
     )
 }
