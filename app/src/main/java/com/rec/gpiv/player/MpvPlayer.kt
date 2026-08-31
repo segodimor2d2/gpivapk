@@ -6,7 +6,12 @@ class MpvPlayer : VideoPlayer {
 
     override fun initialize() {
         println("MpvPlayer: initialize()")
+
         native.initialize()
+
+        val version = native.getVersion()
+
+        println("MpvPlayer: native version = $version")
     }
 
     override fun load(filename: String) {

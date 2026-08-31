@@ -2,8 +2,18 @@ package com.rec.gpiv.player
 
 class MpvNative {
 
+    companion object {
+        init {
+            System.loadLibrary("gpiv_native")
+        }
+    }
+
     fun initialize() {
-        println("MpvNative: initialize()")
+        nativeInitialize()
+    }
+
+    fun getVersion(): String {
+        return nativeGetVersion()
     }
 
     fun load(filename: String) {
@@ -49,4 +59,8 @@ class MpvNative {
     fun release() {
         println("MpvNative: release()")
     }
+
+    private external fun nativeInitialize()
+
+    private external fun nativeGetVersion(): String
 }
