@@ -1,10 +1,16 @@
 package com.rec.gpiv.player
 
+import android.content.ContentResolver
 import android.net.Uri
 
-class MpvPlayer : VideoPlayer {
+class MpvPlayer(
+    contentResolver: ContentResolver
+) : VideoPlayer {
 
     private val native = MpvNative()
+
+    private val videoSource =
+        AndroidVideoSource(contentResolver)
 
     override fun initialize() {
         println("MpvPlayer: initialize()")
@@ -18,7 +24,23 @@ class MpvPlayer : VideoPlayer {
 
     override fun load(uri: Uri) {
         println("MpvPlayer: load($uri)")
+
+        val fileDescriptor =
+            videoSource.open(uri)
+
+        if (fileDescriptor == null) {
+            println("MpvPlayer: não foi possível abrir o Uri")
+            return
+        }
+
+        println(
+            "MpvPlayer: file descriptor = " +
+                fileDescriptor.fd
+        )
+
         native.load(uri.toString())
+
+        fileDescriptor.close()
     }
 
     override fun play() {

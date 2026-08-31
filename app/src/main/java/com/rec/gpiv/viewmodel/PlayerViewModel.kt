@@ -19,9 +19,13 @@ class PlayerViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
-    private val player: VideoPlayer = MpvPlayer()
+    private val player: VideoPlayer =
+        MpvPlayer(
+            application.contentResolver
+        )
 
-    private val _uiState = MutableStateFlow(PlayerUiState())
+    private val _uiState =
+        MutableStateFlow(PlayerUiState())
 
     val uiState: StateFlow<PlayerUiState> =
         _uiState.asStateFlow()
