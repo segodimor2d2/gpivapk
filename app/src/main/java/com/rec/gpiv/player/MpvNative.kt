@@ -17,7 +17,7 @@ class MpvNative {
     }
 
     fun load(filename: String) {
-        println("MpvNative: load($filename)")
+        nativeLoad(filename)
     }
 
     fun play() {
@@ -29,7 +29,7 @@ class MpvNative {
     }
 
     fun seekForward(seconds: Double) {
-        println("MpvNative: seekForward($seconds)")
+        nativeSeekForward(seconds)
     }
 
     fun seekBackward(seconds: Double) {
@@ -65,4 +65,9 @@ class MpvNative {
     private external fun nativeGetVersion(): String
 
     private external fun nativePlay()
+
+    private external fun nativeSeekForward(seconds: Double)
+
+    private external fun nativeLoad(filename: String)
+
 }

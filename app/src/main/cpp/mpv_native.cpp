@@ -35,3 +35,29 @@ Java_com_rec_gpiv_player_MpvNative_nativePlay(
 {
     LOGI("JNI: play()");
 }
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeSeekForward(
+    JNIEnv* env,
+    jobject thiz,
+    jdouble seconds
+)
+{
+    LOGI("JNI: seekForward(%f)", seconds);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeLoad(
+    JNIEnv* env,
+    jobject thiz,
+    jstring filename
+)
+{
+    const char* path = env->GetStringUTFChars(filename, nullptr);
+
+    LOGI("JNI: load(%s)", path);
+
+    env->ReleaseStringUTFChars(filename, path);
+}

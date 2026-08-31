@@ -12,6 +12,8 @@ class MpvPlayer : VideoPlayer {
         val version = native.getVersion()
 
         println("MpvPlayer: native version = $version")
+
+        native.load("/storage/emulated/0/Movies/test.mp4")
     }
 
     override fun load(filename: String) {
