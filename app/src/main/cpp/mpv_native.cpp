@@ -25,3 +25,13 @@ Java_com_rec_gpiv_player_MpvNative_nativeGetVersion(
 {
     return env->NewStringUTF("GPIV Native 0.1");
 }
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativePlay(
+    JNIEnv* env,
+    jobject thiz
+)
+{
+    LOGI("JNI: play()");
+}

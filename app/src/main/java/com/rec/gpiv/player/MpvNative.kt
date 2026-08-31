@@ -21,7 +21,7 @@ class MpvNative {
     }
 
     fun play() {
-        println("MpvNative: play()")
+        nativePlay()
     }
 
     fun pause() {
@@ -63,4 +63,6 @@ class MpvNative {
     private external fun nativeInitialize()
 
     private external fun nativeGetVersion(): String
+
+    private external fun nativePlay()
 }
