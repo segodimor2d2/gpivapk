@@ -31,9 +31,9 @@ class PlayerViewModel(
 
     init {
 
-        player.initialize()
-
         observePlayerEvents()
+
+        player.initialize()
     }
 
     private fun observePlayerEvents() {

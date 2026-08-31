@@ -206,5 +206,19 @@ class MpvPlayer(
                 }
             }
         }
+
+        native.setLoadingListener { loading ->
+
+            println(
+                "MpvPlayer: loading = $loading"
+            )
+
+            _events.tryEmit(
+                PlayerEvent.LoadingChanged(
+                    loading = loading
+                )
+            )
+        }
+
     }
 }

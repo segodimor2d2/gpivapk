@@ -27,6 +27,8 @@ struct MpvContext {
 
     jmethodID onStringProperty;
 
+    jmethodID onLoadingChanged;
+
     /*
      * Surface Android recebida pelo player.
      *

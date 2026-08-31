@@ -19,6 +19,9 @@ class MpvNative {
     private var stringPropertyListener:
         ((String, String?) -> Unit)? = null
 
+    private var loadingListener:
+        ((Boolean) -> Unit)? = null
+
     fun initialize() {
 
         nativeHandle = nativeCreate()
@@ -54,6 +57,24 @@ class MpvNative {
         listener: (String, String?) -> Unit
     ) {
         stringPropertyListener = listener
+    }
+
+    fun setLoadingListener(
+        listener: (Boolean) -> Unit
+    ) {
+        loadingListener = listener
+    }
+
+    private fun onNativeLoadingChanged(
+        loading: Boolean
+    ) {
+        println(
+            "MpvNative: loading = $loading"
+        )
+
+        loadingListener?.invoke(
+            loading
+        )
     }
 
     fun getVersion(): String {
@@ -162,6 +183,7 @@ class MpvNative {
         propertyListener = null
         booleanPropertyListener = null
         stringPropertyListener = null
+        loadingListener = null
 
         println("MpvNative: release()")
     }

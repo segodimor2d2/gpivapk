@@ -250,6 +250,138 @@ static void mpv_event_loop(
         }
 
         /* ====================================================
+         * START FILE
+         * ==================================================== */
+
+        if (
+            event->event_id ==
+            MPV_EVENT_START_FILE
+        ) {
+
+            LOGI(
+                "START_FILE: loading=true"
+            );
+
+            JNIEnv* env = nullptr;
+
+            bool attached = false;
+
+            if (
+                context->javaVm->GetEnv(
+                    reinterpret_cast<void**>(&env),
+                    JNI_VERSION_1_6
+                ) != JNI_OK
+            ) {
+
+                if (
+                    context->javaVm->AttachCurrentThread(
+                        &env,
+                        nullptr
+                    ) != JNI_OK
+                ) {
+
+                    LOGI(
+                        "JNI: AttachCurrentThread() falhou"
+                    );
+
+                    continue;
+                }
+
+                attached = true;
+            }
+
+            env->CallVoidMethod(
+                context->nativeObject,
+                context->onLoadingChanged,
+                static_cast<jboolean>(JNI_TRUE)
+            );
+
+            if (
+                env->ExceptionCheck()
+            ) {
+
+                LOGI(
+                    "JNI: exceção em onNativeLoadingChanged(true)"
+                );
+
+                env->ExceptionDescribe();
+                env->ExceptionClear();
+            }
+
+            if (attached) {
+
+                context->javaVm->DetachCurrentThread();
+            }
+        }
+
+
+        /* ====================================================
+         * FILE LOADED
+         * ==================================================== */
+
+        if (
+            event->event_id ==
+            MPV_EVENT_FILE_LOADED
+        ) {
+
+            LOGI(
+                "FILE_LOADED: loading=false"
+            );
+
+            JNIEnv* env = nullptr;
+
+            bool attached = false;
+
+            if (
+                context->javaVm->GetEnv(
+                    reinterpret_cast<void**>(&env),
+                    JNI_VERSION_1_6
+                ) != JNI_OK
+            ) {
+
+                if (
+                    context->javaVm->AttachCurrentThread(
+                        &env,
+                        nullptr
+                    ) != JNI_OK
+                ) {
+
+                    LOGI(
+                        "JNI: AttachCurrentThread() falhou"
+                    );
+
+                    continue;
+                }
+
+                attached = true;
+            }
+
+            env->CallVoidMethod(
+                context->nativeObject,
+                context->onLoadingChanged,
+                static_cast<jboolean>(JNI_FALSE)
+            );
+
+            if (
+                env->ExceptionCheck()
+            ) {
+
+                LOGI(
+                    "JNI: exceção em onNativeLoadingChanged(false)"
+                );
+
+                env->ExceptionDescribe();
+                env->ExceptionClear();
+            }
+
+            if (attached) {
+
+                context->javaVm->DetachCurrentThread();
+            }
+        }
+
+
+        /* ====================================================
          * END FILE
          * ==================================================== */
 
@@ -328,6 +460,7 @@ MpvContext* mpv_context_create()
     context->onDoubleProperty = nullptr;
     context->onBooleanProperty = nullptr;
     context->onStringProperty = nullptr;
+    context->onLoadingChanged = nullptr;
 
     context->window = nullptr;
 

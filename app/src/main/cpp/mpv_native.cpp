@@ -35,6 +35,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeCreate(
     return reinterpret_cast<jlong>(context);
 }
 
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
@@ -55,12 +56,18 @@ Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
         return;
     }
 
+
+    /* ========================================================
+     * JAVA VM
+     * ======================================================== */
+
     JavaVM* vm = nullptr;
 
     if (
         env->GetJavaVM(&vm)
         != JNI_OK
     ) {
+
         LOGI(
             "JNI: GetJavaVM() falhou"
         );
@@ -69,6 +76,11 @@ Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
     }
 
     context->javaVm = vm;
+
+
+    /* ========================================================
+     * REFERÊNCIA GLOBAL DO OBJETO KOTLIN
+     * ======================================================== */
 
     context->nativeObject =
         env->NewGlobalRef(thiz);
@@ -82,6 +94,11 @@ Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
         return;
     }
 
+
+    /* ========================================================
+     * CLASSE JAVA
+     * ======================================================== */
+
     jclass clazz =
         env->GetObjectClass(thiz);
 
@@ -94,12 +111,22 @@ Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
         return;
     }
 
+
+    /* ========================================================
+     * CALLBACK DOUBLE
+     * ======================================================== */
+
     context->onDoubleProperty =
         env->GetMethodID(
             clazz,
             "onNativeDoubleProperty",
             "(Ljava/lang/String;D)V"
         );
+
+
+    /* ========================================================
+     * CALLBACK BOOLEAN
+     * ======================================================== */
 
     context->onBooleanProperty =
         env->GetMethodID(
@@ -108,6 +135,11 @@ Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
             "(Ljava/lang/String;Z)V"
         );
 
+
+    /* ========================================================
+     * CALLBACK STRING
+     * ======================================================== */
+
     context->onStringProperty =
         env->GetMethodID(
             clazz,
@@ -115,12 +147,31 @@ Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
             "(Ljava/lang/String;Ljava/lang/String;)V"
         );
 
+
+    /* ========================================================
+     * CALLBACK LOADING
+     * ======================================================== */
+
+    context->onLoadingChanged =
+        env->GetMethodID(
+            clazz,
+            "onNativeLoadingChanged",
+            "(Z)V"
+        );
+
+
     env->DeleteLocalRef(clazz);
+
+
+    /* ========================================================
+     * VALIDA CALLBACKS
+     * ======================================================== */
 
     if (
         !context->onDoubleProperty ||
         !context->onBooleanProperty ||
-        !context->onStringProperty
+        !context->onStringProperty ||
+        !context->onLoadingChanged
     ) {
 
         LOGI(
@@ -129,6 +180,11 @@ Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
 
         return;
     }
+
+
+    /* ========================================================
+     * INICIALIZA MPV
+     * ======================================================== */
 
     int error =
         mpv_context_initialize(
@@ -150,6 +206,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
     );
 }
 
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeDestroy(
@@ -162,7 +219,11 @@ Java_com_rec_gpiv_player_MpvNative_nativeDestroy(
         reinterpret_cast<MpvContext*>(handle);
 
     if (!context) {
-        LOGI("JNI: nativeDestroy(NULL)");
+
+        LOGI(
+            "JNI: nativeDestroy(NULL)"
+        );
+
         return;
     }
 
@@ -171,8 +232,11 @@ Java_com_rec_gpiv_player_MpvNative_nativeDestroy(
         static_cast<void*>(context)
     );
 
-    mpv_context_destroy(context);
+    mpv_context_destroy(
+        context
+    );
 }
+
 
 extern "C"
 JNIEXPORT jstring JNICALL
@@ -185,6 +249,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeGetVersion(
         "GPIV Native 0.1"
     );
 }
+
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -208,6 +273,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeSeekForward(
         seconds
     );
 }
+
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -237,6 +303,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeLoad(
     }
 }
 
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeLoadFd(
@@ -260,6 +327,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeLoadFd(
     );
 }
 
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeSetPause(
@@ -273,6 +341,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeSetPause(
         reinterpret_cast<MpvContext*>(handle);
 
     if (!context || !context->mpv) {
+
         LOGI(
             "JNI: nativeSetPause() -> contexto inválido"
         );
@@ -303,6 +372,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeSetPause(
     );
 }
 
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeLoadLocalPath(
@@ -316,6 +386,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeLoadLocalPath(
         reinterpret_cast<MpvContext*>(handle);
 
     if (!context || !context->mpv) {
+
         LOGI(
             "JNI: nativeLoadLocalPath() -> contexto inválido"
         );
@@ -330,6 +401,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeLoadLocalPath(
         );
 
     if (!pathString) {
+
         LOGI(
             "JNI: nativeLoadLocalPath() -> string inválida"
         );
