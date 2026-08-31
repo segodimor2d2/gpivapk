@@ -16,23 +16,18 @@ class MpvNative {
 
         if (nativeHandle == 0L) {
             throw IllegalStateException(
-                "Não foi possível criar o contexto nativo"
+                "Não foi possível criar o contexto libmpv"
             )
         }
 
-        nativeInitialize(nativeHandle)
+        nativeInitialize(
+            nativeHandle
+        )
 
         val version = nativeGetVersion()
 
         println(
             "MpvNative: native version = $version"
-        )
-
-        val testValue =
-            nativeGetTestValue(nativeHandle)
-
-        println(
-            "MpvNative: testValue = $testValue"
         )
     }
 
@@ -58,11 +53,19 @@ class MpvNative {
     fun play() {
         checkInitialized()
 
-        nativePlay(nativeHandle)
+        nativeSetPause(
+            nativeHandle,
+            false
+        )
     }
 
     fun pause() {
-        println("MpvNative: pause()")
+        checkInitialized()
+
+        nativeSetPause(
+            nativeHandle,
+            true
+        )
     }
 
     fun seekForward(seconds: Double) {
@@ -71,6 +74,15 @@ class MpvNative {
         nativeSeekForward(
             nativeHandle,
             seconds
+        )
+    }
+
+    fun setPause(paused: Boolean) {
+        checkInitialized()
+
+        nativeSetPause(
+            nativeHandle,
+            paused
         )
     }
 
@@ -131,10 +143,6 @@ class MpvNative {
         handle: Long
     )
 
-    private external fun nativeGetTestValue(
-        handle: Long
-    ): Int
-
     private external fun nativeDestroy(
         handle: Long
     )
@@ -157,5 +165,10 @@ class MpvNative {
     private external fun nativeSeekForward(
         handle: Long,
         seconds: Double
+    )
+
+    private external fun nativeSetPause(
+        handle: Long,
+        paused: Boolean
     )
 }

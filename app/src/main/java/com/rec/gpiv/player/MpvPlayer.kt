@@ -51,12 +51,12 @@ class MpvPlayer(
 
     override fun play() {
         println("MpvPlayer: play()")
-        native.play()
+        native.setPause(false)
     }
 
     override fun pause() {
         println("MpvPlayer: pause()")
-        native.pause()
+        native.setPause(true)
     }
 
     override fun seekForward(seconds: Double) {

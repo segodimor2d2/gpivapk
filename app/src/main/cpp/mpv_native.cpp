@@ -8,6 +8,7 @@
 #define LOGI(...) \
     __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
+
 extern "C"
 JNIEXPORT jlong JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeCreate(
@@ -19,7 +20,10 @@ Java_com_rec_gpiv_player_MpvNative_nativeCreate(
         mpv_context_create();
 
     if (!context) {
-        LOGI("JNI: nativeCreate() -> NULL");
+        LOGI(
+            "JNI: nativeCreate() -> NULL"
+        );
+
         return 0;
     }
 
@@ -43,32 +47,31 @@ Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
         reinterpret_cast<MpvContext*>(handle);
 
     if (!context) {
-        LOGI("JNI: nativeInitialize() -> NULL");
+        LOGI(
+            "JNI: nativeInitialize() -> NULL"
+        );
+
+        return;
+    }
+
+    int error =
+        mpv_context_initialize(
+            context
+        );
+
+    if (error < 0) {
+
+        LOGI(
+            "JNI: mpv_initialize() falhou: %s",
+            mpv_error_string(error)
+        );
+
         return;
     }
 
     LOGI(
-        "JNI: nativeInitialize(%p)",
-        static_cast<void*>(context)
+        "JNI: mpv_initialize() OK"
     );
-}
-
-extern "C"
-JNIEXPORT jint JNICALL
-Java_com_rec_gpiv_player_MpvNative_nativeGetTestValue(
-    JNIEnv* env,
-    jobject thiz,
-    jlong handle
-)
-{
-    MpvContext* context =
-        reinterpret_cast<MpvContext*>(handle);
-
-    if (!context) {
-        return 0;
-    }
-
-    return context->testValue;
 }
 
 extern "C"
@@ -104,27 +107,6 @@ Java_com_rec_gpiv_player_MpvNative_nativeGetVersion(
 {
     return env->NewStringUTF(
         "GPIV Native 0.1"
-    );
-}
-
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_rec_gpiv_player_MpvNative_nativePlay(
-    JNIEnv* env,
-    jobject thiz,
-    jlong handle
-)
-{
-    MpvContext* context =
-        reinterpret_cast<MpvContext*>(handle);
-
-    if (!context) {
-        return;
-    }
-
-    LOGI(
-        "JNI: play(%p)",
-        static_cast<void*>(context)
     );
 }
 
@@ -199,5 +181,48 @@ Java_com_rec_gpiv_player_MpvNative_nativeLoadFd(
         "JNI: loadFd(%p, fd=%d)",
         static_cast<void*>(context),
         fd
+    );
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeSetPause(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jboolean paused
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+        LOGI(
+            "JNI: nativeSetPause() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    const char* value =
+        paused ? "yes" : "no";
+
+    const char* command[] = {
+        "set",
+        "pause",
+        value,
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: mpv_command(set pause %s) -> %d",
+        value,
+        status
     );
 }
