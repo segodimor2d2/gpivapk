@@ -35,9 +35,21 @@ find_library(
     android
 )
 
+find_library(
+    egl-lib
+    EGL
+)
+
+find_library(
+    gles-lib
+    GLESv2
+)
+
 target_link_libraries(
     gpiv_native
     mpv
     ${log-lib}
     ${android-lib}
+    ${egl-lib}
+    ${gles-lib}
 )
