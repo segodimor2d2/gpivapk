@@ -718,6 +718,27 @@ static bool render_test(
 }
 
 
+/*
+ * ========================================================
+ * CALLBACK DE UPDATE DO MPV
+ * ========================================================
+ */
+
+static void mpv_update_callback(
+    void* userdata
+)
+{
+    MpvContext* context =
+        static_cast<MpvContext*>(userdata);
+
+    if (!context)
+        return;
+
+    LOGI(
+        "Render: mpv_update_callback() disparado"
+    );
+}
+
 /* ============================================================
  * EVENT LOOP
  * ============================================================ */
@@ -1780,6 +1801,25 @@ void mpv_context_set_surface(
         context->renderContext
     );
 
+    /*
+     * ========================================================
+     * CALLBACK DE UPDATE DO MPV
+     * ========================================================
+     */
+
+    LOGI(
+        "MpvContext: registrando mpv_update_callback"
+    );
+
+    mpv_render_context_set_update_callback(
+        context->renderContext,
+        mpv_update_callback,
+        context
+    );
+
+    LOGI(
+        "MpvContext: mpv_update_callback registrado"
+    );
 
     /*
      * ========================================================
