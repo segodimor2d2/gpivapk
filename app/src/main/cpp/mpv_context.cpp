@@ -1820,6 +1820,12 @@ void mpv_context_set_surface(
         "MpvContext: mpv_update_callback registrado"
     );
 
+    if (mpv_context_take_render_request(context)) {
+        LOGI(
+            "Render: teste de consumo OK"
+        );
+    }
+
     /*
      * ========================================================
      * TESTE DE RENDERIZAÇÃO
@@ -2033,4 +2039,27 @@ void mpv_context_destroy(
 
 
     delete context;
+}
+
+
+bool mpv_context_take_render_request(
+    MpvContext* context
+)
+{
+    if (!context)
+        return false;
+
+    bool pending =
+        context->renderPending.exchange(
+            false,
+            std::memory_order_acq_rel
+        );
+
+    if (pending) {
+        LOGI(
+            "Render: solicitação de renderização consumida"
+        );
+    }
+
+    return pending;
 }
