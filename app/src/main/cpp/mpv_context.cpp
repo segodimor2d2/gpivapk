@@ -1,5 +1,3 @@
-
-
 #include "mpv_context.h"
 
 #include <android/log.h>
@@ -1222,123 +1220,168 @@ void mpv_context_set_surface(
     if (!context)
         return;
 
-    LOGI(
-        "MpvContext: set_surface()"
-    );
-
+    LOGI("MpvContext: set_surface()");
 
     /*
-     * --------------------------------------------------------
-     * Remove Surface anterior
-     * --------------------------------------------------------
+     * ============================================================
+     * REMOVER SURFACE ANTERIOR
+     * ============================================================
      */
 
-    if (context->surfaceAvailable) {
+    if (context->window)
+    {
+        LOGI("MpvContext: removendo Surface anterior");
 
-        LOGI(
-            "MpvContext: removendo Surface anterior"
-        );
+        if (context->renderContext)
+        {
+            LOGI("MpvContext: liberando renderContext anterior");
 
-        destroy_egl(
-            context
-        );
-
-        if (context->window) {
-
-            ANativeWindow_release(
-                context->window
+            mpv_render_context_free(
+                context->renderContext
             );
 
-            context->window =
-                nullptr;
+            context->renderContext = nullptr;
         }
 
-        context->surfaceAvailable =
-            false;
-    }
+        destroy_egl(context);
 
-
-    /*
-     * --------------------------------------------------------
-     * Nenhuma Surface
-     * --------------------------------------------------------
-     */
-
-    if (!window) {
-
-        LOGI(
-            "MpvContext: Surface removida"
+        ANativeWindow_release(
+            context->window
         );
 
+        context->window = nullptr;
+        context->surfaceAvailable = false;
+    }
+
+    /*
+     * ============================================================
+     * NENHUMA SURFACE
+     * ============================================================
+     */
+
+    if (!window)
+    {
+        LOGI("MpvContext: Surface removida");
         return;
     }
 
-
     /*
-     * --------------------------------------------------------
-     * Adquire ANativeWindow
-     * --------------------------------------------------------
+     * ============================================================
+     * ADQUIRIR ANativeWindow
+     * ============================================================
      */
 
     ANativeWindow_acquire(
         window
     );
 
-    context->window =
-        window;
-
-    context->surfaceAvailable =
-        true;
+    context->window = window;
+    context->surfaceAvailable = true;
 
     LOGI(
         "MpvContext: ANativeWindow adquirido: %p",
         context->window
     );
 
-
     /*
-     * --------------------------------------------------------
+     * ============================================================
      * EGL
-     * --------------------------------------------------------
+     * ============================================================
      */
 
-    if (!create_egl(context)) {
-
+    if (!create_egl(context))
+    {
         LOGE(
-            "MpvContext: criação do EGL falhou"
+            "MpvContext: falha ao criar EGL"
         );
 
         ANativeWindow_release(
             context->window
         );
 
-        context->window =
-            nullptr;
-
-        context->surfaceAvailable =
-            false;
+        context->window = nullptr;
+        context->surfaceAvailable = false;
 
         return;
     }
-
 
     LOGI(
         "MpvContext: EGL inicializado com sucesso"
     );
 
+    /*
+     * ============================================================
+     * MPV RENDER CONTEXT
+     * ============================================================
+     */
+
+    LOGI(
+        "MpvContext: criando mpv_render_context"
+    );
+
+    mpv_opengl_init_params gl_init_params = {
+        .get_proc_address = get_proc_address,
+        .get_proc_address_ctx = context
+    };
+
+    mpv_render_param params[] = {
+        {
+            MPV_RENDER_PARAM_API_TYPE,
+            const_cast<char*>(
+                MPV_RENDER_API_TYPE_OPENGL
+            )
+        },
+        {
+            MPV_RENDER_PARAM_OPENGL_INIT_PARAMS,
+            &gl_init_params
+        },
+        {
+            MPV_RENDER_PARAM_INVALID,
+            nullptr
+        }
+    };
+
+    int status =
+        mpv_render_context_create(
+            &context->renderContext,
+            context->mpv,
+            params
+        );
+
+    if (status < 0)
+    {
+        LOGE(
+            "MpvContext: mpv_render_context_create() falhou: %s",
+            mpv_error_string(status)
+        );
+
+        context->renderContext = nullptr;
+
+        destroy_egl(context);
+
+        ANativeWindow_release(
+            context->window
+        );
+
+        context->window = nullptr;
+        context->surfaceAvailable = false;
+
+        return;
+    }
+
+    LOGI(
+        "MpvContext: mpv_render_context criado: %p",
+        context->renderContext
+    );
 
     /*
      * IMPORTANTE:
      *
-     * Ainda NÃO criamos:
-     *
-     *     mpv_render_context_create()
-     *
-     * E ainda NÃO chamamos:
+     * Ainda NÃO chamamos:
      *
      *     mpv_render_context_render()
      *
-     * Isso será testado separadamente.
+     * A renderização será o próximo passo.
      */
 }
 
