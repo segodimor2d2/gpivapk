@@ -679,40 +679,6 @@ int mpv_context_initialize(
 
 
     /* ========================================================
-     * CONFIGURAÇÃO DO MPV
-     * ======================================================== */
-
-    /*
-     * Estamos usando o render API do libmpv.
-     *
-     * Portanto o VO deve ser "libmpv".
-     */
-    LOGI(
-        "mpv: configurando vo=libmpv"
-    );
-
-
-    int status =
-        mpv_set_option_string(
-            context->mpv,
-            "vo",
-            "libmpv"
-        );
-
-
-    if (status < 0) {
-
-        LOGI(
-            "mpv_set_option_string(vo=libmpv) "
-            "falhou: %s",
-            mpv_error_string(status)
-        );
-
-        return status;
-    }
-
-
-    /* ========================================================
      * INICIALIZA MPV
      * ======================================================== */
 
@@ -721,7 +687,7 @@ int mpv_context_initialize(
     );
 
 
-    status =
+    int status =
         mpv_initialize(
             context->mpv
         );
@@ -741,100 +707,6 @@ int mpv_context_initialize(
     LOGI(
         "mpv: inicializado"
     );
-
-
-    /* ========================================================
-     * PARÂMETROS OPENGL
-     * ======================================================== */
-
-    /*
-     * mpv_opengl_init_params é definido em:
-     *
-     *     <mpv/render_gl.h>
-     *
-     * e não em render.h.
-     */
-    mpv_opengl_init_params glInitParams{};
-
-
-    glInitParams.get_proc_address =
-        get_proc_address;
-
-
-    glInitParams.get_proc_address_ctx =
-        nullptr;
-
-
-    LOGI(
-        "OpenGL: parâmetros preparados"
-    );
-
-
-    /* ========================================================
-     * PARÂMETROS DO RENDER CONTEXT
-     * ======================================================== */
-
-    mpv_render_param renderParams[] = {
-
-        {
-            MPV_RENDER_PARAM_API_TYPE,
-            const_cast<char*>(
-                MPV_RENDER_API_TYPE_OPENGL
-            )
-        },
-
-        {
-            MPV_RENDER_PARAM_OPENGL_INIT_PARAMS,
-            &glInitParams
-        },
-
-        {
-            MPV_RENDER_PARAM_INVALID,
-            nullptr
-        }
-    };
-
-
-    /* ========================================================
-     * CRIA RENDER CONTEXT
-     * ======================================================== */
-
-    LOGI(
-        "mpv: criando mpv_render_context"
-    );
-
-
-    status =
-        mpv_render_context_create(
-            &context->renderContext,
-            context->mpv,
-            renderParams
-        );
-
-
-    if (status < 0) {
-
-        LOGI(
-            "mpv_render_context_create() falhou: %s",
-            mpv_error_string(status)
-        );
-
-
-        context->renderContext =
-            nullptr;
-
-
-        return status;
-    }
-
-
-    LOGI(
-        "mpv: mpv_render_context criado: %p",
-        static_cast<void*>(
-            context->renderContext
-        )
-    );
-
 
     /* ========================================================
      * OBSERVA PROPRIEDADES
