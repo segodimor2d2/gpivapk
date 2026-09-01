@@ -55,7 +55,6 @@ static void mpv_event_loop(
          * PROPERTY CHANGE
          * ==================================================== */
 
-
         if (
             event->event_id ==
             MPV_EVENT_PROPERTY_CHANGE
@@ -248,6 +247,7 @@ static void mpv_event_loop(
                 context->javaVm->DetachCurrentThread();
             }
         }
+
 
         /* ====================================================
          * START FILE
@@ -462,7 +462,17 @@ MpvContext* mpv_context_create()
     context->onStringProperty = nullptr;
     context->onLoadingChanged = nullptr;
 
+    /*
+     * Surface Android.
+     *
+     * O MpvContext começa sem Surface.
+     */
     context->window = nullptr;
+    context->surfaceAvailable = false;
+
+    LOGI(
+        "MpvContext: criado sem Surface"
+    );
 
     return context;
 }
@@ -614,6 +624,7 @@ int mpv_context_initialize(
     return 0;
 }
 
+
 /* ============================================================
  * SURFACE ANDROID
  * ============================================================ */
@@ -627,10 +638,17 @@ void mpv_context_set_surface(
         return;
     }
 
-    /*
-     * Libera a janela anterior.
-     */
+
+    /* ========================================================
+     * LIBERA A SURFACE ANTERIOR
+     * ======================================================== */
+
     if (context->window) {
+
+        LOGI(
+            "Surface: liberando ANativeWindow anterior: %p",
+            static_cast<void*>(context->window)
+        );
 
         ANativeWindow_release(
             context->window
@@ -639,20 +657,35 @@ void mpv_context_set_surface(
         context->window = nullptr;
     }
 
-    /*
-     * Instala a nova janela.
-     */
+    context->surfaceAvailable = false;
+
+
+    /* ========================================================
+     * INSTALA A NOVA SURFACE
+     * ======================================================== */
+
     if (window) {
 
+        /*
+         * O ANativeWindow recebido pertence ao chamador.
+         *
+         * Adquirimos nossa própria referência para que
+         * context->window tenha seu próprio ownership.
+         */
         ANativeWindow_acquire(
             window
         );
 
         context->window = window;
+        context->surfaceAvailable = true;
 
         LOGI(
             "Surface: ANativeWindow instalada: %p",
             static_cast<void*>(context->window)
+        );
+
+        LOGI(
+            "Surface: surfaceAvailable=true"
         );
 
     } else {
@@ -660,8 +693,13 @@ void mpv_context_set_surface(
         LOGI(
             "Surface: removida"
         );
+
+        LOGI(
+            "Surface: surfaceAvailable=false"
+        );
     }
 }
+
 
 /* ============================================================
  * DESTRUIÇÃO
@@ -674,6 +712,11 @@ void mpv_context_destroy(
     if (!context) {
         return;
     }
+
+
+    /* ========================================================
+     * EVENT LOOP / MPV
+     * ======================================================== */
 
     if (context->mpv) {
 
@@ -697,6 +740,11 @@ void mpv_context_destroy(
 
         context->mpv = nullptr;
     }
+
+
+    /* ========================================================
+     * REFERÊNCIA GLOBAL KOTLIN
+     * ======================================================== */
 
     if (
         context->javaVm &&
@@ -737,7 +785,17 @@ void mpv_context_destroy(
         }
     }
 
+
+    /* ========================================================
+     * SURFACE ANDROID
+     * ======================================================== */
+
     if (context->window) {
+
+        LOGI(
+            "Surface: liberando ANativeWindow no destroy: %p",
+            static_cast<void*>(context->window)
+        );
 
         ANativeWindow_release(
             context->window
@@ -746,7 +804,12 @@ void mpv_context_destroy(
         context->window = nullptr;
     }
 
+    context->surfaceAvailable = false;
+
+
+    LOGI(
+        "MpvContext: destruído"
+    );
+
     delete context;
 }
-
-

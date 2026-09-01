@@ -32,10 +32,19 @@ struct MpvContext {
     /*
      * Surface Android recebida pelo player.
      *
-     * O ANativeWindow é mantido enquanto a Surface
-     * estiver sendo utilizada pelo mpv.
+     * O MpvContext mantém sua própria referência
+     * enquanto a Surface estiver disponível.
      */
     ANativeWindow* window;
+
+    /*
+     * Indica se existe atualmente uma Surface
+     * instalada no contexto.
+     *
+     * Neste estágio é apenas estado de lifecycle.
+     * Ainda não participa da renderização.
+     */
+    bool surfaceAvailable;
 };
 
 MpvContext* mpv_context_create();

@@ -22,11 +22,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
 import com.rec.gpiv.model.PlayerUiState
+import com.rec.gpiv.player.MpvNative
 
 
 @Composable
 fun PlayerScreen(
     uiState: PlayerUiState,
+    mpvNative: MpvNative,
     onOpenVideo: () -> Unit,
     onTogglePlayPause: () -> Unit,
     onSeekBackward: (Double) -> Unit,
@@ -62,6 +64,14 @@ fun PlayerScreen(
                                 println(
                                     "PlayerScreen: surfaceCreated()"
                                 )
+
+                                println(
+                                    "PlayerScreen: enviando Surface para MpvNative"
+                                )
+
+                                mpvNative.setSurface(
+                                    holder.surface
+                                )
                             }
 
                             override fun surfaceChanged(
@@ -81,6 +91,14 @@ fun PlayerScreen(
                             ) {
                                 println(
                                     "PlayerScreen: surfaceDestroyed()"
+                                )
+
+                                println(
+                                    "PlayerScreen: removendo Surface do MpvNative"
+                                )
+
+                                mpvNative.setSurface(
+                                    null
                                 )
                             }
                         }

@@ -460,6 +460,10 @@ Java_com_rec_gpiv_player_MpvNative_nativeSetSurface(
 
     if (surface) {
 
+        LOGI(
+            "JNI: nativeSetSurface() -> Surface recebida"
+        );
+
         window =
             ANativeWindow_fromSurface(
                 env,
@@ -474,14 +478,48 @@ Java_com_rec_gpiv_player_MpvNative_nativeSetSurface(
 
             return;
         }
+
+        LOGI(
+            "JNI: ANativeWindow adquirido: %p",
+            static_cast<void*>(window)
+        );
+
+    } else {
+
+        LOGI(
+            "JNI: nativeSetSurface() -> Surface NULL"
+        );
     }
+
+
+    /* ========================================================
+     * ENTREGA AO MpvContext
+     * ======================================================== */
+
+    LOGI(
+        "JNI: enviando ANativeWindow ao MpvContext: %p",
+        static_cast<void*>(window)
+    );
 
     mpv_context_set_surface(
         context,
         window
     );
 
+
+    /* ========================================================
+     * LIBERA A REFERÊNCIA TEMPORÁRIA
+     * ======================================================== */
+
     if (window) {
-        ANativeWindow_release(window);
+
+        LOGI(
+            "JNI: liberando referência temporária: %p",
+            static_cast<void*>(window)
+        );
+
+        ANativeWindow_release(
+            window
+        );
     }
 }
