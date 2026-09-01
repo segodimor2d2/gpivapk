@@ -4,6 +4,8 @@
 
 #include <EGL/egl.h>
 
+#include <GLES2/gl2.h>
+
 #include <mpv/render_gl.h>
 
 #include <new>
@@ -45,14 +47,6 @@
  * de uma função OpenGL.
  *
  * No Android usamos eglGetProcAddress().
- *
- * IMPORTANTE:
- *
- * Neste estágio ainda não estamos criando/renderizando
- * nenhum frame.
- *
- * Estamos apenas fornecendo ao mpv o mecanismo necessário
- * para inicializar o backend OpenGL do render context.
  */
 static void* get_proc_address(
     void* /* ctx */,
@@ -106,12 +100,17 @@ static void destroy_egl(
     if (!context)
         return;
 
+
     /*
-     * Primeiro deixamos o contexto EGL sem current.
+     * --------------------------------------------------------
+     * Remover o contexto EGL de current
+     * --------------------------------------------------------
      */
+
     if (
         context->eglDisplay != EGL_NO_DISPLAY
     ) {
+
         eglMakeCurrent(
             context->eglDisplay,
             EGL_NO_SURFACE,
@@ -120,13 +119,18 @@ static void destroy_egl(
         );
     }
 
+
     /*
-     * Destrói a EGLSurface.
+     * --------------------------------------------------------
+     * EGLSurface
+     * --------------------------------------------------------
      */
+
     if (
         context->eglSurface != EGL_NO_SURFACE &&
         context->eglDisplay != EGL_NO_DISPLAY
     ) {
+
         eglDestroySurface(
             context->eglDisplay,
             context->eglSurface
@@ -136,13 +140,18 @@ static void destroy_egl(
             EGL_NO_SURFACE;
     }
 
+
     /*
-     * Destrói o EGLContext.
+     * --------------------------------------------------------
+     * EGLContext
+     * --------------------------------------------------------
      */
+
     if (
         context->eglContext != EGL_NO_CONTEXT &&
         context->eglDisplay != EGL_NO_DISPLAY
     ) {
+
         eglDestroyContext(
             context->eglDisplay,
             context->eglContext
@@ -152,12 +161,17 @@ static void destroy_egl(
             EGL_NO_CONTEXT;
     }
 
+
     /*
-     * Encerra o EGLDisplay.
+     * --------------------------------------------------------
+     * EGLDisplay
+     * --------------------------------------------------------
      */
+
     if (
         context->eglDisplay != EGL_NO_DISPLAY
     ) {
+
         eglTerminate(
             context->eglDisplay
         );
@@ -166,8 +180,13 @@ static void destroy_egl(
             EGL_NO_DISPLAY;
     }
 
-    context->eglConfig = nullptr;
-    context->eglInitialized = false;
+
+    context->eglConfig =
+        nullptr;
+
+    context->eglInitialized =
+        false;
+
 
     LOGI(
         "EGL: destruído"
@@ -182,7 +201,9 @@ static bool create_egl(
     if (!context)
         return false;
 
+
     if (!context->window) {
+
         LOGE(
             "EGL: não existe ANativeWindow"
         );
@@ -190,10 +211,11 @@ static bool create_egl(
         return false;
     }
 
+
     /*
-     * --------------------------------------------------------
+     * ========================================================
      * EGLDisplay
-     * --------------------------------------------------------
+     * ========================================================
      */
 
     context->eglDisplay =
@@ -201,9 +223,11 @@ static bool create_egl(
             EGL_DEFAULT_DISPLAY
         );
 
+
     if (
         context->eglDisplay == EGL_NO_DISPLAY
     ) {
+
         log_egl_error(
             "eglGetDisplay"
         );
@@ -211,19 +235,21 @@ static bool create_egl(
         return false;
     }
 
+
     LOGI(
         "EGL: display OK"
     );
 
 
     /*
-     * --------------------------------------------------------
+     * ========================================================
      * EGL initialize
-     * --------------------------------------------------------
+     * ========================================================
      */
 
     EGLint major = 0;
     EGLint minor = 0;
+
 
     if (
         !eglInitialize(
@@ -232,6 +258,7 @@ static bool create_egl(
             &minor
         )
     ) {
+
         log_egl_error(
             "eglInitialize"
         );
@@ -243,6 +270,7 @@ static bool create_egl(
         return false;
     }
 
+
     LOGI(
         "EGL: initialized %d.%d",
         major,
@@ -251,9 +279,9 @@ static bool create_egl(
 
 
     /*
-     * --------------------------------------------------------
-     * OpenGL ES
-     * --------------------------------------------------------
+     * ========================================================
+     * OpenGL ES API
+     * ========================================================
      */
 
     if (
@@ -261,6 +289,7 @@ static bool create_egl(
             EGL_OPENGL_ES_API
         )
     ) {
+
         log_egl_error(
             "eglBindAPI"
         );
@@ -272,18 +301,20 @@ static bool create_egl(
         return false;
     }
 
+
     LOGI(
         "EGL: OpenGL ES API OK"
     );
 
 
     /*
-     * --------------------------------------------------------
+     * ========================================================
      * EGLConfig
-     * --------------------------------------------------------
+     * ========================================================
      */
 
     const EGLint configAttributes[] = {
+
         EGL_SURFACE_TYPE,
         EGL_WINDOW_BIT,
 
@@ -305,7 +336,9 @@ static bool create_egl(
         EGL_NONE
     };
 
+
     EGLint numConfigs = 0;
+
 
     if (
         !eglChooseConfig(
@@ -316,6 +349,7 @@ static bool create_egl(
             &numConfigs
         )
     ) {
+
         log_egl_error(
             "eglChooseConfig"
         );
@@ -327,7 +361,9 @@ static bool create_egl(
         return false;
     }
 
+
     if (numConfigs <= 0) {
+
         LOGE(
             "EGL: nenhum EGLConfig encontrado"
         );
@@ -339,22 +375,26 @@ static bool create_egl(
         return false;
     }
 
+
     LOGI(
         "EGL: config OK"
     );
 
 
     /*
-     * --------------------------------------------------------
+     * ========================================================
      * EGLContext
-     * --------------------------------------------------------
+     * ========================================================
      */
 
     const EGLint contextAttributes[] = {
+
         EGL_CONTEXT_CLIENT_VERSION,
         2,
+
         EGL_NONE
     };
+
 
     context->eglContext =
         eglCreateContext(
@@ -364,9 +404,11 @@ static bool create_egl(
             contextAttributes
         );
 
+
     if (
         context->eglContext == EGL_NO_CONTEXT
     ) {
+
         log_egl_error(
             "eglCreateContext"
         );
@@ -378,15 +420,16 @@ static bool create_egl(
         return false;
     }
 
+
     LOGI(
         "EGL: context OK"
     );
 
 
     /*
-     * --------------------------------------------------------
+     * ========================================================
      * EGLSurface
-     * --------------------------------------------------------
+     * ========================================================
      */
 
     context->eglSurface =
@@ -397,9 +440,11 @@ static bool create_egl(
             nullptr
         );
 
+
     if (
         context->eglSurface == EGL_NO_SURFACE
     ) {
+
         log_egl_error(
             "eglCreateWindowSurface"
         );
@@ -411,15 +456,16 @@ static bool create_egl(
         return false;
     }
 
+
     LOGI(
         "EGL: surface OK"
     );
 
 
     /*
-     * --------------------------------------------------------
+     * ========================================================
      * Make current
-     * --------------------------------------------------------
+     * ========================================================
      */
 
     if (
@@ -430,6 +476,7 @@ static bool create_egl(
             context->eglContext
         )
     ) {
+
         log_egl_error(
             "eglMakeCurrent"
         );
@@ -441,12 +488,231 @@ static bool create_egl(
         return false;
     }
 
+
     LOGI(
         "EGL: makeCurrent OK"
     );
 
 
-    context->eglInitialized = true;
+    context->eglInitialized =
+        true;
+
+
+    return true;
+}
+
+
+/* ============================================================
+ * TESTE DE RENDERIZAÇÃO
+ * ============================================================ */
+
+/*
+ * Faz uma única chamada de renderização do mpv.
+ *
+ * IMPORTANTE:
+ *
+ * Neste estágio:
+ *
+ *     - não carregamos vídeo;
+ *     - não iniciamos reprodução;
+ *     - não criamos loop de renderização;
+ *     - não usamos callback de atualização.
+ *
+ * O objetivo é apenas provar que:
+ *
+ *     EGL
+ *       +
+ *     mpv_render_context
+ *       +
+ *     mpv_render_context_render()
+ *       +
+ *     eglSwapBuffers()
+ *
+ * funcionam juntos.
+ */
+static bool render_test(
+    MpvContext* context
+)
+{
+    if (!context) {
+
+        LOGE(
+            "Render: context == null"
+        );
+
+        return false;
+    }
+
+
+    if (!context->renderContext) {
+
+        LOGE(
+            "Render: renderContext == null"
+        );
+
+        return false;
+    }
+
+
+    if (!context->eglInitialized) {
+
+        LOGE(
+            "Render: EGL não inicializado"
+        );
+
+        return false;
+    }
+
+
+    if (!context->window) {
+
+        LOGE(
+            "Render: window == null"
+        );
+
+        return false;
+    }
+
+
+    /*
+     * ========================================================
+     * TAMANHO DA SURFACE
+     * ========================================================
+     */
+
+    int width =
+        ANativeWindow_getWidth(
+            context->window
+        );
+
+
+    int height =
+        ANativeWindow_getHeight(
+            context->window
+        );
+
+
+    LOGI(
+        "Render: tamanho %dx%d",
+        width,
+        height
+    );
+
+
+    if (
+        width <= 0 ||
+        height <= 0
+    ) {
+
+        LOGE(
+            "Render: tamanho inválido"
+        );
+
+        return false;
+    }
+
+
+    /*
+     * ========================================================
+     * OPENGL FBO
+     * ========================================================
+     *
+     * FBO 0 = framebuffer padrão da EGLSurface.
+     */
+
+    mpv_opengl_fbo fbo = {
+
+        .fbo = 0,
+
+        .w = width,
+
+        .h = height,
+
+        .internal_format = 0
+    };
+
+
+    /*
+     * ========================================================
+     * FLIP Y
+     * ========================================================
+     */
+
+    int flip_y = 0;
+
+
+    /*
+     * ========================================================
+     * PARÂMETROS DO RENDER
+     * ========================================================
+     */
+
+    mpv_render_param params[] = {
+
+        {
+            MPV_RENDER_PARAM_OPENGL_FBO,
+            &fbo
+        },
+
+        {
+            MPV_RENDER_PARAM_FLIP_Y,
+            &flip_y
+        },
+
+        {
+            MPV_RENDER_PARAM_INVALID,
+            nullptr
+        }
+    };
+
+
+    /*
+     * ========================================================
+     * MPV RENDER
+     * ========================================================
+     */
+
+    LOGI(
+        "Render: chamando mpv_render_context_render()"
+    );
+
+
+    mpv_render_context_render(
+        context->renderContext,
+        params
+    );
+
+
+    LOGI(
+        "Render: mpv_render_context_render() OK"
+    );
+
+
+    /*
+     * ========================================================
+     * SWAP BUFFERS
+     * ========================================================
+     */
+
+    if (
+        !eglSwapBuffers(
+            context->eglDisplay,
+            context->eglSurface
+        )
+    ) {
+
+        log_egl_error(
+            "eglSwapBuffers"
+        );
+
+        return false;
+    }
+
+
+    LOGI(
+        "Render: eglSwapBuffers() OK"
+    );
+
 
     return true;
 }
@@ -484,7 +750,9 @@ static void mpv_event_loop(
         LOGI(
             "event loop: event_id=%d name=%s",
             event->event_id,
-            mpv_event_name(event->event_id)
+            mpv_event_name(
+                event->event_id
+            )
         );
 
 
@@ -517,17 +785,22 @@ static void mpv_event_loop(
              * Só fazemos callback JNI se houver
              * objeto Java/Kotlin associado.
              */
+
             if (
                 !context->javaVm ||
                 !context->nativeObject
             ) {
+
                 continue;
             }
 
 
-            JNIEnv* env = nullptr;
+            JNIEnv* env =
+                nullptr;
 
-            bool attached = false;
+
+            bool attached =
+                false;
 
 
             if (
@@ -551,7 +824,9 @@ static void mpv_event_loop(
                     continue;
                 }
 
-                attached = true;
+
+                attached =
+                    true;
             }
 
 
@@ -662,7 +937,8 @@ static void mpv_event_loop(
                         );
 
 
-                    jstring value = nullptr;
+                    jstring value =
+                        nullptr;
 
 
                     if (property->data) {
@@ -718,6 +994,7 @@ static void mpv_event_loop(
                     "JNI: exceção durante callback"
                 );
 
+
                 env->ExceptionDescribe();
 
                 env->ExceptionClear();
@@ -751,9 +1028,12 @@ static void mpv_event_loop(
                 context->onLoadingChanged
             ) {
 
-                JNIEnv* env = nullptr;
+                JNIEnv* env =
+                    nullptr;
 
-                bool attached = false;
+
+                bool attached =
+                    false;
 
 
                 if (
@@ -777,7 +1057,9 @@ static void mpv_event_loop(
                         continue;
                     }
 
-                    attached = true;
+
+                    attached =
+                        true;
                 }
 
 
@@ -798,6 +1080,7 @@ static void mpv_event_loop(
                         "JNI: exceção em "
                         "onNativeLoadingChanged(true)"
                     );
+
 
                     env->ExceptionDescribe();
 
@@ -833,9 +1116,12 @@ static void mpv_event_loop(
                 context->onLoadingChanged
             ) {
 
-                JNIEnv* env = nullptr;
+                JNIEnv* env =
+                    nullptr;
 
-                bool attached = false;
+
+                bool attached =
+                    false;
 
 
                 if (
@@ -859,7 +1145,9 @@ static void mpv_event_loop(
                         continue;
                     }
 
-                    attached = true;
+
+                    attached =
+                        true;
                 }
 
 
@@ -880,6 +1168,7 @@ static void mpv_event_loop(
                         "JNI: exceção em "
                         "onNativeLoadingChanged(false)"
                     );
+
 
                     env->ExceptionDescribe();
 
@@ -988,47 +1277,62 @@ MpvContext* mpv_context_create()
     context->renderContext =
         nullptr;
 
+
     context->eglDisplay =
         EGL_NO_DISPLAY;
+
 
     context->eglConfig =
         nullptr;
 
+
     context->eglContext =
         EGL_NO_CONTEXT;
+
 
     context->eglSurface =
         EGL_NO_SURFACE;
 
+
     context->eglInitialized =
         false;
+
 
     context->eventLoopRunning =
         false;
 
+
     context->javaVm =
         nullptr;
+
 
     context->nativeObject =
         nullptr;
 
+
     context->onDoubleProperty =
         nullptr;
+
 
     context->onBooleanProperty =
         nullptr;
 
+
     context->onStringProperty =
         nullptr;
+
 
     context->onLoadingChanged =
         nullptr;
 
+
     context->window =
         nullptr;
 
+
     context->surfaceAvailable =
         false;
+
 
     LOGI(
         "MpvContext: criado sem Surface"
@@ -1069,11 +1373,21 @@ int mpv_context_initialize(
         "mpv: mpv_initialize()"
     );
 
+
+    /*
+     * Neste projeto usamos o render API do libmpv.
+     *
+     * Portanto não queremos que o mpv tente selecionar
+     * automaticamente uma saída de vídeo como mediacodec_embed
+     * antes de existir uma Surface.
+     */
+
     mpv_set_option_string(
         context->mpv,
         "vo",
         "libmpv"
     );
+
 
     int status =
         mpv_initialize(
@@ -1085,7 +1399,9 @@ int mpv_context_initialize(
 
         LOGI(
             "mpv_initialize() falhou: %s",
-            mpv_error_string(status)
+            mpv_error_string(
+                status
+            )
         );
 
         return -1;
@@ -1095,6 +1411,7 @@ int mpv_context_initialize(
     LOGI(
         "mpv: inicializado"
     );
+
 
     /* ========================================================
      * OBSERVA PROPRIEDADES
@@ -1114,7 +1431,9 @@ int mpv_context_initialize(
         LOGI(
             "mpv_observe_property(time-pos) "
             "falhou: %s",
-            mpv_error_string(status)
+            mpv_error_string(
+                status
+            )
         );
 
         return status;
@@ -1135,7 +1454,9 @@ int mpv_context_initialize(
         LOGI(
             "mpv_observe_property(duration) "
             "falhou: %s",
-            mpv_error_string(status)
+            mpv_error_string(
+                status
+            )
         );
 
         return status;
@@ -1156,7 +1477,9 @@ int mpv_context_initialize(
         LOGI(
             "mpv_observe_property(pause) "
             "falhou: %s",
-            mpv_error_string(status)
+            mpv_error_string(
+                status
+            )
         );
 
         return status;
@@ -1177,7 +1500,9 @@ int mpv_context_initialize(
         LOGI(
             "mpv_observe_property(filename) "
             "falhou: %s",
-            mpv_error_string(status)
+            mpv_error_string(
+                status
+            )
         );
 
         return status;
@@ -1220,73 +1545,121 @@ void mpv_context_set_surface(
     if (!context)
         return;
 
-    LOGI("MpvContext: set_surface()");
+
+    LOGI(
+        "MpvContext: set_surface()"
+    );
+
 
     /*
-     * ============================================================
+     * ========================================================
      * REMOVER SURFACE ANTERIOR
-     * ============================================================
+     * ========================================================
      */
 
     if (context->window)
     {
-        LOGI("MpvContext: removendo Surface anterior");
+        LOGI(
+            "MpvContext: removendo Surface anterior"
+        );
+
+
+        /*
+         * Primeiro destruímos o renderContext.
+         *
+         * Ele depende do contexto OpenGL/EGL.
+         */
 
         if (context->renderContext)
         {
-            LOGI("MpvContext: liberando renderContext anterior");
+            LOGI(
+                "MpvContext: liberando renderContext anterior"
+            );
+
 
             mpv_render_context_free(
                 context->renderContext
             );
 
-            context->renderContext = nullptr;
+
+            context->renderContext =
+                nullptr;
         }
 
-        destroy_egl(context);
+
+        /*
+         * Depois destruímos EGL.
+         */
+
+        destroy_egl(
+            context
+        );
+
+
+        /*
+         * Finalmente liberamos a referência
+         * para a ANativeWindow.
+         */
 
         ANativeWindow_release(
             context->window
         );
 
-        context->window = nullptr;
-        context->surfaceAvailable = false;
+
+        context->window =
+            nullptr;
+
+
+        context->surfaceAvailable =
+            false;
     }
 
+
     /*
-     * ============================================================
+     * ========================================================
      * NENHUMA SURFACE
-     * ============================================================
+     * ========================================================
      */
 
     if (!window)
     {
-        LOGI("MpvContext: Surface removida");
+        LOGI(
+            "MpvContext: Surface removida"
+        );
+
         return;
     }
 
+
     /*
-     * ============================================================
+     * ========================================================
      * ADQUIRIR ANativeWindow
-     * ============================================================
+     * ========================================================
      */
 
     ANativeWindow_acquire(
         window
     );
 
-    context->window = window;
-    context->surfaceAvailable = true;
+
+    context->window =
+        window;
+
+
+    context->surfaceAvailable =
+        true;
+
 
     LOGI(
         "MpvContext: ANativeWindow adquirido: %p",
         context->window
     );
 
+
     /*
-     * ============================================================
+     * ========================================================
      * EGL
-     * ============================================================
+     * ========================================================
      */
 
     if (!create_egl(context))
@@ -1295,51 +1668,67 @@ void mpv_context_set_surface(
             "MpvContext: falha ao criar EGL"
         );
 
+
         ANativeWindow_release(
             context->window
         );
 
-        context->window = nullptr;
-        context->surfaceAvailable = false;
+
+        context->window =
+            nullptr;
+
+
+        context->surfaceAvailable =
+            false;
+
 
         return;
     }
+
 
     LOGI(
         "MpvContext: EGL inicializado com sucesso"
     );
 
+
     /*
-     * ============================================================
+     * ========================================================
      * MPV RENDER CONTEXT
-     * ============================================================
+     * ========================================================
      */
 
     LOGI(
         "MpvContext: criando mpv_render_context"
     );
 
+
     mpv_opengl_init_params gl_init_params = {
         .get_proc_address = get_proc_address,
         .get_proc_address_ctx = context
     };
 
+
     mpv_render_param params[] = {
+
         {
             MPV_RENDER_PARAM_API_TYPE,
+
             const_cast<char*>(
                 MPV_RENDER_API_TYPE_OPENGL
             )
         },
+
         {
             MPV_RENDER_PARAM_OPENGL_INIT_PARAMS,
             &gl_init_params
         },
+
         {
             MPV_RENDER_PARAM_INVALID,
             nullptr
         }
     };
+
 
     int status =
         mpv_render_context_create(
@@ -1348,41 +1737,68 @@ void mpv_context_set_surface(
             params
         );
 
+
     if (status < 0)
     {
         LOGE(
-            "MpvContext: mpv_render_context_create() falhou: %s",
-            mpv_error_string(status)
+            "MpvContext: "
+            "mpv_render_context_create() falhou: %s",
+            mpv_error_string(
+                status
+            )
         );
 
-        context->renderContext = nullptr;
 
-        destroy_egl(context);
+        context->renderContext =
+            nullptr;
+
+
+        destroy_egl(
+            context
+        );
+
 
         ANativeWindow_release(
             context->window
         );
 
-        context->window = nullptr;
-        context->surfaceAvailable = false;
+
+        context->window =
+            nullptr;
+
+
+        context->surfaceAvailable =
+            false;
+
 
         return;
     }
+
 
     LOGI(
         "MpvContext: mpv_render_context criado: %p",
         context->renderContext
     );
 
+
     /*
-     * IMPORTANTE:
+     * ========================================================
+     * TESTE DE RENDERIZAÇÃO
+     * ========================================================
      *
-     * Ainda NÃO chamamos:
+     * Fazemos apenas UMA renderização.
      *
-     *     mpv_render_context_render()
+     * Ainda não existe:
      *
-     * A renderização será o próximo passo.
+     *     - loop;
+     *     - callback;
+     *     - vídeo;
+     *     - mpv_command(loadfile);
      */
+
+    render_test(
+        context
+    );
 }
 
 
@@ -1528,16 +1944,21 @@ void mpv_context_destroy(
             nullptr;
     }
 
+
     /* ========================================================
-     * DESTRUA O EGL
+     * DESTRUIR EGL
      * ======================================================== */
 
     if (
         context->eglInitialized ||
         context->eglDisplay != EGL_NO_DISPLAY
     ) {
-        destroy_egl(context);
+
+        destroy_egl(
+            context
+        );
     }
+
 
     /* ========================================================
      * SURFACE ANDROID
