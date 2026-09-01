@@ -33,6 +33,8 @@ struct MpvContext {
 
     std::thread eventThread;
 
+    std::atomic<bool> renderPending;
+
 
     /* ========================================================
      * JNI
@@ -93,6 +95,10 @@ void mpv_context_destroy(
 void mpv_context_set_surface(
     MpvContext* context,
     ANativeWindow* window
+);
+
+bool mpv_context_take_render_request(
+    MpvContext* context
 );
 
 #endif

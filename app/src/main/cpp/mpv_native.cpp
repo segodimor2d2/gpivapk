@@ -523,3 +523,17 @@ Java_com_rec_gpiv_player_MpvNative_nativeSetSurface(
         );
     }
 }
+
+
+bool mpv_context_take_render_request(
+    MpvContext* context
+)
+{
+    if (!context)
+        return false;
+
+    return context->renderPending.exchange(
+        false,
+        std::memory_order_acq_rel
+    );
+}

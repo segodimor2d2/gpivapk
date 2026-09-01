@@ -734,8 +734,13 @@ static void mpv_update_callback(
     if (!context)
         return;
 
+    context->renderPending.store(
+        true,
+        std::memory_order_release
+    );
+
     LOGI(
-        "Render: mpv_update_callback() disparado"
+        "Render: mpv_update_callback() -> renderPending=true"
     );
 }
 
@@ -1295,8 +1300,7 @@ MpvContext* mpv_context_create()
     }
 
 
-    context->renderContext =
-        nullptr;
+    context->renderContext = nullptr;
 
 
     context->eglDisplay =
@@ -1318,14 +1322,11 @@ MpvContext* mpv_context_create()
     context->eglInitialized =
         false;
 
+    context->eventLoopRunning = false;
 
-    context->eventLoopRunning =
-        false;
+    context->renderPending = false;
 
-
-    context->javaVm =
-        nullptr;
-
+    context->javaVm = nullptr;
 
     context->nativeObject =
         nullptr;
@@ -1603,8 +1604,7 @@ void mpv_context_set_surface(
             );
 
 
-            context->renderContext =
-                nullptr;
+            context->renderContext = nullptr;
         }
 
 
@@ -1770,8 +1770,7 @@ void mpv_context_set_surface(
         );
 
 
-        context->renderContext =
-            nullptr;
+        context->renderContext = nullptr;
 
 
         destroy_egl(
