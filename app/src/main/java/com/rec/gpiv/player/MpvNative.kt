@@ -1,5 +1,7 @@
 package com.rec.gpiv.player
 
+import android.view.Surface
+
 class MpvNative {
 
     companion object {
@@ -38,6 +40,15 @@ class MpvNative {
 
         println(
             "MpvNative: native version = $version"
+        )
+    }
+
+    fun setSurface(surface: Surface?) {
+        checkInitialized()
+
+        nativeSetSurface(
+            nativeHandle,
+            surface
         )
     }
 
@@ -280,5 +291,10 @@ class MpvNative {
     private external fun nativeSeekForward(
         handle: Long,
         seconds: Double
+    )
+
+    private external fun nativeSetSurface(
+        handle: Long,
+        surface: Surface?
     )
 }

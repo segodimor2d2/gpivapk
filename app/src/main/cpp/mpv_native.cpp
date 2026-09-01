@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <android/log.h>
+#include <android/native_window_jni.h>
 
 #include "mpv_context.h"
 
@@ -432,4 +433,55 @@ Java_com_rec_gpiv_player_MpvNative_nativeLoadLocalPath(
         path,
         pathString
     );
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeSetSurface(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jobject surface
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context) {
+
+        LOGI(
+            "JNI: nativeSetSurface() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    ANativeWindow* window = nullptr;
+
+    if (surface) {
+
+        window =
+            ANativeWindow_fromSurface(
+                env,
+                surface
+            );
+
+        if (!window) {
+
+            LOGI(
+                "JNI: ANativeWindow_fromSurface() falhou"
+            );
+
+            return;
+        }
+    }
+
+    mpv_context_set_surface(
+        context,
+        window
+    );
+
+    if (window) {
+        ANativeWindow_release(window);
+    }
 }

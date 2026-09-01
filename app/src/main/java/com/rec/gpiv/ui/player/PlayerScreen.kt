@@ -1,16 +1,28 @@
 package com.rec.gpiv.ui.player
 
+import android.view.SurfaceHolder
+import android.view.SurfaceView
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+
 import androidx.compose.runtime.Composable
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+
+import androidx.compose.ui.viewinterop.AndroidView
+
 import com.rec.gpiv.model.PlayerUiState
+
 
 @Composable
 fun PlayerScreen(
@@ -29,11 +41,56 @@ fun PlayerScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+
         Button(
             onClick = onOpenVideo
         ) {
             Text("ABRIR VÍDEO")
         }
+
+        AndroidView(
+            factory = { context ->
+
+                SurfaceView(context).apply {
+
+                    holder.addCallback(
+                        object : SurfaceHolder.Callback {
+
+                            override fun surfaceCreated(
+                                holder: SurfaceHolder
+                            ) {
+                                println(
+                                    "PlayerScreen: surfaceCreated()"
+                                )
+                            }
+
+                            override fun surfaceChanged(
+                                holder: SurfaceHolder,
+                                format: Int,
+                                width: Int,
+                                height: Int
+                            ) {
+                                println(
+                                    "PlayerScreen: surfaceChanged: " +
+                                        "${width}x${height}"
+                                )
+                            }
+
+                            override fun surfaceDestroyed(
+                                holder: SurfaceHolder
+                            ) {
+                                println(
+                                    "PlayerScreen: surfaceDestroyed()"
+                                )
+                            }
+                        }
+                    )
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        )
 
         Text(
             text = uiState.filename ?: "Nenhum arquivo"
@@ -62,8 +119,12 @@ fun PlayerScreen(
         )
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(
+                vertical = 8.dp
+            )
         ) {
+
             Button(
                 onClick = {
                     onSeekBackward(5.0)
@@ -94,8 +155,12 @@ fun PlayerScreen(
         }
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(
+                bottom = 8.dp
+            )
         ) {
+
             Button(
                 onClick = onVolumeDown
             ) {

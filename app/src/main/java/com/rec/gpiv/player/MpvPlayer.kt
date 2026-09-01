@@ -2,6 +2,7 @@ package com.rec.gpiv.player
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.view.Surface
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
@@ -39,6 +40,15 @@ class MpvPlayer(
         loadLocalTestPath(
             "/data/user/0/com.rec.gpiv/files/test.mp4"
         )
+    }
+
+    fun setSurface(surface: Surface?) {
+
+        println(
+            "MpvPlayer: setSurface($surface)"
+        )
+
+        native.setSurface(surface)
     }
 
     fun loadLocalTestPath(path: String) {
