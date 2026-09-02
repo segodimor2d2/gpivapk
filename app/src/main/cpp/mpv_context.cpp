@@ -54,22 +54,33 @@ static void* get_proc_address(
 )
 {
     if (!name) {
+        LOGI(
+            "OpenGL: get_proc_address(NULL)"
+        );
+
         return nullptr;
     }
-
 
     void* address =
         reinterpret_cast<void*>(
             eglGetProcAddress(name)
         );
 
-
-    LOGI(
-        "OpenGL: get_proc_address(%s) -> %p",
-        name,
-        address
-    );
-
+    if (address)
+    {
+        LOGI(
+            "OpenGL: PROC OK: %s -> %p",
+            name,
+            address
+        );
+    }
+    else
+    {
+        LOGI(
+            "OpenGL: PROC FAIL: %s -> NULL",
+            name
+        );
+    }
 
     return address;
 }
