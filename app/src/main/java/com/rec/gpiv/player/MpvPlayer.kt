@@ -1,5 +1,7 @@
 package com.rec.gpiv.player
 
+import com.rec.gpiv.player.MpvNative
+
 import android.content.ContentResolver
 import android.net.Uri
 import android.view.Surface
@@ -7,10 +9,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
 class MpvPlayer(
-    contentResolver: ContentResolver
+    contentResolver: ContentResolver,
+    private val native: MpvNative
 ) : VideoPlayer {
-
-    private val native = MpvNative()
 
     private val videoSource =
         VideoSource(contentResolver)
@@ -35,10 +36,6 @@ class MpvPlayer(
 
         println(
             "MpvPlayer: native version = $version"
-        )
-
-        loadLocalTestPath(
-            "/data/user/0/com.rec.gpiv/files/test.mp4"
         )
     }
 

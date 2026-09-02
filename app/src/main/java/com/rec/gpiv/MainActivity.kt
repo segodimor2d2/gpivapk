@@ -29,21 +29,6 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: PlayerViewModel by viewModels()
 
-    /*
-     * Uma única instância nativa do libmpv.
-     *
-     * Essa instância será compartilhada entre:
-     *
-     * MainActivity
-     *      ↓
-     * PlayerScreen
-     *      ↓
-     * Surface lifecycle
-     */
-    private val mpvNative =
-        MpvNative()
-
-
     private val openVideoLauncher =
         registerForActivityResult(
             ActivityResultContracts.OpenDocument()
@@ -54,7 +39,6 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-
     override fun onCreate(
         savedInstanceState: Bundle?
     ) {
@@ -63,14 +47,6 @@ class MainActivity : ComponentActivity() {
         )
 
         enableEdgeToEdge()
-
-
-        /*
-         * Inicializa o contexto nativo antes
-         * da Surface começar a ser entregue.
-         */
-        mpvNative.initialize()
-
 
         setContent {
 
@@ -89,7 +65,7 @@ class MainActivity : ComponentActivity() {
                     PlayerScreen(
                         uiState = uiState,
 
-                        mpvNative = mpvNative,
+                        mpvNative = viewModel.mpvNative,
 
                         onOpenVideo = {
                             openVideoLauncher.launch(
@@ -115,6 +91,9 @@ class MainActivity : ComponentActivity() {
                         onMute =
                             viewModel::mute,
 
+                        onSurfaceReady =
+                            viewModel::onSurfaceReady,
+
                         modifier =
                             Modifier.padding(
                                 innerPadding
@@ -125,18 +104,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
     override fun onDestroy() {
-
-        /*
-         * Neste momento ainda estamos apenas
-         * tratando o lifecycle da Surface.
-         *
-         * O release do MpvNative fica associado
-         * ao lifecycle da Activity.
-         */
-        mpvNative.release()
-
         super.onDestroy()
     }
+
 }

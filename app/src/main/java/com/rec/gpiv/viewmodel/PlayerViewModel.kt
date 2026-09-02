@@ -1,11 +1,13 @@
 package com.rec.gpiv.viewmodel
 
+
 import android.app.Application
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rec.gpiv.model.PlayerUiState
+import com.rec.gpiv.player.MpvNative
 import com.rec.gpiv.player.MpvPlayer
 import com.rec.gpiv.player.PlayerEvent
 import com.rec.gpiv.player.VideoPlayer
@@ -18,9 +20,13 @@ class PlayerViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
+    val mpvNative =
+        MpvNative()
+
     private val player: VideoPlayer =
         MpvPlayer(
-            application.contentResolver
+            application.contentResolver,
+            mpvNative
         )
 
     private val _uiState =
@@ -34,6 +40,24 @@ class PlayerViewModel(
         observePlayerEvents()
 
         player.initialize()
+    }
+
+    fun onSurfaceReady() {
+
+        println(
+            "PlayerViewModel: Surface pronta"
+        )
+
+        val testPath =
+            "/data/user/0/com.rec.gpiv/files/test.mp4"
+
+        println(
+            "PlayerViewModel: carregando vídeo de teste"
+        )
+
+        if (player is MpvPlayer) {
+            player.loadLocalTestPath(testPath)
+        }
     }
 
     private fun observePlayerEvents() {

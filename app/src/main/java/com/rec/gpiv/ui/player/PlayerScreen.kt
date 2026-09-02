@@ -45,6 +45,7 @@ fun PlayerScreen(
     onVolumeDown: () -> Unit,
     onVolumeUp: () -> Unit,
     onMute: () -> Unit,
+    onSurfaceReady: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var surfaceReady by remember {
@@ -54,14 +55,23 @@ fun PlayerScreen(
     val renderHandler = Handler(Looper.getMainLooper())
 
     val renderRunnable = object : Runnable {
+
         override fun run() {
+
             if (surfaceReady) {
-                val rendered = mpvNative.render()
+
+                val rendered =
+                    mpvNative.render()
 
                 println(
                     "PlayerScreen: render() = $rendered"
                 )
             }
+
+            renderHandler.postDelayed(
+                this,
+                16L
+            )
         }
     }
 
@@ -101,12 +111,21 @@ fun PlayerScreen(
                             override fun surfaceCreated(
                                 holder: SurfaceHolder
                             ) {
-                                println( "PlayerScreen: surfaceCreated()")
-                                println( "PlayerScreen: enviando Surface para MpvNative")
+                                println(
+                                    "PlayerScreen: surfaceCreated()"
+                                )
 
-                                mpvNative.setSurface( holder.surface)
+                                println(
+                                    "PlayerScreen: enviando Surface para MpvNative"
+                                )
+
+                                mpvNative.setSurface(
+                                    holder.surface
+                                )
 
                                 surfaceReady = true
+
+                                onSurfaceReady()
                             }
 
                             override fun surfaceChanged(
