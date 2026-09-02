@@ -57,7 +57,11 @@ fun PlayerScreen(
         override fun run() {
 
             if (surfaceReady) {
-                mpvNative.renderIfPending()
+                val rendered = mpvNative.renderIfPending()
+
+                println(
+                    "PlayerScreen: renderIfPending() = $rendered"
+                )
             }
 
             renderHandler.postDelayed(
