@@ -719,6 +719,21 @@ static bool render_test(
         "Render: tela vermelha desenhada"
     );
 
+
+
+    int status =
+        mpv_render_context_render(
+            context->renderContext,
+            params
+        );
+
+    LOGI(
+        "Render: mpv_render_context_render() retornou %d",
+        status
+    );
+
+
+
     /*
      * ========================================================
      * SWAP BUFFERS
