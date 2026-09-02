@@ -703,17 +703,21 @@ static bool render_test(
         "Render: chamando mpv_render_context_render()"
     );
 
+    glClearColor(
+        1.0f,
+        0.0f,
+        0.0f,
+        1.0f
+    );
 
-    mpv_render_context_render(
-        context->renderContext,
-        params
+    glClear(
+        GL_COLOR_BUFFER_BIT
     );
 
 
     LOGI(
-        "Render: mpv_render_context_render() OK"
+        "Render: tela vermelha desenhada"
     );
-
 
     /*
      * ========================================================
