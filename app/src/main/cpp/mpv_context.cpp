@@ -694,27 +694,37 @@ static bool render_test(
      * ========================================================
      */
 
-    if (
-        !eglSwapBuffers(
-            context->eglDisplay,
-            context->eglSurface
-        )
-    ) {
+      if (
+          !eglSwapBuffers(
+              context->eglDisplay,
+              context->eglSurface
+          )
+      ) {
 
-        log_egl_error(
-            "eglSwapBuffers"
-        );
+          log_egl_error(
+              "eglSwapBuffers"
+          );
 
-        return false;
-    }
-
-
-    LOGI(
-        "Render: eglSwapBuffers() OK"
-    );
+          return false;
+      }
 
 
-    return true;
+      LOGI(
+          "Render: eglSwapBuffers() OK"
+      );
+
+
+      mpv_render_context_report_swap(
+          context->renderContext
+      );
+
+
+      LOGI(
+          "Render: mpv_render_context_report_swap() OK"
+      );
+
+
+      return true;
 }
 
 
