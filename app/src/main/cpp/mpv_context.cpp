@@ -2092,3 +2092,15 @@ bool mpv_context_render_if_pending(
 
     return true;
 }
+
+bool mpv_context_render(MpvContext* context)
+{
+    if (!context)
+        return false;
+
+    LOGI(
+        "Render: render contínuo"
+    );
+
+    return render_test(context);
+}

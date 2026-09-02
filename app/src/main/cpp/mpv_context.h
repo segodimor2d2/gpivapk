@@ -105,4 +105,6 @@ bool mpv_context_render_if_pending(
     MpvContext* context
 );
 
+bool mpv_context_render(MpvContext* context);
+
 #endif

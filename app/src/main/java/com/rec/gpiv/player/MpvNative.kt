@@ -305,4 +305,11 @@ class MpvNative {
     fun renderIfPending(): Boolean {
         return nativeRenderIfPending(nativeHandle)
     }
+
+    private external fun nativeRender(handle: Long): Boolean
+
+    fun render(): Boolean {
+        return nativeRender(nativeHandle)
+    }
+
 }
