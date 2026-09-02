@@ -1,7 +1,16 @@
 package com.rec.gpiv.ui.player
 
+import android.os.Handler
+import android.os.Looper
+
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -38,6 +47,39 @@ fun PlayerScreen(
     onMute: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var surfaceReady by remember {
+        mutableStateOf(false)
+    }
+
+    val renderHandler = Handler(Looper.getMainLooper())
+
+    val renderRunnable = object : Runnable {
+        override fun run() {
+
+            if (surfaceReady) {
+                mpvNative.renderIfPending()
+            }
+
+            renderHandler.postDelayed(
+                this,
+                16L
+            )
+        }
+    }
+
+    DisposableEffect(mpvNative) {
+
+        renderHandler.post(
+            renderRunnable
+        )
+
+        onDispose {
+            renderHandler.removeCallbacks(
+                renderRunnable
+            )
+        }
+    }
+
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -61,17 +103,12 @@ fun PlayerScreen(
                             override fun surfaceCreated(
                                 holder: SurfaceHolder
                             ) {
-                                println(
-                                    "PlayerScreen: surfaceCreated()"
-                                )
+                                println( "PlayerScreen: surfaceCreated()")
+                                println( "PlayerScreen: enviando Surface para MpvNative")
 
-                                println(
-                                    "PlayerScreen: enviando Surface para MpvNative"
-                                )
+                                mpvNative.setSurface( holder.surface)
 
-                                mpvNative.setSurface(
-                                    holder.surface
-                                )
+                                surfaceReady = true
                             }
 
                             override fun surfaceChanged(
@@ -89,17 +126,14 @@ fun PlayerScreen(
                             override fun surfaceDestroyed(
                                 holder: SurfaceHolder
                             ) {
-                                println(
-                                    "PlayerScreen: surfaceDestroyed()"
-                                )
+                                println( "PlayerScreen: surfaceDestroyed()")
 
-                                println(
-                                    "PlayerScreen: removendo Surface do MpvNative"
-                                )
+                                println( "PlayerScreen: removendo Surface do MpvNative")
 
-                                mpvNative.setSurface(
-                                    null
-                                )
+                                surfaceReady = false
+
+                                mpvNative.setSurface( null)
+
                             }
                         }
                     )

@@ -2063,3 +2063,22 @@ bool mpv_context_take_render_request(
 
     return pending;
 }
+
+bool mpv_context_render_if_pending(
+    MpvContext* context
+)
+{
+    if (!context)
+        return false;
+
+    if (!mpv_context_take_render_request(context))
+        return false;
+
+    LOGI(
+        "Render: solicitação pendente detectada"
+    );
+
+    render_test(context);
+
+    return true;
+}

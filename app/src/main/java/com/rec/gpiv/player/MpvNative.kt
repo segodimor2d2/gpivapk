@@ -297,4 +297,12 @@ class MpvNative {
         handle: Long,
         surface: Surface?
     )
+
+    private external fun nativeRenderIfPending(
+        handle: Long
+    ): Boolean
+
+    fun renderIfPending(): Boolean {
+        return nativeRenderIfPending(nativeHandle)
+    }
 }
