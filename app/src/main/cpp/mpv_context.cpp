@@ -621,13 +621,9 @@ static bool render_test(
      */
 
     mpv_opengl_fbo fbo = {
-
         .fbo = 0,
-
         .w = width,
-
         .h = height,
-
         .internal_format = 0
     };
 
@@ -671,6 +667,37 @@ static bool render_test(
      * MPV RENDER
      * ========================================================
      */
+
+    GLint current_fbo = 0;
+
+    glGetIntegerv(
+        GL_FRAMEBUFFER_BINDING,
+        &current_fbo
+    );
+
+    GLenum gl_error = glGetError();
+
+    LOGI(
+        "Render: FBO=%d GL_ERROR=0x%x",
+        current_fbo,
+        gl_error
+    );
+
+    GLint viewport[4] = {0, 0, 0, 0};
+
+    glGetIntegerv(
+        GL_VIEWPORT,
+        viewport
+    );
+
+    LOGI(
+        "Render: GL_VIEWPORT = %d %d %d %d",
+        viewport[0],
+        viewport[1],
+        viewport[2],
+        viewport[3]
+    );
+
 
     LOGI(
         "Render: chamando mpv_render_context_render()"
