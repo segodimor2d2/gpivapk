@@ -120,6 +120,38 @@ static void destroy_egl(
     }
 
 
+    const GLubyte* version =
+        glGetString(GL_VERSION);
+
+    const GLubyte* renderer =
+        glGetString(GL_RENDERER);
+
+    const GLubyte* vendor =
+        glGetString(GL_VENDOR);
+
+    LOGI(
+        "OpenGL: version = %s",
+        version
+            ? reinterpret_cast<const char*>(version)
+            : "NULL"
+    );
+
+    LOGI(
+        "OpenGL: renderer = %s",
+        renderer
+            ? reinterpret_cast<const char*>(renderer)
+            : "NULL"
+    );
+
+    LOGI(
+        "OpenGL: vendor = %s",
+        vendor
+            ? reinterpret_cast<const char*>(vendor)
+            : "NULL"
+    );
+
+
+
     /*
      * --------------------------------------------------------
      * EGLSurface
@@ -491,6 +523,61 @@ static bool create_egl(
 
     LOGI(
         "EGL: makeCurrent OK"
+    );
+
+
+    /*
+     * ========================================================
+     * TESTE OPENGL ES
+     * ========================================================
+     */
+
+    GLenum gl_error =
+        glGetError();
+
+    const GLubyte* gl_version =
+        glGetString(
+            GL_VERSION
+        );
+
+    const GLubyte* gl_renderer =
+        glGetString(
+            GL_RENDERER
+        );
+
+    const GLubyte* gl_vendor =
+        glGetString(
+            GL_VENDOR
+        );
+
+
+    LOGI(
+        "OpenGL TEST: glGetError = 0x%x",
+        gl_error
+    );
+
+
+    LOGI(
+        "OpenGL TEST: version = %s",
+        gl_version
+            ? reinterpret_cast<const char*>(gl_version)
+            : "NULL"
+    );
+
+
+    LOGI(
+        "OpenGL TEST: renderer = %s",
+        gl_renderer
+            ? reinterpret_cast<const char*>(gl_renderer)
+            : "NULL"
+    );
+
+
+    LOGI(
+        "OpenGL TEST: vendor = %s",
+        gl_vendor
+            ? reinterpret_cast<const char*>(gl_vendor)
+            : "NULL"
     );
 
 
