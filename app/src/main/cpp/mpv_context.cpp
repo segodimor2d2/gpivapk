@@ -614,6 +614,49 @@ static bool create_egl(
  *
  * funcionam juntos.
  */
+
+static void log_center_pixel(
+    const char* label,
+    int width,
+    int height
+)
+{
+    const int x = width / 2;
+    const int y = height / 2;
+
+    unsigned char pixel[4] = {
+        0,
+        0,
+        0,
+        0
+    };
+
+    glReadPixels(
+        x,
+        y,
+        1,
+        1,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        pixel
+    );
+
+    GLenum error =
+        glGetError();
+
+    LOGI(
+        "PIXEL: %s (%d,%d) = RGBA(%u,%u,%u,%u), GL_ERROR=0x%x",
+        label,
+        x,
+        y,
+        pixel[0],
+        pixel[1],
+        pixel[2],
+        pixel[3],
+        error
+    );
+}
+
 static bool render_test(
     MpvContext* context
 )
@@ -804,6 +847,17 @@ static bool render_test(
     );
 
 
+    log_center_pixel(
+        "ANTES_MPV",
+        width,
+        height
+    );
+
+
+    LOGI(
+        "Render: chamando mpv_render_context_render()"
+    );
+
 
     int status =
         mpv_render_context_render(
@@ -811,12 +865,28 @@ static bool render_test(
             params
         );
 
+
     LOGI(
         "Render: mpv_render_context_render() retornou %d",
         status
     );
 
 
+    log_center_pixel(
+        "DEPOIS_MPV",
+        width,
+        height
+    );
+
+
+    GLenum render_error =
+        glGetError();
+
+
+    LOGI(
+        "Render: GL_ERROR depois do MPV = 0x%x",
+        render_error
+    );
 
     /*
      * ========================================================
@@ -1349,6 +1419,36 @@ static void mpv_event_loop(
             }
         }
 
+        /* ====================================================
+         * LOG MESSAGE
+         * ==================================================== */
+
+        if (
+            event->event_id ==
+            MPV_EVENT_LOG_MESSAGE
+        ) {
+
+            mpv_event_log_message* logMessage =
+                static_cast<mpv_event_log_message*>(
+                    event->data
+                );
+
+            if (logMessage) {
+
+                LOGI(
+                    "MPV_LOG [%s] %s: %s",
+                    logMessage->prefix
+                        ? logMessage->prefix
+                        : "?",
+                    logMessage->level
+                        ? logMessage->level
+                        : "?",
+                    logMessage->text
+                        ? logMessage->text
+                        : ""
+                );
+            }
+        }
 
         /* ====================================================
          * END FILE
@@ -1424,8 +1524,13 @@ MpvContext* mpv_context_create()
     }
 
 
-    context->mpv =
-        mpv_create();
+    context->mpv = mpv_create();
+
+
+    mpv_request_log_messages(
+        context->mpv,
+        "info"
+    );
 
 
     if (!context->mpv) {
