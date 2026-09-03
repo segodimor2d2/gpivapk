@@ -15,6 +15,19 @@ add_library(
     IMPORTED
 )
 
+add_library(
+    avcodec
+    SHARED
+    IMPORTED
+)
+
+set_target_properties(
+    avcodec
+    PROPERTIES
+    IMPORTED_LOCATION
+        "${CMAKE_CURRENT_LIST_DIR}/../jniLibs/arm64-v8a/libavcodec.so"
+)
+
 set_target_properties(
     mpv
     PROPERTIES
@@ -22,7 +35,7 @@ set_target_properties(
         "${CMAKE_CURRENT_LIST_DIR}/../jniLibs/arm64-v8a/libmpv.so"
 
     INTERFACE_INCLUDE_DIRECTORIES
-        "/home/segodimo/05android/mpv/include"
+        "/home/segodimo/05android/mpv/include;/home/segodimo/05android/mpv-android/buildscripts/prefix/arm64/include"
 )
 
 find_library(
@@ -48,6 +61,7 @@ find_library(
 target_link_libraries(
     gpiv_native
     mpv
+    avcodec
     ${log-lib}
     ${android-lib}
     ${egl-lib}

@@ -4,6 +4,10 @@
 
 #include "mpv_context.h"
 
+extern "C" {
+#include <libavcodec/jni.h>
+}
+
 #define LOG_TAG "GPIV_NATIVE"
 
 #define LOGI(...) \
@@ -78,6 +82,10 @@ Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
 
     context->javaVm = vm;
 
+    av_jni_set_java_vm(
+        vm,
+        nullptr
+    );
 
     /* ========================================================
      * REFERÊNCIA GLOBAL DO OBJETO KOTLIN
