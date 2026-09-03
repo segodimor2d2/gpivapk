@@ -615,47 +615,6 @@ static bool create_egl(
  * funcionam juntos.
  */
 
-static void log_center_pixel(
-    const char* label,
-    int width,
-    int height
-)
-{
-    const int x = width / 2;
-    const int y = height / 2;
-
-    unsigned char pixel[4] = {
-        0,
-        0,
-        0,
-        0
-    };
-
-    glReadPixels(
-        x,
-        y,
-        1,
-        1,
-        GL_RGBA,
-        GL_UNSIGNED_BYTE,
-        pixel
-    );
-
-    GLenum error =
-        glGetError();
-
-    LOGI(
-        "PIXEL: %s (%d,%d) = RGBA(%u,%u,%u,%u), GL_ERROR=0x%x",
-        label,
-        x,
-        y,
-        pixel[0],
-        pixel[1],
-        pixel[2],
-        pixel[3],
-        error
-    );
-}
 
 static bool render_test(
     MpvContext* context
@@ -718,14 +677,6 @@ static bool render_test(
             context->window
         );
 
-
-    LOGI(
-        "Render: tamanho %dx%d",
-        width,
-        height
-    );
-
-
     if (
         width <= 0 ||
         height <= 0
@@ -754,15 +705,7 @@ static bool render_test(
         .internal_format = 0
     };
 
-
-    /*
-     * ========================================================
-     * FLIP Y
-     * ========================================================
-     */
-
     int flip_y = 1;
-
 
     /*
      * ========================================================
@@ -795,70 +738,6 @@ static bool render_test(
      * ========================================================
      */
 
-    GLint current_fbo = 0;
-
-    glGetIntegerv(
-        GL_FRAMEBUFFER_BINDING,
-        &current_fbo
-    );
-
-    GLenum gl_error = glGetError();
-
-    LOGI(
-        "Render: FBO=%d GL_ERROR=0x%x",
-        current_fbo,
-        gl_error
-    );
-
-    GLint viewport[4] = {0, 0, 0, 0};
-
-    glGetIntegerv(
-        GL_VIEWPORT,
-        viewport
-    );
-
-    LOGI(
-        "Render: GL_VIEWPORT = %d %d %d %d",
-        viewport[0],
-        viewport[1],
-        viewport[2],
-        viewport[3]
-    );
-
-
-    LOGI(
-        "Render: chamando mpv_render_context_render()"
-    );
-
-    glClearColor(
-        1.0f,
-        0.0f,
-        0.0f,
-        1.0f
-    );
-
-    glClear(
-        GL_COLOR_BUFFER_BIT
-    );
-
-
-    LOGI(
-        "Render: tela vermelha desenhada"
-    );
-
-
-    log_center_pixel(
-        "ANTES_MPV",
-        width,
-        height
-    );
-
-
-    LOGI(
-        "Render: chamando mpv_render_context_render()"
-    );
-
-
     int status =
         mpv_render_context_render(
             context->renderContext,
@@ -866,27 +745,15 @@ static bool render_test(
         );
 
 
-    LOGI(
-        "Render: mpv_render_context_render() retornou %d",
-        status
-    );
+    if (status < 0) {
 
+        LOGE(
+            "Render: mpv_render_context_render() retornou %d",
+            status
+        );
 
-    log_center_pixel(
-        "DEPOIS_MPV",
-        width,
-        height
-    );
-
-
-    GLenum render_error =
-        glGetError();
-
-
-    LOGI(
-        "Render: GL_ERROR depois do MPV = 0x%x",
-        render_error
-    );
+        return false;
+    }
 
     /*
      * ========================================================
@@ -908,21 +775,9 @@ static bool render_test(
           return false;
       }
 
-
-      LOGI(
-          "Render: eglSwapBuffers() OK"
-      );
-
-
       mpv_render_context_report_swap(
           context->renderContext
       );
-
-
-      LOGI(
-          "Render: mpv_render_context_report_swap() OK"
-      );
-
 
       return true;
 }

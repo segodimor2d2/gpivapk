@@ -48,40 +48,40 @@ fun PlayerScreen(
     onSurfaceReady: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var surfaceReady by remember {
+
+    var renderLoopRunning by remember {
         mutableStateOf(false)
     }
 
-    val renderHandler = Handler(Looper.getMainLooper())
+    val renderHandler = remember(mpvNative) {
+        Handler(Looper.getMainLooper())
+    }
 
-    val renderRunnable = object : Runnable {
+    val renderRunnable = remember(mpvNative) {
+        object : Runnable {
 
-        override fun run() {
+            override fun run() {
 
-            if (surfaceReady) {
+                if (!renderLoopRunning) {
+                    return
+                }
 
-                val rendered =
-                    mpvNative.render()
+                mpvNative.render()
 
-                println(
-                    "PlayerScreen: render() = $rendered"
+                renderHandler.postDelayed(
+                    this,
+                    16L
                 )
             }
-
-            renderHandler.postDelayed(
-                this,
-                16L
-            )
         }
     }
 
     DisposableEffect(mpvNative) {
 
-        renderHandler.post(
-            renderRunnable
-        )
-
         onDispose {
+
+            renderLoopRunning = false
+
             renderHandler.removeCallbacks(
                 renderRunnable
             )
@@ -115,15 +115,18 @@ fun PlayerScreen(
                                     "PlayerScreen: surfaceCreated()"
                                 )
 
-                                println(
-                                    "PlayerScreen: enviando Surface para MpvNative"
-                                )
-
                                 mpvNative.setSurface(
                                     holder.surface
                                 )
 
-                                surfaceReady = true
+                                if (!renderLoopRunning) {
+
+                                    renderLoopRunning = true
+
+                                    renderHandler.post(
+                                        renderRunnable
+                                    )
+                                }
 
                                 onSurfaceReady()
                             }
@@ -143,14 +146,19 @@ fun PlayerScreen(
                             override fun surfaceDestroyed(
                                 holder: SurfaceHolder
                             ) {
-                                println( "PlayerScreen: surfaceDestroyed()")
+                                println(
+                                    "PlayerScreen: surfaceDestroyed()"
+                                )
 
-                                println( "PlayerScreen: removendo Surface do MpvNative")
+                                renderLoopRunning = false
 
-                                surfaceReady = false
+                                renderHandler.removeCallbacks(
+                                    renderRunnable
+                                )
 
-                                mpvNative.setSurface( null)
-
+                                mpvNative.setSurface(
+                                    null
+                                )
                             }
                         }
                     )
