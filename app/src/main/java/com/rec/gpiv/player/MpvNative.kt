@@ -216,10 +216,6 @@ class MpvNative {
         name: String,
         value: Double
     ) {
-        println(
-            "MpvNative: double property " +
-                "$name = $value"
-        )
 
         propertyListener?.invoke(
             name,

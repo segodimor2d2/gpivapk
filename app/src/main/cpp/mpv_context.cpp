@@ -1,13 +1,12 @@
 #include "mpv_context.h"
 
+#include <cstring>
+
 #include <android/log.h>
 
 #include <EGL/egl.h>
-
 #include <GLES2/gl2.h>
-
 #include <mpv/render_gl.h>
-
 #include <new>
 
 
@@ -17,6 +16,13 @@
     __android_log_print( \
         ANDROID_LOG_INFO, \
         LOG_TAG, \
+        __VA_ARGS__ \
+    )
+
+#define LOGW(...) \
+    __android_log_print( \
+        ANDROID_LOG_WARN, \
+        "GPIV_NATIVE", \
         __VA_ARGS__ \
     )
 
@@ -62,12 +68,6 @@ static void* get_proc_address(
             eglGetProcAddress(name)
         );
 
-    LOGI(
-        "OpenGL: PROC %s: %p",
-        name,
-        address
-    );
-
     return address;
 }
 
@@ -97,7 +97,6 @@ static void destroy_egl(
     if (!context)
         return;
 
-
     /*
      * --------------------------------------------------------
      * Remover o contexto EGL de current
@@ -115,39 +114,6 @@ static void destroy_egl(
             EGL_NO_CONTEXT
         );
     }
-
-
-    const GLubyte* version =
-        glGetString(GL_VERSION);
-
-    const GLubyte* renderer =
-        glGetString(GL_RENDERER);
-
-    const GLubyte* vendor =
-        glGetString(GL_VENDOR);
-
-    LOGI(
-        "OpenGL: version = %s",
-        version
-            ? reinterpret_cast<const char*>(version)
-            : "NULL"
-    );
-
-    LOGI(
-        "OpenGL: renderer = %s",
-        renderer
-            ? reinterpret_cast<const char*>(renderer)
-            : "NULL"
-    );
-
-    LOGI(
-        "OpenGL: vendor = %s",
-        vendor
-            ? reinterpret_cast<const char*>(vendor)
-            : "NULL"
-    );
-
-
 
     /*
      * --------------------------------------------------------
@@ -522,62 +488,6 @@ static bool create_egl(
         "EGL: makeCurrent OK"
     );
 
-
-    /*
-     * ========================================================
-     * TESTE OPENGL ES
-     * ========================================================
-     */
-
-    GLenum gl_error =
-        glGetError();
-
-    const GLubyte* gl_version =
-        glGetString(
-            GL_VERSION
-        );
-
-    const GLubyte* gl_renderer =
-        glGetString(
-            GL_RENDERER
-        );
-
-    const GLubyte* gl_vendor =
-        glGetString(
-            GL_VENDOR
-        );
-
-
-    LOGI(
-        "OpenGL TEST: glGetError = 0x%x",
-        gl_error
-    );
-
-
-    LOGI(
-        "OpenGL TEST: version = %s",
-        gl_version
-            ? reinterpret_cast<const char*>(gl_version)
-            : "NULL"
-    );
-
-
-    LOGI(
-        "OpenGL TEST: renderer = %s",
-        gl_renderer
-            ? reinterpret_cast<const char*>(gl_renderer)
-            : "NULL"
-    );
-
-
-    LOGI(
-        "OpenGL TEST: vendor = %s",
-        gl_vendor
-            ? reinterpret_cast<const char*>(gl_vendor)
-            : "NULL"
-    );
-
-
     context->eglInitialized =
         true;
 
@@ -744,17 +654,6 @@ static bool render_test(
             params
         );
 
-
-    if (status < 0) {
-
-        LOGE(
-            "Render: mpv_render_context_render() retornou %d",
-            status
-        );
-
-        return false;
-    }
-
     /*
      * ========================================================
      * SWAP BUFFERS
@@ -803,10 +702,6 @@ static void mpv_update_callback(
         true,
         std::memory_order_release
     );
-
-    LOGI(
-        "Render: mpv_update_callback() -> renderPending=true"
-    );
 }
 
 /* ============================================================
@@ -836,16 +731,6 @@ static void mpv_event_loop(
         if (!event) {
             continue;
         }
-
-
-        LOGI(
-            "event loop: event_id=%d name=%s",
-            event->event_id,
-            mpv_event_name(
-                event->event_id
-            )
-        );
-
 
         /* ====================================================
          * PROPERTY CHANGE
@@ -1290,18 +1175,38 @@ static void mpv_event_loop(
 
             if (logMessage) {
 
-                LOGI(
-                    "MPV_LOG [%s] %s: %s",
-                    logMessage->prefix
-                        ? logMessage->prefix
-                        : "?",
-                    logMessage->level
-                        ? logMessage->level
-                        : "?",
-                    logMessage->text
-                        ? logMessage->text
-                        : ""
-                );
+                if (
+                    logMessage->level &&
+                    strcmp(logMessage->level, "error") == 0
+                ) {
+
+                    LOGE(
+                        "MPV_LOG [%s] %s: %s",
+                        logMessage->prefix
+                            ? logMessage->prefix
+                            : "?",
+                        logMessage->level,
+                        logMessage->text
+                            ? logMessage->text
+                            : ""
+                    );
+
+                } else if (
+                    logMessage->level &&
+                    strcmp(logMessage->level, "warn") == 0
+                ) {
+
+                    LOGW(
+                        "MPV_LOG [%s] %s: %s",
+                        logMessage->prefix
+                            ? logMessage->prefix
+                            : "?",
+                        logMessage->level,
+                        logMessage->text
+                            ? logMessage->text
+                            : ""
+                    );
+                }
             }
         }
 
@@ -2187,10 +2092,6 @@ bool mpv_context_render(MpvContext* context)
 {
     if (!context)
         return false;
-
-    LOGI(
-        "Render: render contínuo"
-    );
 
     return render_test(context);
 }

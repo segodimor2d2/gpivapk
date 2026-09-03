@@ -147,11 +147,6 @@ class MpvPlayer(
 
         native.setPropertyListener { name, value ->
 
-            println(
-                "MpvPlayer: double property " +
-                    "$name = $value"
-            )
-
             when (name) {
 
                 "time-pos" -> {
