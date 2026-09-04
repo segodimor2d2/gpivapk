@@ -1467,31 +1467,12 @@ MpvContext* mpv_context_create()
 }
 
 
-/* ============================================================
- * INICIALIZAÇÃO
- * ============================================================ */
-
-int mpv_context_initialize(
+static bool configure_mpv(
     MpvContext* context
 )
 {
-    if (
-        !context ||
-        !context->mpv
-    ) {
-
-        return -1;
-    }
-
-
-    /* ========================================================
-     * INICIALIZA MPV
-     * ======================================================== */
-
-    LOGI(
-        "mpv: mpv_initialize()"
-    );
-
+    if (!context || !context->mpv)
+        return false;
 
     /*
      * Neste projeto usamos o render API do libmpv.
@@ -1501,42 +1482,67 @@ int mpv_context_initialize(
      * antes de existir uma Surface.
      */
 
-    mpv_set_option_string(
-        context->mpv,
-        "vo",
-        "libmpv"
-    );
+    int status =
+        mpv_set_option_string(
+            context->mpv,
+            "vo",
+            "libmpv"
+        );
 
+    if (status < 0) {
+        LOGI(
+            "mpv_set_option_string(vo) falhou: %s",
+            mpv_error_string(status)
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+
+static bool initialize_mpv(
+    MpvContext* context
+)
+{
+    if (!context || !context->mpv)
+        return false;
+
+    LOGI(
+        "mpv: mpv_initialize()"
+    );
 
     int status =
         mpv_initialize(
             context->mpv
         );
 
-
     if (status < 0) {
-
         LOGI(
             "mpv_initialize() falhou: %s",
-            mpv_error_string(
-                status
-            )
+            mpv_error_string(status)
         );
 
-        return -1;
+        return false;
     }
-
 
     LOGI(
         "mpv: inicializado"
     );
 
+    return true;
+}
 
-    /* ========================================================
-     * OBSERVA PROPRIEDADES
-     * ======================================================== */
 
-    status =
+static int observe_mpv_properties(
+    MpvContext* context
+)
+{
+    if (!context || !context->mpv)
+        return -1;
+
+    int status =
         mpv_observe_property(
             context->mpv,
             PROPERTY_TIME_POS,
@@ -1544,15 +1550,11 @@ int mpv_context_initialize(
             MPV_FORMAT_DOUBLE
         );
 
-
     if (status < 0) {
-
         LOGI(
             "mpv_observe_property(time-pos) "
             "falhou: %s",
-            mpv_error_string(
-                status
-            )
+            mpv_error_string(status)
         );
 
         return status;
@@ -1567,15 +1569,11 @@ int mpv_context_initialize(
             MPV_FORMAT_DOUBLE
         );
 
-
     if (status < 0) {
-
         LOGI(
             "mpv_observe_property(duration) "
             "falhou: %s",
-            mpv_error_string(
-                status
-            )
+            mpv_error_string(status)
         );
 
         return status;
@@ -1590,15 +1588,11 @@ int mpv_context_initialize(
             MPV_FORMAT_FLAG
         );
 
-
     if (status < 0) {
-
         LOGI(
             "mpv_observe_property(pause) "
             "falhou: %s",
-            mpv_error_string(
-                status
-            )
+            mpv_error_string(status)
         );
 
         return status;
@@ -1613,34 +1607,88 @@ int mpv_context_initialize(
             MPV_FORMAT_STRING
         );
 
-
     if (status < 0) {
-
         LOGI(
             "mpv_observe_property(filename) "
             "falhou: %s",
-            mpv_error_string(
-                status
-            )
+            mpv_error_string(status)
         );
 
         return status;
     }
 
+    return 0;
+}
 
-    /* ========================================================
-     * INICIA EVENT LOOP
-     * ======================================================== */
+
+static bool start_event_loop(
+    MpvContext* context
+)
+{
+    if (!context || !context->mpv)
+        return false;
 
     context->eventLoopRunning =
         true;
-
 
     context->eventThread =
         std::thread(
             mpv_event_loop,
             context
         );
+
+    return true;
+}
+
+/* ============================================================
+ * INICIALIZAÇÃO
+ * ============================================================ */
+
+int mpv_context_initialize(
+    MpvContext* context
+)
+{
+    if (
+        !context ||
+        !context->mpv
+    ) {
+        return -1;
+    }
+
+
+    /* ========================================================
+     * CONFIGURA MPV
+     * ======================================================== */
+
+    if (!configure_mpv(context))
+        return -1;
+
+
+    /* ========================================================
+     * INICIALIZA MPV
+     * ======================================================== */
+
+    if (!initialize_mpv(context))
+        return -1;
+
+
+    /* ========================================================
+     * OBSERVA PROPRIEDADES
+     * ======================================================== */
+
+    int status =
+        observe_mpv_properties(context);
+
+    if (status < 0)
+        return status;
+
+
+    /* ========================================================
+     * INICIA EVENT LOOP
+     * ======================================================== */
+
+    if (!start_event_loop(context))
+        return -1;
 
 
     LOGI(
