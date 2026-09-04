@@ -575,36 +575,85 @@ static bool create_egl(
     return true;
 }
 
-
 /* ============================================================
- * TESTE DE RENDERIZAÇÃO
+ * RENDER
  * ============================================================ */
 
 /*
- * Faz uma única chamada de renderização do mpv.
+ * Executa uma renderização do mpv na EGLSurface atual.
  *
- * IMPORTANTE:
+ * O framebuffer padrão da EGLSurface é usado como destino.
  *
- * Neste estágio:
- *
- *     - não carregamos vídeo;
- *     - não iniciamos reprodução;
- *     - não criamos loop de renderização;
- *     - não usamos callback de atualização.
- *
- * O objetivo é apenas provar que:
- *
- *     EGL
- *       +
- *     mpv_render_context
- *       +
- *     mpv_render_context_render()
- *       +
- *     eglSwapBuffers()
- *
- * funcionam juntos.
+ * O FLIP_Y é necessário para manter a orientação correta
+ * do vídeo no Android.
  */
 
+static bool render_mpv(
+    MpvContext* context,
+    mpv_render_param* params
+)
+{
+    if (!context)
+        return false;
+
+    if (!context->renderContext)
+        return false;
+
+    if (!params)
+        return false;
+
+    mpv_render_context_render(
+        context->renderContext,
+        params
+    );
+
+    return true;
+}
+
+static bool swap_egl(
+    MpvContext* context
+)
+{
+    if (!context)
+        return false;
+
+    if (
+        context->eglDisplay == EGL_NO_DISPLAY ||
+        context->eglSurface == EGL_NO_SURFACE
+    ) {
+        return false;
+    }
+
+    if (
+        !eglSwapBuffers(
+            context->eglDisplay,
+            context->eglSurface
+        )
+    ) {
+        log_egl_error(
+            "eglSwapBuffers"
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+static void report_mpv_swap(
+    MpvContext* context
+)
+{
+    if (!context)
+        return;
+
+    if (!context->renderContext)
+        return;
+
+    mpv_render_context_report_swap(
+        context->renderContext
+    );
+}
 
 static bool render(
     MpvContext* context
@@ -728,10 +777,10 @@ static bool render(
      * ========================================================
      */
 
-    mpv_render_context_render(
-        context->renderContext,
-        params
-    );
+    if (!render_mpv(context, params))
+    {
+        return false;
+    }
 
     /*
      * ========================================================
@@ -739,25 +788,14 @@ static bool render(
      * ========================================================
      */
 
-      if (
-          !eglSwapBuffers(
-              context->eglDisplay,
-              context->eglSurface
-          )
-      ) {
+    if (!swap_egl(context))
+    {
+        return false;
+    }
 
-          log_egl_error(
-              "eglSwapBuffers"
-          );
+    report_mpv_swap(context);
 
-          return false;
-      }
-
-      mpv_render_context_report_swap(
-          context->renderContext
-      );
-
-      return true;
+    return true;
 }
 
 /* ============================================================
