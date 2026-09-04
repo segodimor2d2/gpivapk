@@ -1934,6 +1934,136 @@ void mpv_context_set_surface(
 }
 
 
+static void destroy_mpv_render_context(
+    MpvContext* context
+)
+{
+    if (!context)
+        return;
+
+    if (!context->renderContext)
+        return;
+
+    LOGI(
+        "mpv: destruindo mpv_render_context: %p",
+        static_cast<void*>(
+            context->renderContext
+        )
+    );
+
+    mpv_render_context_free(
+        context->renderContext
+    );
+
+    context->renderContext =
+        nullptr;
+
+    LOGI(
+        "mpv: mpv_render_context destruído"
+    );
+}
+
+static void destroy_mpv(
+    MpvContext* context
+)
+{
+    if (!context)
+        return;
+
+    if (!context->mpv)
+        return;
+
+    LOGI(
+        "mpv: destruindo mpv"
+    );
+
+    mpv_terminate_destroy(
+        context->mpv
+    );
+
+    context->mpv =
+        nullptr;
+}
+
+static void release_jni_reference(
+    MpvContext* context
+)
+{
+    if (!context)
+        return;
+
+    if (
+        !context->javaVm ||
+        !context->nativeObject
+    ) {
+        return;
+    }
+
+    JNIEnv* env =
+        nullptr;
+
+    bool attached =
+        false;
+
+    if (
+        context->javaVm->GetEnv(
+            reinterpret_cast<void**>(&env),
+            JNI_VERSION_1_6
+        ) != JNI_OK
+    ) {
+        if (
+            context->javaVm->AttachCurrentThread(
+                &env,
+                nullptr
+            ) == JNI_OK
+        ) {
+            attached =
+                true;
+        }
+    }
+
+    if (env) {
+        env->DeleteGlobalRef(
+            context->nativeObject
+        );
+    }
+
+    if (attached) {
+        context->javaVm->DetachCurrentThread();
+    }
+
+    context->nativeObject =
+        nullptr;
+}
+
+static void stop_event_loop(
+    MpvContext* context
+)
+{
+    if (!context)
+        return;
+
+    if (!context->mpv)
+        return;
+
+    context->eventLoopRunning =
+        false;
+
+    mpv_wakeup(
+        context->mpv
+    );
+
+    if (
+        context->eventThread.joinable()
+    ) {
+        context->eventThread.join();
+    }
+
+    LOGI(
+        "MpvContext: event loop parado"
+    );
+}
+
 /* ============================================================
  * DESTRUIÇÃO
  * ============================================================ */
@@ -1942,188 +2072,48 @@ void mpv_context_destroy(
     MpvContext* context
 )
 {
-    if (!context) {
+    if (!context)
         return;
-    }
-
 
     /* ========================================================
      * EVENT LOOP
      * ======================================================== */
 
-    if (context->mpv) {
-
-        context->eventLoopRunning =
-            false;
-
-
-        mpv_wakeup(
-            context->mpv
-        );
-
-
-        if (
-            context->eventThread.joinable()
-        ) {
-
-            context->eventThread.join();
-        }
-    }
-
+    stop_event_loop(context);
 
     /* ========================================================
      * MPV RENDER CONTEXT
      * ======================================================== */
 
-    if (context->renderContext) {
-
-        LOGI(
-            "mpv: destruindo mpv_render_context: %p",
-            static_cast<void*>(
-                context->renderContext
-            )
-        );
-
-
-        mpv_render_context_free(
-            context->renderContext
-        );
-
-
-        context->renderContext =
-            nullptr;
-
-
-        LOGI(
-            "mpv: mpv_render_context destruído"
-        );
-    }
-
+    destroy_mpv_render_context(context);
 
     /* ========================================================
      * MPV
      * ======================================================== */
 
-    if (context->mpv) {
-
-        LOGI(
-            "mpv: destruindo mpv"
-        );
-
-
-        mpv_terminate_destroy(
-            context->mpv
-        );
-
-
-        context->mpv =
-            nullptr;
-    }
-
+    destroy_mpv(context);
 
     /* ========================================================
      * REFERÊNCIA GLOBAL KOTLIN
      * ======================================================== */
 
-    if (
-        context->javaVm &&
-        context->nativeObject
-    ) {
-
-        JNIEnv* env =
-            nullptr;
-
-
-        bool attached =
-            false;
-
-
-        if (
-            context->javaVm->GetEnv(
-                reinterpret_cast<void**>(&env),
-                JNI_VERSION_1_6
-            ) != JNI_OK
-        ) {
-
-            if (
-                context->javaVm->AttachCurrentThread(
-                    &env,
-                    nullptr
-                ) == JNI_OK
-            ) {
-
-                attached =
-                    true;
-            }
-        }
-
-
-        if (env) {
-
-            env->DeleteGlobalRef(
-                context->nativeObject
-            );
-        }
-
-
-        if (attached) {
-
-            context->javaVm->DetachCurrentThread();
-        }
-
-
-        context->nativeObject =
-            nullptr;
-    }
-
+    release_jni_reference(context);
 
     /* ========================================================
-     * DESTRUIR EGL
+     * EGL
      * ======================================================== */
 
-    if (
-        context->eglInitialized ||
-        context->eglDisplay != EGL_NO_DISPLAY
-    ) {
-
-        destroy_egl(
-            context
-        );
-    }
-
+    destroy_egl(context);
 
     /* ========================================================
-     * SURFACE ANDROID
+     * ANDROID SURFACE
      * ======================================================== */
 
-    if (context->window) {
-
-        LOGI(
-            "Surface: liberando ANativeWindow no destroy: %p",
-            static_cast<void*>(
-                context->window
-            )
-        );
-
-
-        ANativeWindow_release(
-            context->window
-        );
-
-
-        context->window =
-            nullptr;
-    }
-
-
-    context->surfaceAvailable =
-        false;
-
+    release_surface(context);
 
     LOGI(
         "MpvContext: destruído"
     );
-
 
     delete context;
 }
