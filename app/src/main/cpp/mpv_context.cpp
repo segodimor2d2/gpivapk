@@ -90,6 +90,38 @@ static void log_egl_error(
 }
 
 
+/* ============================================================
+ * DESTRÓI APENAS A EGLSURFACE
+ * ============================================================ */
+static void destroy_egl_surface(
+    MpvContext* context
+)
+{
+    if (!context)
+        return;
+
+    if (
+        context->eglDisplay != EGL_NO_DISPLAY &&
+        context->eglSurface != EGL_NO_SURFACE
+    ) {
+        eglMakeCurrent(
+            context->eglDisplay,
+            EGL_NO_SURFACE,
+            EGL_NO_SURFACE,
+            EGL_NO_CONTEXT
+        );
+
+        eglDestroySurface(
+            context->eglDisplay,
+            context->eglSurface
+        );
+
+        context->eglSurface = EGL_NO_SURFACE;
+
+        LOGI("EGL: surface destruída");
+    }
+}
+
 static void destroy_egl(
     MpvContext* context
 )
@@ -97,34 +129,85 @@ static void destroy_egl(
     if (!context)
         return;
 
-    /*
-     * --------------------------------------------------------
-     * Remover o contexto EGL de current
-     * --------------------------------------------------------
-     */
+    destroy_egl_surface(context);
 
     if (
+        context->eglContext != EGL_NO_CONTEXT &&
         context->eglDisplay != EGL_NO_DISPLAY
     ) {
-
-        eglMakeCurrent(
+        eglDestroyContext(
             context->eglDisplay,
-            EGL_NO_SURFACE,
-            EGL_NO_SURFACE,
-            EGL_NO_CONTEXT
+            context->eglContext
         );
+
+        context->eglContext = EGL_NO_CONTEXT;
     }
 
-    /*
-     * --------------------------------------------------------
-     * EGLSurface
-     * --------------------------------------------------------
-     */
+    if (context->eglDisplay != EGL_NO_DISPLAY) {
+        eglTerminate(
+            context->eglDisplay
+        );
+
+        context->eglDisplay = EGL_NO_DISPLAY;
+    }
+
+    context->eglConfig = nullptr;
+    context->eglInitialized = false;
+
+    LOGI("EGL: destruído");
+}
+
+static bool create_egl_surface(
+    MpvContext* context
+)
+{
+    if (!context)
+        return false;
 
     if (
-        context->eglSurface != EGL_NO_SURFACE &&
-        context->eglDisplay != EGL_NO_DISPLAY
+        context->eglDisplay == EGL_NO_DISPLAY ||
+        context->eglContext == EGL_NO_CONTEXT ||
+        !context->eglConfig ||
+        !context->window
     ) {
+        LOGE(
+            "EGL: não é possível recriar EGLSurface"
+        );
+        return false;
+    }
+
+    context->eglSurface =
+        eglCreateWindowSurface(
+            context->eglDisplay,
+            context->eglConfig,
+            context->window,
+            nullptr
+        );
+
+    if (
+        context->eglSurface == EGL_NO_SURFACE
+    ) {
+        log_egl_error(
+            "eglCreateWindowSurface"
+        );
+        return false;
+    }
+
+    LOGI(
+        "EGL: nova surface criada"
+    );
+
+    if (
+        !eglMakeCurrent(
+            context->eglDisplay,
+            context->eglSurface,
+            context->eglSurface,
+            context->eglContext
+        )
+    ) {
+        log_egl_error(
+            "eglMakeCurrent"
+        );
 
         eglDestroySurface(
             context->eglDisplay,
@@ -133,59 +216,15 @@ static void destroy_egl(
 
         context->eglSurface =
             EGL_NO_SURFACE;
+
+        return false;
     }
-
-
-    /*
-     * --------------------------------------------------------
-     * EGLContext
-     * --------------------------------------------------------
-     */
-
-    if (
-        context->eglContext != EGL_NO_CONTEXT &&
-        context->eglDisplay != EGL_NO_DISPLAY
-    ) {
-
-        eglDestroyContext(
-            context->eglDisplay,
-            context->eglContext
-        );
-
-        context->eglContext =
-            EGL_NO_CONTEXT;
-    }
-
-
-    /*
-     * --------------------------------------------------------
-     * EGLDisplay
-     * --------------------------------------------------------
-     */
-
-    if (
-        context->eglDisplay != EGL_NO_DISPLAY
-    ) {
-
-        eglTerminate(
-            context->eglDisplay
-        );
-
-        context->eglDisplay =
-            EGL_NO_DISPLAY;
-    }
-
-
-    context->eglConfig =
-        nullptr;
-
-    context->eglInitialized =
-        false;
-
 
     LOGI(
-        "EGL: destruído"
+        "EGL: nova surface vinculada ao EGLContext"
     );
+
+    return true;
 }
 
 
@@ -1585,60 +1624,25 @@ void mpv_context_set_surface(
 
     if (context->window)
     {
-        LOGI(
-            "MpvContext: removendo Surface anterior"
-        );
-
+        LOGI("MpvContext: removendo Surface anterior");
 
         /*
-         * Primeiro destruímos o renderContext.
+         * A Surface Android pode ser destruída e recriada
+         * durante a vida do player.
          *
-         * Ele depende do contexto OpenGL/EGL.
+         * Não destruímos o mpv_render_context nem o EGLContext.
+         * Apenas removemos a EGLSurface associada à janela anterior.
          */
 
-        if (context->renderContext)
-        {
-            LOGI(
-                "MpvContext: liberando renderContext anterior"
-            );
-
-
-            mpv_render_context_free(
-                context->renderContext
-            );
-
-
-            context->renderContext = nullptr;
-        }
-
-
-        /*
-         * Depois destruímos EGL.
-         */
-
-        destroy_egl(
-            context
-        );
-
-
-        /*
-         * Finalmente liberamos a referência
-         * para a ANativeWindow.
-         */
+        destroy_egl_surface(context);
 
         ANativeWindow_release(
             context->window
         );
 
-
-        context->window =
-            nullptr;
-
-
-        context->surfaceAvailable =
-            false;
+        context->window = nullptr;
+        context->surfaceAvailable = false;
     }
-
 
     /*
      * ========================================================
@@ -1687,40 +1691,71 @@ void mpv_context_set_surface(
      * ========================================================
      */
 
-    if (!create_egl(context))
+    if (
+        context->eglDisplay == EGL_NO_DISPLAY ||
+        context->eglContext == EGL_NO_CONTEXT
+    )
     {
-        LOGE(
-            "MpvContext: falha ao criar EGL"
+        LOGI(
+            "MpvContext: EGL ainda não existe, "
+            "criando EGL completo"
         );
 
+        if (!create_egl(context))
+        {
+            LOGE(
+                "MpvContext: falha ao criar EGL"
+            );
 
-        ANativeWindow_release(
-            context->window
+            ANativeWindow_release(
+                context->window
+            );
+
+            context->window = nullptr;
+            context->surfaceAvailable = false;
+
+            return;
+        }
+
+        LOGI(
+            "MpvContext: EGL inicializado com sucesso"
+        );
+    }
+    else
+    {
+        LOGI(
+            "MpvContext: reutilizando EGL existente"
         );
 
+        if (!create_egl_surface(context))
+        {
+            LOGE(
+                "MpvContext: falha ao recriar EGLSurface"
+            );
 
-        context->window =
-            nullptr;
+            ANativeWindow_release(
+                context->window
+            );
 
+            context->window = nullptr;
+            context->surfaceAvailable = false;
 
-        context->surfaceAvailable =
-            false;
+            return;
+        }
 
+        LOGI(
+            "MpvContext: EGLSurface recriada com sucesso"
+        );
+    }
+
+    if (context->renderContext)
+    {
+        LOGI(
+            "MpvContext: reutilizando mpv_render_context"
+        );
 
         return;
     }
-
-
-    LOGI(
-        "MpvContext: EGL inicializado com sucesso"
-    );
-
-
-    /*
-     * ========================================================
-     * MPV RENDER CONTEXT
-     * ========================================================
-     */
 
     LOGI(
         "MpvContext: criando mpv_render_context"

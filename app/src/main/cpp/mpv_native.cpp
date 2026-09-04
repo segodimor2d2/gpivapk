@@ -544,18 +544,15 @@ Java_com_rec_gpiv_player_MpvNative_nativeRenderIfPending(
         reinterpret_cast<MpvContext*>(handle);
 
     if (!context) {
-        if (!context) {
-            __android_log_print(
-                ANDROID_LOG_ERROR,
-                "GPIV_NATIVE",
-                "JNI: nativeRenderIfPending() -> contexto inválido"
-            );
-
-            return JNI_FALSE;
-        }
+        __android_log_print(
+            ANDROID_LOG_ERROR,
+            "GPIV_NATIVE",
+            "JNI: nativeRenderIfPending() -> contexto inválido"
+        );
 
         return JNI_FALSE;
     }
+
 
     bool rendered =
         mpv_context_render_if_pending(
