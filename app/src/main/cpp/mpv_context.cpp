@@ -526,7 +526,7 @@ static bool create_egl(
  */
 
 
-static bool render_test(
+static bool render(
     MpvContext* context
 )
 {
@@ -648,11 +648,10 @@ static bool render_test(
      * ========================================================
      */
 
-    int status =
-        mpv_render_context_render(
-            context->renderContext,
-            params
-        );
+    mpv_render_context_render(
+        context->renderContext,
+        params
+    );
 
     /*
      * ========================================================
@@ -1824,31 +1823,6 @@ void mpv_context_set_surface(
     LOGI(
         "MpvContext: mpv_update_callback registrado"
     );
-
-    if (mpv_context_take_render_request(context)) {
-        LOGI(
-            "Render: teste de consumo OK"
-        );
-    }
-
-    /*
-     * ========================================================
-     * TESTE DE RENDERIZAÇÃO
-     * ========================================================
-     *
-     * Fazemos apenas UMA renderização.
-     *
-     * Ainda não existe:
-     *
-     *     - loop;
-     *     - callback;
-     *     - vídeo;
-     *     - mpv_command(loadfile);
-     */
-
-    render_test(
-        context
-    );
 }
 
 
@@ -2083,7 +2057,7 @@ bool mpv_context_render_if_pending(
         "Render: solicitação pendente detectada"
     );
 
-    render_test(context);
+    render(context);
 
     return true;
 }
@@ -2093,5 +2067,5 @@ bool mpv_context_render(MpvContext* context)
     if (!context)
         return false;
 
-    return render_test(context);
+    return render(context);
 }
