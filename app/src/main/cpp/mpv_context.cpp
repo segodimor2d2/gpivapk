@@ -1,5 +1,6 @@
 #include "mpv_context.h"
 #include "mpv_context_egl.h"
+#include "mpv_context_render.h"
 
 #include <cstring>
 
@@ -44,197 +45,13 @@
 #define PROPERTY_PAUSE      3
 #define PROPERTY_FILENAME   4
 
-
-
-/* ============================================================
- * RENDER
- * ============================================================ */
-
-/*
- * Executa uma renderização do mpv na EGLSurface atual.
- *
- * O framebuffer padrão da EGLSurface é usado como destino.
- *
- * O FLIP_Y é necessário para manter a orientação correta
- * do vídeo no Android.
- */
-
-static bool render_mpv(
-    MpvContext* context,
-    mpv_render_param* params
-)
-{
-    if (!context)
-        return false;
-
-    if (!context->renderContext)
-        return false;
-
-    if (!params)
-        return false;
-
-    mpv_render_context_render(
-        context->renderContext,
-        params
-    );
-
-    return true;
-}
-
-static void report_mpv_swap(
+bool mpv_context_render(
     MpvContext* context
 )
 {
-    if (!context)
-        return;
-
-    if (!context->renderContext)
-        return;
-
-    mpv_render_context_report_swap(
-        context->renderContext
+    return mpv_context_render_frame(
+        context
     );
-}
-
-static bool render(
-    MpvContext* context
-)
-{
-    if (!context) {
-
-        LOGE(
-            "Render: context == null"
-        );
-
-        return false;
-    }
-
-
-    if (!context->renderContext) {
-
-        LOGE(
-            "Render: renderContext == null"
-        );
-
-        return false;
-    }
-
-
-    if (!context->eglInitialized) {
-
-        LOGE(
-            "Render: EGL não inicializado"
-        );
-
-        return false;
-    }
-
-
-    if (!context->window) {
-
-        LOGE(
-            "Render: window == null"
-        );
-
-        return false;
-    }
-
-
-    /*
-     * ========================================================
-     * TAMANHO DA SURFACE
-     * ========================================================
-     */
-
-    int width =
-        ANativeWindow_getWidth(
-            context->window
-        );
-
-
-    int height =
-        ANativeWindow_getHeight(
-            context->window
-        );
-
-    if (
-        width <= 0 ||
-        height <= 0
-    ) {
-
-        LOGE(
-            "Render: tamanho inválido"
-        );
-
-        return false;
-    }
-
-
-    /*
-     * ========================================================
-     * OPENGL FBO
-     * ========================================================
-     *
-     * FBO 0 = framebuffer padrão da EGLSurface.
-     */
-
-    mpv_opengl_fbo fbo = {
-        .fbo = 0,
-        .w = width,
-        .h = height,
-        .internal_format = 0
-    };
-
-    int flip_y = 1;
-
-    /*
-     * ========================================================
-     * PARÂMETROS DO RENDER
-     * ========================================================
-     */
-
-    mpv_render_param params[] = {
-
-        {
-            MPV_RENDER_PARAM_OPENGL_FBO,
-            &fbo
-        },
-
-        {
-            MPV_RENDER_PARAM_FLIP_Y,
-            &flip_y
-        },
-
-        {
-            MPV_RENDER_PARAM_INVALID,
-            nullptr
-        }
-    };
-
-
-    /*
-     * ========================================================
-     * MPV RENDER
-     * ========================================================
-     */
-
-    if (!render_mpv(context, params))
-    {
-        return false;
-    }
-
-    /*
-     * ========================================================
-     * SWAP BUFFERS
-     * ========================================================
-     */
-
-    if (!mpv_context_egl_swap(context))
-        return false;
-
-    report_mpv_swap(context);
-
-    return true;
 }
 
 /* ============================================================
@@ -1251,72 +1068,7 @@ static bool setup_egl_for_surface(
 }
 
 
-static bool create_mpv_render_context(
-    MpvContext* context
-)
-{
-    if (!context)
-        return false;
 
-    LOGI(
-        "MpvContext: criando mpv_render_context"
-    );
-
-    mpv_opengl_init_params gl_init_params = {
-        .get_proc_address =
-            [](void* /* ctx */, const char* name) {
-                return mpv_context_egl_get_proc_address(name);
-            },
-        .get_proc_address_ctx = context
-    };
-
-    mpv_render_param params[] = {
-        {
-            MPV_RENDER_PARAM_API_TYPE,
-
-            const_cast<char*>(
-                MPV_RENDER_API_TYPE_OPENGL
-            )
-        },
-
-        {
-            MPV_RENDER_PARAM_OPENGL_INIT_PARAMS,
-            &gl_init_params
-        },
-
-        {
-            MPV_RENDER_PARAM_INVALID,
-            nullptr
-        }
-    };
-
-    int status =
-        mpv_render_context_create(
-            &context->renderContext,
-            context->mpv,
-            params
-        );
-
-    if (status < 0)
-    {
-        LOGE(
-            "MpvContext: "
-            "mpv_render_context_create() falhou: %s",
-            mpv_error_string(status)
-        );
-
-        context->renderContext = nullptr;
-
-        return false;
-    }
-
-    LOGI(
-        "MpvContext: mpv_render_context criado: %p",
-        context->renderContext
-    );
-
-    return true;
-}
 
 static void release_surface(
     MpvContext* context
@@ -1413,7 +1165,7 @@ void mpv_context_set_surface(
         return;
     }
 
-    if (!create_mpv_render_context(context))
+    if (!mpv_context_render_create(context))
     {
         mpv_context_egl_destroy(context);
         release_surface(context);
@@ -1424,34 +1176,7 @@ void mpv_context_set_surface(
 }
 
 
-static void destroy_mpv_render_context(
-    MpvContext* context
-)
-{
-    if (!context)
-        return;
 
-    if (!context->renderContext)
-        return;
-
-    LOGI(
-        "mpv: destruindo mpv_render_context: %p",
-        static_cast<void*>(
-            context->renderContext
-        )
-    );
-
-    mpv_render_context_free(
-        context->renderContext
-    );
-
-    context->renderContext =
-        nullptr;
-
-    LOGI(
-        "mpv: mpv_render_context destruído"
-    );
-}
 
 static void destroy_mpv(
     MpvContext* context
@@ -1575,7 +1300,7 @@ void mpv_context_destroy(
      * MPV RENDER CONTEXT
      * ======================================================== */
 
-    destroy_mpv_render_context(context);
+    mpv_context_render_destroy(context);
 
     /* ========================================================
      * MPV
@@ -1608,10 +1333,4 @@ void mpv_context_destroy(
     delete context;
 }
 
-bool mpv_context_render(MpvContext* context)
-{
-    if (!context)
-        return false;
 
-    return render(context);
-}

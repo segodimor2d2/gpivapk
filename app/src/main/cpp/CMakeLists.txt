@@ -8,6 +8,7 @@ add_library(
     mpv_native.cpp
     mpv_context.cpp
     mpv_context_egl.cpp
+    mpv_context_render.cpp
 )
 
 add_library(
