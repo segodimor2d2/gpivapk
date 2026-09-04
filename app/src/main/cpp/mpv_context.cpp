@@ -4,6 +4,7 @@
 #include "mpv_context_surface.h"
 #include "mpv_context_events.h"
 #include "mpv_context_mpv.h"
+#include "mpv_context_jni.h"
 
 #include <android/log.h>
 
@@ -236,57 +237,6 @@ void mpv_context_set_surface(
     );
 }
 
-static void release_jni_reference(
-    MpvContext* context
-)
-{
-    if (!context)
-        return;
-
-    if (
-        !context->javaVm ||
-        !context->nativeObject
-    ) {
-        return;
-    }
-
-    JNIEnv* env =
-        nullptr;
-
-    bool attached =
-        false;
-
-    if (
-        context->javaVm->GetEnv(
-            reinterpret_cast<void**>(&env),
-            JNI_VERSION_1_6
-        ) != JNI_OK
-    ) {
-        if (
-            context->javaVm->AttachCurrentThread(
-                &env,
-                nullptr
-            ) == JNI_OK
-        ) {
-            attached =
-                true;
-        }
-    }
-
-    if (env) {
-        env->DeleteGlobalRef(
-            context->nativeObject
-        );
-    }
-
-    if (attached) {
-        context->javaVm->DetachCurrentThread();
-    }
-
-    context->nativeObject =
-        nullptr;
-}
-
 /* ============================================================
  * DESTRUIÇÃO
  * ============================================================ */
@@ -321,7 +271,7 @@ void mpv_context_destroy(
      * REFERÊNCIA GLOBAL KOTLIN
      * ======================================================== */
 
-    release_jni_reference(context);
+    mpv_context_jni_release_reference(context);
 
     /* ========================================================
      * EGL

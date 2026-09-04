@@ -12,6 +12,7 @@ add_library(
     mpv_context_surface.cpp
     mpv_context_events.cpp
     mpv_context_mpv.cpp
+    mpv_context_jni.cpp
 )
 
 add_library(
