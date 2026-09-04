@@ -719,29 +719,6 @@ static bool render(
       return true;
 }
 
-
-/*
- * ========================================================
- * CALLBACK DE UPDATE DO MPV
- * ========================================================
- */
-
-static void mpv_update_callback(
-    void* userdata
-)
-{
-    MpvContext* context =
-        static_cast<MpvContext*>(userdata);
-
-    if (!context)
-        return;
-
-    context->renderPending.store(
-        true,
-        std::memory_order_release
-    );
-}
-
 /* ============================================================
  * EVENT LOOP
  * ============================================================ */
@@ -1367,8 +1344,6 @@ MpvContext* mpv_context_create()
 
     context->eventLoopRunning = false;
 
-    context->renderPending = false;
-
     context->javaVm = nullptr;
 
     context->nativeObject =
@@ -1839,25 +1814,6 @@ void mpv_context_set_surface(
         context->renderContext
     );
 
-    /*
-     * ========================================================
-     * CALLBACK DE UPDATE DO MPV
-     * ========================================================
-     */
-
-    LOGI(
-        "MpvContext: registrando mpv_update_callback"
-    );
-
-    mpv_render_context_set_update_callback(
-        context->renderContext,
-        mpv_update_callback,
-        context
-    );
-
-    LOGI(
-        "MpvContext: mpv_update_callback registrado"
-    );
 }
 
 
@@ -2053,48 +2009,6 @@ void mpv_context_destroy(
 
 
     delete context;
-}
-
-
-bool mpv_context_take_render_request(
-    MpvContext* context
-)
-{
-    if (!context)
-        return false;
-
-    bool pending =
-        context->renderPending.exchange(
-            false,
-            std::memory_order_acq_rel
-        );
-
-    if (pending) {
-        LOGI(
-            "Render: solicitação de renderização consumida"
-        );
-    }
-
-    return pending;
-}
-
-bool mpv_context_render_if_pending(
-    MpvContext* context
-)
-{
-    if (!context)
-        return false;
-
-    if (!mpv_context_take_render_request(context))
-        return false;
-
-    LOGI(
-        "Render: solicitação pendente detectada"
-    );
-
-    render(context);
-
-    return true;
 }
 
 bool mpv_context_render(MpvContext* context)

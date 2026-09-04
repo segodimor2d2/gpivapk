@@ -534,38 +534,6 @@ Java_com_rec_gpiv_player_MpvNative_nativeSetSurface(
 
 extern "C"
 JNIEXPORT jboolean JNICALL
-Java_com_rec_gpiv_player_MpvNative_nativeRenderIfPending(
-    JNIEnv* env,
-    jobject thiz,
-    jlong handle
-)
-{
-    MpvContext* context =
-        reinterpret_cast<MpvContext*>(handle);
-
-    if (!context) {
-        __android_log_print(
-            ANDROID_LOG_ERROR,
-            "GPIV_NATIVE",
-            "JNI: nativeRenderIfPending() -> contexto inválido"
-        );
-
-        return JNI_FALSE;
-    }
-
-
-    bool rendered =
-        mpv_context_render_if_pending(
-            context
-        );
-
-    return rendered
-        ? JNI_TRUE
-        : JNI_FALSE;
-}
-
-extern "C"
-JNIEXPORT jboolean JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeRender(
     JNIEnv* env,
     jobject thiz,
