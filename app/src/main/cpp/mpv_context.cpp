@@ -3,6 +3,7 @@
 #include "mpv_context_render.h"
 #include "mpv_context_surface.h"
 #include "mpv_context_events.h"
+#include "mpv_context_mpv.h"
 
 #include <android/log.h>
 
@@ -161,160 +162,6 @@ MpvContext* mpv_context_create()
     return context;
 }
 
-
-static bool configure_mpv(
-    MpvContext* context
-)
-{
-    if (!context || !context->mpv)
-        return false;
-
-    /*
-     * Neste projeto usamos o render API do libmpv.
-     *
-     * Portanto não queremos que o mpv tente selecionar
-     * automaticamente uma saída de vídeo como mediacodec_embed
-     * antes de existir uma Surface.
-     */
-
-    int status =
-        mpv_set_option_string(
-            context->mpv,
-            "vo",
-            "libmpv"
-        );
-
-    if (status < 0) {
-        LOGI(
-            "mpv_set_option_string(vo) falhou: %s",
-            mpv_error_string(status)
-        );
-
-        return false;
-    }
-
-    return true;
-}
-
-
-static bool initialize_mpv(
-    MpvContext* context
-)
-{
-    if (!context || !context->mpv)
-        return false;
-
-    LOGI(
-        "mpv: mpv_initialize()"
-    );
-
-    int status =
-        mpv_initialize(
-            context->mpv
-        );
-
-    if (status < 0) {
-        LOGI(
-            "mpv_initialize() falhou: %s",
-            mpv_error_string(status)
-        );
-
-        return false;
-    }
-
-    LOGI(
-        "mpv: inicializado"
-    );
-
-    return true;
-}
-
-
-static int observe_mpv_properties(
-    MpvContext* context
-)
-{
-    if (!context || !context->mpv)
-        return -1;
-
-    int status =
-        mpv_observe_property(
-            context->mpv,
-            PROPERTY_TIME_POS,
-            "time-pos",
-            MPV_FORMAT_DOUBLE
-        );
-
-    if (status < 0) {
-        LOGI(
-            "mpv_observe_property(time-pos) "
-            "falhou: %s",
-            mpv_error_string(status)
-        );
-
-        return status;
-    }
-
-
-    status =
-        mpv_observe_property(
-            context->mpv,
-            PROPERTY_DURATION,
-            "duration",
-            MPV_FORMAT_DOUBLE
-        );
-
-    if (status < 0) {
-        LOGI(
-            "mpv_observe_property(duration) "
-            "falhou: %s",
-            mpv_error_string(status)
-        );
-
-        return status;
-    }
-
-
-    status =
-        mpv_observe_property(
-            context->mpv,
-            PROPERTY_PAUSE,
-            "pause",
-            MPV_FORMAT_FLAG
-        );
-
-    if (status < 0) {
-        LOGI(
-            "mpv_observe_property(pause) "
-            "falhou: %s",
-            mpv_error_string(status)
-        );
-
-        return status;
-    }
-
-
-    status =
-        mpv_observe_property(
-            context->mpv,
-            PROPERTY_FILENAME,
-            "filename",
-            MPV_FORMAT_STRING
-        );
-
-    if (status < 0) {
-        LOGI(
-            "mpv_observe_property(filename) "
-            "falhou: %s",
-            mpv_error_string(status)
-        );
-
-        return status;
-    }
-
-    return 0;
-}
-
 /* ============================================================
  * INICIALIZAÇÃO
  * ============================================================ */
@@ -335,7 +182,7 @@ int mpv_context_initialize(
      * CONFIGURA MPV
      * ======================================================== */
 
-    if (!configure_mpv(context))
+    if (!mpv_context_mpv_configure(context))
         return -1;
 
 
@@ -343,7 +190,7 @@ int mpv_context_initialize(
      * INICIALIZA MPV
      * ======================================================== */
 
-    if (!initialize_mpv(context))
+    if (!mpv_context_mpv_initialize(context))
         return -1;
 
 
@@ -352,7 +199,7 @@ int mpv_context_initialize(
      * ======================================================== */
 
     int status =
-        observe_mpv_properties(context);
+        mpv_context_mpv_observe_properties(context);
 
     if (status < 0)
         return status;
@@ -387,28 +234,6 @@ void mpv_context_set_surface(
         context,
         window
     );
-}
-
-static void destroy_mpv(
-    MpvContext* context
-)
-{
-    if (!context)
-        return;
-
-    if (!context->mpv)
-        return;
-
-    LOGI(
-        "mpv: destruindo mpv"
-    );
-
-    mpv_terminate_destroy(
-        context->mpv
-    );
-
-    context->mpv =
-        nullptr;
 }
 
 static void release_jni_reference(
@@ -490,7 +315,7 @@ void mpv_context_destroy(
      * MPV
      * ======================================================== */
 
-    destroy_mpv(context);
+    mpv_context_mpv_destroy(context);
 
     /* ========================================================
      * REFERÊNCIA GLOBAL KOTLIN
