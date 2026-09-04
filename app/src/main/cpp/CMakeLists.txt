@@ -7,6 +7,7 @@ add_library(
     SHARED
     mpv_native.cpp
     mpv_context.cpp
+    mpv_context_egl.cpp
 )
 
 add_library(
