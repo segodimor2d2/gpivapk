@@ -10,6 +10,7 @@ add_library(
     mpv_context_egl.cpp
     mpv_context_render.cpp
     mpv_context_surface.cpp
+    mpv_context_events.cpp
 )
 
 add_library(
