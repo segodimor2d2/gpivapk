@@ -1,6 +1,5 @@
 package com.rec.gpiv.viewmodel
 
-
 import android.app.Application
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -30,6 +29,7 @@ class PlayerViewModel(
         )
 
     private var testVideoLoaded = false
+    private var pickerVideoLoaded = false
 
     private val _uiState =
         MutableStateFlow(PlayerUiState())
@@ -109,10 +109,13 @@ class PlayerViewModel(
 
                     is PlayerEvent.FilenameChanged -> {
 
-                        _uiState.value =
-                            _uiState.value.copy(
-                                filename = event.filename
-                            )
+                        if (!pickerVideoLoaded) {
+
+                            _uiState.value =
+                                _uiState.value.copy(
+                                    filename = event.filename
+                                )
+                        }
                     }
 
                     is PlayerEvent.LoadingChanged -> {
@@ -131,11 +134,12 @@ class PlayerViewModel(
 
         val filename = getFileName(uri)
 
+        pickerVideoLoaded = true
+
         _uiState.value =
             _uiState.value.copy(
                 filename = filename,
                 loading = true,
-                playing = false,
                 position = 0.0,
                 duration = 0.0
             )

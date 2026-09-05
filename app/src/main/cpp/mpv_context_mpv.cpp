@@ -62,6 +62,23 @@ bool mpv_context_mpv_configure(
         return false;
     }
 
+    status =
+        mpv_set_option_string(
+            context->mpv,
+            "loop-file",
+            "yes"
+        );
+
+    if (status < 0) {
+
+        LOGI(
+            "mpv_set_option_string(loop-file) falhou: %s",
+            mpv_error_string(status)
+        );
+
+        return false;
+    }
+
     return true;
 }
 

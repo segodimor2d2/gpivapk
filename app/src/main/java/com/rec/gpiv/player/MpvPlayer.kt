@@ -1,7 +1,5 @@
 package com.rec.gpiv.player
 
-import com.rec.gpiv.player.MpvNative
-
 import android.content.ContentResolver
 import android.net.Uri
 import android.view.Surface
@@ -23,6 +21,22 @@ class MpvPlayer(
 
     override val events =
         _events.asSharedFlow()
+
+    /*
+     * Último estado real de reprodução informado pelo mpv.
+     *
+     * true  = tocando
+     * false = pausado
+     */
+    private var lastKnownPlaying = false
+
+    /*
+     * Estado que deverá ser aplicado ao próximo
+     * vídeo depois que ele terminar de carregar.
+     *
+     * null = nenhum estado pendente.
+     */
+    private var pendingPlaybackState: Boolean? = null
 
     override fun initialize() {
 
@@ -49,6 +63,7 @@ class MpvPlayer(
     }
 
     fun loadLocalTestPath(path: String) {
+
         println(
             "MpvPlayer: loadLocalTestPath($path)"
         )
@@ -57,24 +72,51 @@ class MpvPlayer(
     }
 
     override fun load(uri: Uri) {
-        println("MpvPlayer: load($uri)")
 
-        val opened = videoSource.open(uri)
+        println(
+            "MpvPlayer: load($uri)"
+        )
+
+        /*
+         * Preserva o estado de reprodução atual.
+         *
+         * Se o vídeo anterior estava tocando,
+         * o novo deverá tocar.
+         *
+         * Se estava pausado,
+         * o novo deverá permanecer pausado.
+         */
+        pendingPlaybackState =
+            lastKnownPlaying
+
+        println(
+            "MpvPlayer: estado anterior = " +
+                "playing=$lastKnownPlaying"
+        )
+
+        val opened =
+            videoSource.open(uri)
 
         if (!opened) {
+
             println(
                 "MpvPlayer: não foi possível abrir o Uri"
             )
+
+            pendingPlaybackState = null
+
             return
         }
 
-        val fd = videoSource.getFileDescriptor()
+        val fd =
+            videoSource.getFileDescriptor()
 
         println(
             "MpvPlayer: file descriptor = $fd"
         )
 
         if (fd != null) {
+
             native.loadFd(fd)
         }
 
@@ -82,16 +124,25 @@ class MpvPlayer(
     }
 
     override fun play() {
-        println("MpvPlayer: play()")
+
+        println(
+            "MpvPlayer: play()"
+        )
+
         native.setPause(false)
     }
 
     override fun pause() {
-        println("MpvPlayer: pause()")
+
+        println(
+            "MpvPlayer: pause()"
+        )
+
         native.setPause(true)
     }
 
     override fun seekForward(seconds: Double) {
+
         println(
             "MpvPlayer: seekForward($seconds)"
         )
@@ -100,6 +151,7 @@ class MpvPlayer(
     }
 
     override fun seekBackward(seconds: Double) {
+
         println(
             "MpvPlayer: seekBackward($seconds)"
         )
@@ -108,6 +160,7 @@ class MpvPlayer(
     }
 
     override fun setVolume(volume: Double) {
+
         println(
             "MpvPlayer: setVolume($volume)"
         )
@@ -116,27 +169,46 @@ class MpvPlayer(
     }
 
     override fun mute() {
-        println("MpvPlayer: mute()")
+
+        println(
+            "MpvPlayer: mute()"
+        )
+
         native.mute()
     }
 
     override fun frameForward() {
-        println("MpvPlayer: frameForward()")
+
+        println(
+            "MpvPlayer: frameForward()"
+        )
+
         native.frameForward()
     }
 
     override fun frameBackward() {
-        println("MpvPlayer: frameBackward()")
+
+        println(
+            "MpvPlayer: frameBackward()"
+        )
+
         native.frameBackward()
     }
 
     override fun screenshot() {
-        println("MpvPlayer: screenshot()")
+
+        println(
+            "MpvPlayer: screenshot()"
+        )
+
         native.screenshot()
     }
 
     override fun release() {
-        println("MpvPlayer: release()")
+
+        println(
+            "MpvPlayer: release()"
+        )
 
         videoSource.close()
 
@@ -180,6 +252,20 @@ class MpvPlayer(
 
                 "pause" -> {
 
+                    /*
+                     * Este é o estado real do mpv.
+                     *
+                     * pause=true  -> playing=false
+                     * pause=false -> playing=true
+                     */
+                    lastKnownPlaying =
+                        !value
+
+                    println(
+                        "MpvPlayer: estado real = " +
+                            "playing=$lastKnownPlaying"
+                    )
+
                     _events.tryEmit(
                         PlayerEvent.PauseChanged(
                             paused = value
@@ -215,12 +301,39 @@ class MpvPlayer(
                 "MpvPlayer: loading = $loading"
             )
 
+            /*
+             * FILE_LOADED significa que o novo arquivo
+             * terminou de carregar.
+             *
+             * Agora podemos restaurar com segurança
+             * o estado de reprodução anterior.
+             */
+            if (!loading) {
+
+                val playbackState =
+                    pendingPlaybackState
+
+                if (playbackState != null) {
+
+                    println(
+                        "MpvPlayer: restaurando estado " +
+                            "playing=$playbackState"
+                    )
+
+                    native.setPause(
+                        !playbackState
+                    )
+
+                    pendingPlaybackState =
+                        null
+                }
+            }
+
             _events.tryEmit(
                 PlayerEvent.LoadingChanged(
                     loading = loading
                 )
             )
         }
-
     }
 }
