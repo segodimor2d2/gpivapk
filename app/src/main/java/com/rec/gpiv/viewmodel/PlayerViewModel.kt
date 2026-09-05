@@ -28,7 +28,6 @@ class PlayerViewModel(
             mpvNative
         )
 
-    private var testVideoLoaded = false
     private var pickerVideoLoaded = false
 
     private val _uiState =
@@ -49,26 +48,6 @@ class PlayerViewModel(
         println(
             "PlayerViewModel: Surface pronta"
         )
-
-        if (testVideoLoaded) {
-            println(
-                "PlayerViewModel: vídeo já carregado, " +
-                    "não recarregando"
-            )
-            return
-        }
-
-        val testPath =
-            "/data/user/0/com.rec.gpiv/files/test.mp4"
-
-        println(
-            "PlayerViewModel: carregando vídeo de teste"
-        )
-
-        if (player is MpvPlayer) {
-            player.loadLocalTestPath(testPath)
-            testVideoLoaded = true
-        }
     }
 
     private fun observePlayerEvents() {
