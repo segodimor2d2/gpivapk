@@ -14,6 +14,8 @@
 #include <thread>
 
 
+struct MpvStreamManager;
+
 struct MpvContext {
 
     /* ========================================================
@@ -73,6 +75,8 @@ struct MpvContext {
     EGLSurface eglSurface;
 
     bool eglInitialized;
+
+    MpvStreamManager* streamManager;
 };
 
 

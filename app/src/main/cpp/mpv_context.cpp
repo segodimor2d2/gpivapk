@@ -5,12 +5,9 @@
 #include "mpv_context_events.h"
 #include "mpv_context_mpv.h"
 #include "mpv_context_jni.h"
+#include "mpv_context_stream.h"
 
 #include <android/log.h>
-
-#include <EGL/egl.h>
-#include <GLES2/gl2.h>
-#include <mpv/render_gl.h>
 #include <new>
 
 #define LOG_TAG "GPIV_NATIVE"
@@ -36,15 +33,6 @@
         __VA_ARGS__ \
     )
 
-
-/* ============================================================
- * IDENTIFICADORES DAS PROPRIEDADES OBSERVADAS
- * ============================================================ */
-
-#define PROPERTY_TIME_POS   1
-#define PROPERTY_DURATION   2
-#define PROPERTY_PAUSE      3
-#define PROPERTY_FILENAME   4
 
 bool mpv_context_render(
     MpvContext* context
@@ -98,56 +86,35 @@ MpvContext* mpv_context_create()
 
     context->renderContext = nullptr;
 
+    context->streamManager = nullptr;
 
-    context->eglDisplay =
-        EGL_NO_DISPLAY;
+    context->eglDisplay = EGL_NO_DISPLAY;
 
+    context->eglConfig = nullptr;
 
-    context->eglConfig =
-        nullptr;
+    context->eglContext = EGL_NO_CONTEXT;
 
+    context->eglSurface = EGL_NO_SURFACE;
 
-    context->eglContext =
-        EGL_NO_CONTEXT;
-
-
-    context->eglSurface =
-        EGL_NO_SURFACE;
-
-
-    context->eglInitialized =
-        false;
+    context->eglInitialized = false;
 
     context->eventLoopRunning = false;
 
     context->javaVm = nullptr;
 
-    context->nativeObject =
-        nullptr;
+    context->nativeObject = nullptr;
 
+    context->onDoubleProperty = nullptr;
 
-    context->onDoubleProperty =
-        nullptr;
+    context->onBooleanProperty = nullptr;
 
+    context->onStringProperty = nullptr;
 
-    context->onBooleanProperty =
-        nullptr;
+    context->onLoadingChanged = nullptr;
 
+    context->window = nullptr;
 
-    context->onStringProperty =
-        nullptr;
-
-
-    context->onLoadingChanged =
-        nullptr;
-
-
-    context->window =
-        nullptr;
-
-
-    context->surfaceAvailable =
-        false;
+    context->surfaceAvailable = false;
 
 
     LOGI(
@@ -194,6 +161,8 @@ int mpv_context_initialize(
     if (!mpv_context_mpv_initialize(context))
         return -1;
 
+    if (!mpv_context_stream_initialize(context))
+        return -1;
 
     /* ========================================================
      * OBSERVA PROPRIEDADES

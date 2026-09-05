@@ -3,10 +3,13 @@
 #include <android/native_window_jni.h>
 
 #include "mpv_context.h"
+#include "mpv_context_stream.h"
 
 extern "C" {
 #include <libavcodec/jni.h>
 }
+
+#include <string>
 
 #define LOG_TAG "GPIV_NATIVE"
 
@@ -325,14 +328,50 @@ Java_com_rec_gpiv_player_MpvNative_nativeLoadFd(
     MpvContext* context =
         reinterpret_cast<MpvContext*>(handle);
 
-    if (!context) {
+    if (!context || !context->mpv) {
+        LOGI("JNI: loadFd() -> contexto inválido");
+        return;
+    }
+
+    if (fd < 0) {
+        LOGI("JNI: loadFd() -> fd inválido: %d", fd);
+        return;
+    }
+
+    std::string uri =
+        mpv_context_stream_add_fd(
+            context,
+            fd
+        );
+
+    if (uri.empty()) {
+        LOGI("JNI: loadFd() -> falha ao registrar fd");
         return;
     }
 
     LOGI(
-        "JNI: loadFd(%p, fd=%d)",
-        static_cast<void*>(context),
-        fd
+        "JNI: loadFd(fd=%d) -> %s",
+        fd,
+        uri.c_str()
+    );
+
+    const char* command[] = {
+        "loadfile",
+        uri.c_str(),
+        "replace",
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: loadfile(%s) -> %d",
+        uri.c_str(),
+        status
     );
 }
 

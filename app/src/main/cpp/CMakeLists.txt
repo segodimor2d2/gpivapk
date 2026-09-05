@@ -13,6 +13,7 @@ add_library(
     mpv_context_events.cpp
     mpv_context_mpv.cpp
     mpv_context_jni.cpp
+    mpv_context_stream.cpp
 )
 
 add_library(
