@@ -16,6 +16,12 @@ add_library(
     mpv_context_stream.cpp
 )
 
+target_include_directories(
+    gpiv_native
+    PRIVATE
+    "${CMAKE_CURRENT_LIST_DIR}/../../../../../mpv-android/buildscripts/deps/ffmpeg"
+)
+
 add_library(
     mpv
     SHARED
@@ -42,7 +48,7 @@ set_target_properties(
         "${CMAKE_CURRENT_LIST_DIR}/../jniLibs/arm64-v8a/libmpv.so"
 
     INTERFACE_INCLUDE_DIRECTORIES
-        "/home/segodimo/05android/mpv/include;/home/segodimo/05android/mpv-android/buildscripts/prefix/arm64/include"
+        "${CMAKE_CURRENT_LIST_DIR}/../../../../../mpv/include;${CMAKE_CURRENT_LIST_DIR}/../../../../../mpv-android/buildscripts/include"
 )
 
 find_library(
