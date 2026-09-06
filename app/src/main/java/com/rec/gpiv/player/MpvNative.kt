@@ -98,15 +98,6 @@ class MpvNative {
         nativeLoad(uri)
     }
 
-    fun loadLocalPath(path: String) {
-        checkInitialized()
-
-        nativeLoadLocalPath(
-            nativeHandle,
-            path
-        )
-    }
-
     fun loadFd(fd: Int) {
         checkInitialized()
 
@@ -267,11 +258,6 @@ class MpvNative {
 
     private external fun nativeLoad(
         uri: String
-    )
-
-    private external fun nativeLoadLocalPath(
-        handle: Long,
-        path: String
     )
 
     private external fun nativeLoadFd(

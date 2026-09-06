@@ -2,6 +2,69 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project("gpiv_native")
 
+# ============================================================
+# Dependências externas
+# ============================================================
+
+# Por padrão, assume a estrutura atual:
+#
+# 03android/
+# ├── gpivapk/
+# ├── mpv/
+# └── mpv-android/
+#
+# Os caminhos podem ser sobrescritos externamente com:
+#
+# -DGPIV_MPV_ROOT=/caminho/para/mpv
+# -DGPIV_MPV_ANDROID_ROOT=/caminho/para/mpv-android
+
+set(
+    GPIV_MPV_ROOT
+    "${CMAKE_CURRENT_LIST_DIR}/../../../../../mpv"
+    CACHE PATH
+    "Root directory of the MPV source tree"
+)
+
+set(
+    GPIV_MPV_ANDROID_ROOT
+    "${CMAKE_CURRENT_LIST_DIR}/../../../../../mpv-android"
+    CACHE PATH
+    "Root directory of the mpv-android source tree"
+)
+
+set(
+    GPIV_FFMPEG_ROOT
+    "${GPIV_MPV_ANDROID_ROOT}/buildscripts/deps/ffmpeg"
+    CACHE PATH
+    "Root directory of the FFmpeg source tree"
+)
+
+message(STATUS "GPIV_MPV_ROOT        = ${GPIV_MPV_ROOT}")
+message(STATUS "GPIV_MPV_ANDROID_ROOT = ${GPIV_MPV_ANDROID_ROOT}")
+message(STATUS "GPIV_FFMPEG_ROOT     = ${GPIV_FFMPEG_ROOT}")
+
+if(NOT EXISTS "${GPIV_MPV_ROOT}/include/mpv/client.h")
+    message(FATAL_ERROR
+        "MPV não encontrado: ${GPIV_MPV_ROOT}"
+    )
+endif()
+
+if(NOT EXISTS "${GPIV_MPV_ANDROID_ROOT}/buildscripts/include")
+    message(FATAL_ERROR
+        "mpv-android não encontrado: ${GPIV_MPV_ANDROID_ROOT}"
+    )
+endif()
+
+if(NOT EXISTS "${GPIV_FFMPEG_ROOT}/libavcodec/jni.h")
+    message(FATAL_ERROR
+        "FFmpeg não encontrado: ${GPIV_FFMPEG_ROOT}"
+    )
+endif()
+
+# ============================================================
+# Biblioteca principal
+# ============================================================
+
 add_library(
     gpiv_native
     SHARED
@@ -16,11 +79,21 @@ add_library(
     mpv_context_stream.cpp
 )
 
+
+# ============================================================
+# Headers externos
+# ============================================================
+
 target_include_directories(
     gpiv_native
     PRIVATE
-    "${CMAKE_CURRENT_LIST_DIR}/../../../../../mpv-android/buildscripts/deps/ffmpeg"
+    "${GPIV_FFMPEG_ROOT}"
 )
+
+
+# ============================================================
+# MPV
+# ============================================================
 
 add_library(
     mpv
@@ -28,11 +101,17 @@ add_library(
     IMPORTED
 )
 
+
+# ============================================================
+# FFmpeg / avcodec
+# ============================================================
+
 add_library(
     avcodec
     SHARED
     IMPORTED
 )
+
 
 set_target_properties(
     avcodec
@@ -41,6 +120,7 @@ set_target_properties(
         "${CMAKE_CURRENT_LIST_DIR}/../jniLibs/arm64-v8a/libavcodec.so"
 )
 
+
 set_target_properties(
     mpv
     PROPERTIES
@@ -48,8 +128,13 @@ set_target_properties(
         "${CMAKE_CURRENT_LIST_DIR}/../jniLibs/arm64-v8a/libmpv.so"
 
     INTERFACE_INCLUDE_DIRECTORIES
-        "${CMAKE_CURRENT_LIST_DIR}/../../../../../mpv/include;${CMAKE_CURRENT_LIST_DIR}/../../../../../mpv-android/buildscripts/include"
+        "${GPIV_MPV_ROOT}/include;${GPIV_MPV_ANDROID_ROOT}/buildscripts/include"
 )
+
+
+# ============================================================
+# Android libraries
+# ============================================================
 
 find_library(
     log-lib
@@ -70,6 +155,11 @@ find_library(
     gles-lib
     GLESv2
 )
+
+
+# ============================================================
+# Link
+# ============================================================
 
 target_link_libraries(
     gpiv_native

@@ -62,15 +62,6 @@ class MpvPlayer(
         native.setSurface(surface)
     }
 
-    fun loadLocalTestPath(path: String) {
-
-        println(
-            "MpvPlayer: loadLocalTestPath($path)"
-        )
-
-        native.loadLocalPath(path)
-    }
-
     override fun load(uri: Uri) {
 
         println(

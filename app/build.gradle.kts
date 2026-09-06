@@ -1,6 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use {
+        localProperties.load(it)
+    }
 }
 
 android {
@@ -18,7 +29,15 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                arguments(
+                    "-DGPIV_MPV_ROOT=${localProperties.getProperty("GPIV_MPV_ROOT")}",
+                    "-DGPIV_MPV_ANDROID_ROOT=${localProperties.getProperty("GPIV_MPV_ANDROID_ROOT")}",
+                    "-DGPIV_FFMPEG_ROOT=${localProperties.getProperty("GPIV_FFMPEG_ROOT")}"
+                )
+            }
+        }
     }
 
     buildTypes {

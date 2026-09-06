@@ -423,67 +423,6 @@ Java_com_rec_gpiv_player_MpvNative_nativeSetPause(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_rec_gpiv_player_MpvNative_nativeLoadLocalPath(
-    JNIEnv* env,
-    jobject thiz,
-    jlong handle,
-    jstring path
-)
-{
-    MpvContext* context =
-        reinterpret_cast<MpvContext*>(handle);
-
-    if (!context || !context->mpv) {
-
-        LOGI(
-            "JNI: nativeLoadLocalPath() -> contexto inválido"
-        );
-
-        return;
-    }
-
-    const char* pathString =
-        env->GetStringUTFChars(
-            path,
-            nullptr
-        );
-
-    if (!pathString) {
-
-        LOGI(
-            "JNI: nativeLoadLocalPath() -> string inválida"
-        );
-
-        return;
-    }
-
-    const char* command[] = {
-        "loadfile",
-        pathString,
-        "replace",
-        nullptr
-    };
-
-    int status =
-        mpv_command(
-            context->mpv,
-            command
-        );
-
-    LOGI(
-        "JNI: loadfile(%s) -> %d",
-        pathString,
-        status
-    );
-
-    env->ReleaseStringUTFChars(
-        path,
-        pathString
-    );
-}
-
-extern "C"
-JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeSetSurface(
     JNIEnv* env,
     jobject thiz,
