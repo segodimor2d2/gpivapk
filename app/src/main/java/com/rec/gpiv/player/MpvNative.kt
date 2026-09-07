@@ -144,8 +144,13 @@ class MpvNative {
     }
 
     fun seekBackward(seconds: Double) {
+        checkInitialized()
         println(
             "MpvNative: seekBackward($seconds)"
+        )
+        nativeSeekBackward(
+            nativeHandle,
+            seconds
         )
     }
 
@@ -160,13 +165,10 @@ class MpvNative {
     }
 
     fun frameForward() {
-
         checkInitialized()
-
         println(
             "MpvNative: frameForward()"
         )
-
         nativeFrameForward(
             nativeHandle
         )
@@ -289,6 +291,11 @@ class MpvNative {
     )
 
     private external fun nativeSeekForward(
+        handle: Long,
+        seconds: Double
+    )
+
+    private external fun nativeSeekBackward(
         handle: Long,
         seconds: Double
     )

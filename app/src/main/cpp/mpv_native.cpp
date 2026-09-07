@@ -275,7 +275,12 @@ Java_com_rec_gpiv_player_MpvNative_nativeSeekForward(
     MpvContext* context =
         reinterpret_cast<MpvContext*>(handle);
 
-    if (!context) {
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeSeekForward() -> contexto inválido"
+        );
+
         return;
     }
 
@@ -283,6 +288,78 @@ Java_com_rec_gpiv_player_MpvNative_nativeSeekForward(
         "JNI: seekForward(%p, %f)",
         static_cast<void*>(context),
         seconds
+    );
+
+    std::string amount =
+        std::to_string(seconds);
+
+    const char* command[] = {
+        "seek",
+        amount.c_str(),
+        "relative",
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: mpv_command(seek +%f relative) -> %d",
+        seconds,
+        status
+    );
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeSeekBackward(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jdouble seconds
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeSeekBackward() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    LOGI(
+        "JNI: seekBackward(%p, %f)",
+        static_cast<void*>(context),
+        seconds
+    );
+
+    std::string amount =
+        std::to_string(-seconds);
+
+    const char* command[] = {
+        "seek",
+        amount.c_str(),
+        "relative",
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: mpv_command(seek %f relative) -> %d",
+        -seconds,
+        status
     );
 }
 
