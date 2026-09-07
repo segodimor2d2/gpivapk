@@ -6,6 +6,7 @@ import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rec.gpiv.model.PlayerUiState
+import com.rec.gpiv.player.FileList
 import com.rec.gpiv.player.MpvNative
 import com.rec.gpiv.player.MpvPlayer
 import com.rec.gpiv.player.PlayerEvent
@@ -28,7 +29,14 @@ class PlayerViewModel(
             mpvNative
         )
 
+    private val fileList =
+        FileList(
+            application.contentResolver
+        )
+
     private var pickerVideoLoaded = false
+
+    private var selectedUri: Uri? = null
 
     private val _uiState =
         MutableStateFlow(PlayerUiState())
@@ -111,9 +119,38 @@ class PlayerViewModel(
 
     fun load(uri: Uri) {
 
-        val filename = getFileName(uri)
+        val filename =
+            getFileName(uri)
+
+        selectedUri = uri
 
         pickerVideoLoaded = true
+
+        println(
+            "PlayerViewModel: carregando arquivo = $filename"
+        )
+
+        /*
+         * Se a FileList já foi carregada através de uma pasta,
+         * tenta posicionar o arquivo selecionado.
+         */
+        if (fileList.size() > 0) {
+
+            val found =
+                fileList.setCurrent(
+                    uri
+                )
+
+            println(
+                "PlayerViewModel: arquivo encontrado " +
+                    "na FileList = $found"
+            )
+
+            println(
+                "PlayerViewModel: posição atual = " +
+                    fileList.currentIndex()
+            )
+        }
 
         _uiState.value =
             _uiState.value.copy(
@@ -136,19 +173,77 @@ class PlayerViewModel(
                 )
 
             println(
-                "PlayerViewModel: erro ao carregar vídeo: ${e.message}"
+                "PlayerViewModel: erro ao carregar vídeo: " +
+                    e.message
             )
         }
     }
 
-    private fun getFileName(uri: Uri): String {
+    fun loadFolder(
+        uri: Uri
+    ) {
+
+        println(
+            "PlayerViewModel: carregando pasta = $uri"
+        )
+
+        val loaded =
+            fileList.loadFromTree(
+                uri
+            )
+
+        println(
+            "PlayerViewModel: FileList da pasta carregada = $loaded"
+        )
+
+        println(
+            "PlayerViewModel: quantidade de arquivos = " +
+                fileList.size()
+        )
+
+        println(
+            "PlayerViewModel: posição atual antes = " +
+                fileList.currentIndex()
+        )
+
+        val currentUri =
+            selectedUri
+
+        if (
+            loaded &&
+            currentUri != null
+        ) {
+
+            val found =
+                fileList.setCurrent(
+                    currentUri
+                )
+
+            println(
+                "PlayerViewModel: arquivo selecionado " +
+                    "encontrado na pasta = $found"
+            )
+
+            println(
+                "PlayerViewModel: posição atual depois = " +
+                    fileList.currentIndex()
+            )
+        }
+    }
+
+    private fun getFileName(
+        uri: Uri
+    ): String {
 
         val resolver =
-            getApplication<Application>().contentResolver
+            getApplication<Application>()
+                .contentResolver
 
         resolver.query(
             uri,
-            arrayOf(OpenableColumns.DISPLAY_NAME),
+            arrayOf(
+                OpenableColumns.DISPLAY_NAME
+            ),
             null,
             null,
             null
@@ -164,7 +259,9 @@ class PlayerViewModel(
                 if (nameIndex >= 0) {
 
                     val name =
-                        cursor.getString(nameIndex)
+                        cursor.getString(
+                            nameIndex
+                        )
 
                     if (!name.isNullOrBlank()) {
                         return name
@@ -175,6 +272,80 @@ class PlayerViewModel(
 
         return uri.lastPathSegment
             ?: "Nenhum arquivo"
+    }
+
+    fun nextFile() {
+
+        val file =
+            fileList.next()
+
+        if (file == null) {
+
+            println(
+                "PlayerViewModel: já está no último arquivo"
+            )
+
+            return
+        }
+
+        println(
+            "PlayerViewModel: próximo arquivo = " +
+                file.name
+        )
+
+        println(
+            "PlayerViewModel: currentIndex = " +
+                fileList.currentIndex()
+        )
+
+        selectedUri = file.uri
+
+        _uiState.value =
+            _uiState.value.copy(
+                filename = file.name,
+                loading = true,
+                position = 0.0,
+                duration = 0.0
+            )
+
+        player.load(file.uri)
+    }
+
+    fun previousFile() {
+
+        val file =
+            fileList.previous()
+
+        if (file == null) {
+
+            println(
+                "PlayerViewModel: já está no primeiro arquivo"
+            )
+
+            return
+        }
+
+        println(
+            "PlayerViewModel: arquivo anterior = " +
+                file.name
+        )
+
+        println(
+            "PlayerViewModel: currentIndex = " +
+                fileList.currentIndex()
+        )
+
+        selectedUri = file.uri
+
+        _uiState.value =
+            _uiState.value.copy(
+                filename = file.name,
+                loading = true,
+                position = 0.0,
+                duration = 0.0
+            )
+
+        player.load(file.uri)
     }
 
     fun togglePlayPause() {
@@ -196,19 +367,30 @@ class PlayerViewModel(
         player.pause()
     }
 
-    fun seekForward(seconds: Double) {
+    fun seekForward(
+        seconds: Double
+    ) {
 
-        player.seekForward(seconds)
+        player.seekForward(
+            seconds
+        )
     }
 
-    fun seekBackward(seconds: Double) {
+    fun seekBackward(
+        seconds: Double
+    ) {
 
-        player.seekBackward(seconds)
+        player.seekBackward(
+            seconds
+        )
     }
 
-    fun volumeUp(amount: Double = 5.0) {
+    fun volumeUp(
+        amount: Double = 5.0
+    ) {
 
-        val state = _uiState.value
+        val state =
+            _uiState.value
 
         val newVolume =
             minOf(
@@ -216,7 +398,9 @@ class PlayerViewModel(
                 100.0
             )
 
-        player.setVolume(newVolume)
+        player.setVolume(
+            newVolume
+        )
 
         _uiState.value =
             state.copy(
@@ -224,9 +408,12 @@ class PlayerViewModel(
             )
     }
 
-    fun volumeDown(amount: Double = 5.0) {
+    fun volumeDown(
+        amount: Double = 5.0
+    ) {
 
-        val state = _uiState.value
+        val state =
+            _uiState.value
 
         val newVolume =
             maxOf(
@@ -234,7 +421,9 @@ class PlayerViewModel(
                 0.0
             )
 
-        player.setVolume(newVolume)
+        player.setVolume(
+            newVolume
+        )
 
         _uiState.value =
             state.copy(

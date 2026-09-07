@@ -1,5 +1,6 @@
 package com.rec.gpiv
 
+import android.content.Intent
 import android.os.Bundle
 
 import androidx.activity.ComponentActivity
@@ -19,7 +20,6 @@ import androidx.compose.ui.Modifier
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-import com.rec.gpiv.player.MpvNative
 import com.rec.gpiv.ui.player.PlayerScreen
 import com.rec.gpiv.ui.theme.GpivTheme
 import com.rec.gpiv.viewmodel.PlayerViewModel
@@ -29,15 +29,93 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: PlayerViewModel by viewModels()
 
+
+    /*
+     * ========================================================
+     * ABRIR ARQUIVO
+     * ========================================================
+     *
+     * Continua exatamente como antes.
+     *
+     * O usuário escolhe um arquivo e o PlayerViewModel
+     * continua responsável por carregá-lo.
+     */
+
     private val openVideoLauncher =
         registerForActivityResult(
             ActivityResultContracts.OpenDocument()
         ) { uri ->
 
             if (uri != null) {
+
+                println(
+                    "MainActivity: arquivo selecionado = $uri"
+                )
+
                 viewModel.load(uri)
             }
         }
+
+
+    /*
+     * ========================================================
+     * ABRIR PASTA
+     * ========================================================
+     *
+     * Neste momento o launcher apenas obtém a permissão
+     * da pasta.
+     *
+     * Ainda não estamos usando a pasta para montar a FileList.
+     * Isso será feito no próximo passo.
+     */
+
+    private val openFolderLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.OpenDocumentTree()
+        ) { uri ->
+
+            if (uri != null) {
+
+                println(
+                    "MainActivity: pasta selecionada = $uri"
+                )
+
+                /*
+                 * O Android informa através do Intent quais
+                 * permissões podem ser persistidas.
+                 *
+                 * Neste callback usamos as permissões READ/WRITE
+                 * realmente concedidas pelo sistema.
+                 */
+
+                val flags =
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+
+
+                try {
+
+                    contentResolver.takePersistableUriPermission(
+                        uri,
+                        flags
+                    )
+
+                    println(
+                        "MainActivity: permissão da pasta persistida"
+                    )
+
+                    viewModel.loadFolder(uri)
+
+                } catch (e: Exception) {
+
+                    println(
+                        "MainActivity: erro ao persistir " +
+                            "permissão da pasta: ${e.message}"
+                    )
+                }
+            }
+        }
+
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -46,7 +124,21 @@ class MainActivity : ComponentActivity() {
             savedInstanceState
         )
 
+
+        /*
+         * ====================================================
+         * EDGE TO EDGE
+         * ====================================================
+         */
+
         enableEdgeToEdge()
+
+
+        /*
+         * ====================================================
+         * COMPOSE
+         * ====================================================
+         */
 
         setContent {
 
@@ -57,21 +149,48 @@ class MainActivity : ComponentActivity() {
                         Modifier.fillMaxSize()
                 ) { innerPadding ->
 
+
+                    /*
+                     * ========================================
+                     * UI STATE
+                     * ========================================
+                     */
+
                     val uiState by
                         viewModel.uiState
                             .collectAsStateWithLifecycle()
 
 
+                    /*
+                     * ========================================
+                     * PLAYER SCREEN
+                     * ========================================
+                     *
+                     * O PlayerScreen continua exatamente
+                     * como estava.
+                     */
+
                     PlayerScreen(
                         uiState = uiState,
 
-                        mpvNative = viewModel.mpvNative,
+                        mpvNative =
+                            viewModel.mpvNative,
 
                         onOpenVideo = {
                             openVideoLauncher.launch(
-                                arrayOf("*/*")
+                              arrayOf("*/*")
                             )
                         },
+
+                        onOpenFolder = {
+                            openFolderLauncher.launch(null)
+                        },
+
+                        onPreviousFile =
+                            viewModel::previousFile,
+
+                        onNextFile =
+                            viewModel::nextFile,
 
                         onTogglePlayPause =
                             viewModel::togglePlayPause,
@@ -104,8 +223,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+
     override fun onDestroy() {
         super.onDestroy()
     }
-
 }

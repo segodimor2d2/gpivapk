@@ -49,7 +49,13 @@ import com.rec.gpiv.player.MpvNative
 fun PlayerScreen(
     uiState: PlayerUiState,
     mpvNative: MpvNative,
+
     onOpenVideo: () -> Unit,
+    onOpenFolder: () -> Unit,
+
+    onPreviousFile: () -> Unit,
+    onNextFile: () -> Unit,
+
     onTogglePlayPause: () -> Unit,
     onSeekBackward: (Double) -> Unit,
     onSeekForward: (Double) -> Unit,
@@ -57,6 +63,7 @@ fun PlayerScreen(
     onVolumeUp: () -> Unit,
     onMute: () -> Unit,
     onSurfaceReady: () -> Unit,
+
     modifier: Modifier = Modifier
 ) {
 
@@ -283,8 +290,54 @@ fun PlayerScreen(
                     Arrangement.spacedBy(3.dp)
             ) {
 
+
+                /*
+                 * --------------------------------------------
+                 * ARQUIVO
+                 * --------------------------------------------
+                 *
+                 * BOTÕES TEMPORÁRIOS
+                 *
+                 * Servem para testar previousFile()
+                 * e nextFile() antes de implementar swipe.
+                 */
+
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    horizontalArrangement =
+                        Arrangement.spacedBy(2.dp)
+                ) {
+
+                    CompactButton(
+                        onClick = onPreviousFile
+                    ) {
+
+                        Text(
+                            text = "ANTERIOR",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick = onNextFile
+                    ) {
+
+                        Text(
+                            text = "PRÓXIMO",
+                            fontSize = 9.sp
+                        )
+                    }
+                }
+
+
+                /*
+                 * --------------------------------------------
+                 * REPRODUÇÃO
+                 * --------------------------------------------
+                 */
+
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(2.dp)
                 ) {
 
                     CompactButton(
@@ -378,9 +431,17 @@ fun PlayerScreen(
                     }
                 }
 
+
+                /*
+                 * --------------------------------------------
+                 * STATUS
+                 * --------------------------------------------
+                 */
+
                 Row(
 
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier =
+                        Modifier.fillMaxWidth(),
 
                     horizontalArrangement =
                         Arrangement.Center,
@@ -391,48 +452,94 @@ fun PlayerScreen(
 
                     Text(
 
-                        text = "%.2f s".format(uiState.position),
+                        text =
+                            "%.2f s".format(
+                                uiState.position
+                            ),
+
                         fontSize = 9.sp
                     )
 
+
                     Text(
-                        text = "  |  Vol: ${uiState.volume}%",
+
+                        text =
+                            "  |  Vol: ${uiState.volume}%",
+
                         fontSize = 9.sp
                     )
 
+
                     Text(
+
                         text =
                             if (uiState.loading) {
+
                                 "  |  Carregando..."
+
                             } else if (uiState.playing) {
+
                                 "  |  ▶"
+
                             } else {
+
                                 "  |  ⏸"
                             },
+
                         fontSize = 9.sp
                     )
                 }
 
+
                 /*
                  * --------------------------------------------
-                 * NOME DO ARQUIVO e REPRODUÇÃO
+                 * NOME DO ARQUIVO
                  * --------------------------------------------
                  */
 
                 Text(
-                    text = uiState.filename ?: "abrir",
+
+                    text =
+                        uiState.filename
+                            ?: "abrir",
+
                     fontSize = 9.sp,
+
                     maxLines = 1,
-                    modifier = Modifier.clickable {
-                        onOpenVideo()
-                    }
+
+                    modifier =
+                        Modifier.clickable {
+
+                            onOpenVideo()
+                        }
                 )
 
-                // --------------------------------------------
+
+                /*
+                 * --------------------------------------------
+                 * ABRIR PASTA
+                 * --------------------------------------------
+                 *
+                 * BOTÃO TEMPORÁRIO
+                 *
+                 * Será usado somente para testar
+                 * ACTION_OPEN_DOCUMENT_TREE.
+                 */
+
+                CompactButton(
+                    onClick = onOpenFolder
+                ) {
+
+                    Text(
+                        text = "ABRIR PASTA",
+                        fontSize = 9.sp
+                    )
+                }
             }
         }
     }
 }
+
 
 /*
  * ============================================================
