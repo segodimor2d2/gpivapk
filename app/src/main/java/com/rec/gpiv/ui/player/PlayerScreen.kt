@@ -6,27 +6,38 @@ import android.os.Looper
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+
+import androidx.compose.material3.Button
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.Text
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-
-import androidx.compose.runtime.Composable
-
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 import androidx.compose.ui.viewinterop.AndroidView
 
@@ -49,15 +60,38 @@ fun PlayerScreen(
     modifier: Modifier = Modifier
 ) {
 
+    /*
+     * --------------------------------------------------------
+     * CONTROLES
+     * --------------------------------------------------------
+     *
+     * false = painel escondido
+     * true  = painel visível
+     */
+
+    var controlsVisible by remember {
+        mutableStateOf(false)
+    }
+
+
+    /*
+     * --------------------------------------------------------
+     * RENDER LOOP
+     * --------------------------------------------------------
+     */
+
     var renderLoopRunning by remember {
         mutableStateOf(false)
     }
 
     val renderHandler = remember(mpvNative) {
-        Handler(Looper.getMainLooper())
+        Handler(
+            Looper.getMainLooper()
+        )
     }
 
     val renderRunnable = remember(mpvNative) {
+
         object : Runnable {
 
             override fun run() {
@@ -76,6 +110,7 @@ fun PlayerScreen(
         }
     }
 
+
     DisposableEffect(mpvNative) {
 
         onDispose {
@@ -88,17 +123,27 @@ fun PlayerScreen(
         }
     }
 
-    Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+
+    /*
+     * --------------------------------------------------------
+     * TELA INTEIRA
+     * --------------------------------------------------------
+     *
+     * O vídeo ocupa toda a área.
+     *
+     * Os controles ficam sobrepostos ao vídeo.
+     */
+
+    Box(
+        modifier = modifier.fillMaxSize()
     ) {
 
-        Button(
-            onClick = onOpenVideo
-        ) {
-            Text("ABRIR VÍDEO")
-        }
+
+        /*
+         * ----------------------------------------------------
+         * VÍDEO
+         * ----------------------------------------------------
+         */
 
         AndroidView(
             factory = { context ->
@@ -111,6 +156,7 @@ fun PlayerScreen(
                             override fun surfaceCreated(
                                 holder: SurfaceHolder
                             ) {
+
                                 println(
                                     "PlayerScreen: surfaceCreated()"
                                 )
@@ -131,21 +177,25 @@ fun PlayerScreen(
                                 onSurfaceReady()
                             }
 
+
                             override fun surfaceChanged(
                                 holder: SurfaceHolder,
                                 format: Int,
                                 width: Int,
                                 height: Int
                             ) {
+
                                 println(
                                     "PlayerScreen: surfaceChanged: " +
                                         "${width}x${height}"
                                 )
                             }
 
+
                             override fun surfaceDestroyed(
                                 holder: SurfaceHolder
                             ) {
+
                                 println(
                                     "PlayerScreen: surfaceDestroyed()"
                                 )
@@ -164,97 +214,275 @@ fun PlayerScreen(
                     )
                 }
             },
+
+            modifier = Modifier.fillMaxSize()
+        )
+
+
+        /*
+         * ----------------------------------------------------
+         * ÁREA DE TOQUE
+         * ----------------------------------------------------
+         *
+         * Dois toques:
+         *
+         * escondido -> mostra
+         * mostrado  -> esconde
+         *
+         * Não fazemos nada no toque simples.
+         */
+
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        )
+                .fillMaxSize()
+                .pointerInput(Unit) {
 
-        Text(
-            text = uiState.filename ?: "Nenhum arquivo"
-        )
+                    detectTapGestures(
 
-        Text(
-            text = "Posição: ${uiState.position} s"
-        )
+                        onDoubleTap = {
 
-        Text(
-            text = "Duração: ${uiState.duration} s"
-        )
+                            controlsVisible =
+                                !controlsVisible
 
-        Text(
-            text = "Volume: ${uiState.volume}%"
-        )
-
-        Text(
-            text = if (uiState.loading) {
-                "Carregando..."
-            } else if (uiState.playing) {
-                "Estado: Reproduzindo"
-            } else {
-                "Estado: Pausado"
-            }
-        )
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(
-                vertical = 8.dp
-            )
-        ) {
-
-            Button(
-                onClick = {
-                    onSeekBackward(5.0)
+                            println(
+                                "PlayerScreen: " +
+                                    "controlsVisible=" +
+                                    controlsVisible
+                            )
+                        }
+                    )
                 }
-            ) {
-                Text("-5s")
-            }
+        )
 
-            Button(
-                onClick = onTogglePlayPause
+
+        /*
+         * ----------------------------------------------------
+         * PAINEL DE CONTROLES
+         * ----------------------------------------------------
+         */
+
+        if (controlsVisible) {
+
+            Column(
+
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(
+                        Color.Black.copy(
+                            alpha = 0.0f
+                        )
+                    )
+                    .navigationBarsPadding()
+                    .padding(1.dp),
+
+                horizontalAlignment =
+                    Alignment.CenterHorizontally,
+
+                verticalArrangement =
+                    Arrangement.spacedBy(3.dp)
             ) {
-                Text(
-                    text = if (uiState.playing) {
-                        "PAUSAR"
-                    } else {
-                        "PLAY"
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+
+                    CompactButton(
+                        onClick = {
+                            onSeekBackward(5.0)
+                        }
+                    ) {
+
+                        Text(
+                            text = "-5s",
+                            fontSize = 9.sp
+                        )
                     }
-                )
-            }
 
-            Button(
-                onClick = {
-                    onSeekForward(5.0)
+
+                    CompactButton(
+                        onClick = onTogglePlayPause
+                    ) {
+
+                        Text(
+                            text =
+                                if (uiState.playing) {
+                                    "PAUSAR"
+                                } else {
+                                    "PLAY"
+                                },
+                            fontSize = 9.sp
+                        )
+                    }
+
+
+                    CompactButton(
+                        onClick = {
+                            onSeekForward(5.0)
+                        }
+                    ) {
+
+                        Text(
+                            text = "+5s",
+                            fontSize = 9.sp
+                        )
+                    }
                 }
-            ) {
-                Text("+5s")
+
+
+                /*
+                 * --------------------------------------------
+                 * VOLUME
+                 * --------------------------------------------
+                 */
+
+                Row(
+
+                    horizontalArrangement =
+                        Arrangement.spacedBy(3.dp)
+                ) {
+
+                    CompactButton(
+                        onClick =
+                            onVolumeDown
+                    ) {
+
+                        Text(
+                            text = "VOL -",
+                            fontSize = 9.sp
+                        )
+                    }
+
+
+                    CompactButton(
+                        onClick =
+                            onMute
+                    ) {
+
+                        Text(
+                            text = "MUTE",
+                            fontSize = 9.sp
+                        )
+                    }
+
+
+                    CompactButton(
+                        onClick =
+                            onVolumeUp
+                    ) {
+
+                        Text(
+                            text = "VOL +",
+                            fontSize = 9.sp
+                        )
+                    }
+                }
+
+                Row(
+
+                    modifier = Modifier.fillMaxWidth(),
+
+                    horizontalArrangement =
+                        Arrangement.Center,
+
+                    verticalAlignment =
+                        Alignment.CenterVertically
+                ) {
+
+                    Text(
+                        text = "ABRIR",
+                        fontSize = 10.sp,
+                        modifier = Modifier.clickable {
+                            onOpenVideo()
+                        }
+                    )
+
+                    Text(
+
+                        text = " | %.2f s".format(uiState.position),
+                        fontSize = 9.sp
+                    )
+
+                    Text(
+                        text = "  |  Vol: ${uiState.volume}%",
+                        fontSize = 9.sp
+                    )
+
+                    Text(
+                        text =
+                            if (uiState.loading) {
+                                "  |  Carregando..."
+                            } else if (uiState.playing) {
+                                "  |  ▶"
+                            } else {
+                                "  |  ⏸"
+                            },
+                        fontSize = 9.sp
+                    )
+                }
+
+                /*
+                 * --------------------------------------------
+                 * NOME DO ARQUIVO
+                 * --------------------------------------------
+                 */
+
+                Text(
+                    text = uiState.filename ?: "Nenhum arquivo",
+                    fontSize = 9.sp,
+                    maxLines = 1
+                )
+
+                /*
+                 * --------------------------------------------
+                 * REPRODUÇÃO
+                 * --------------------------------------------
+                 */
             }
         }
+    }
+}
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(
-                bottom = 8.dp
-            )
+/*
+ * ============================================================
+ * BOTÃO COMPACTO
+ * ============================================================
+ *
+ * - altura
+ * - padding horizontal
+ * - padding vertical
+ */
+
+@Composable
+private fun CompactButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+
+    CompositionLocalProvider(
+
+        LocalMinimumInteractiveComponentSize
+            provides 0.dp
+
+    ) {
+
+        Button(
+
+            onClick = onClick,
+
+            modifier = modifier
+                .height(24.dp),
+
+            contentPadding =
+                PaddingValues(
+                    horizontal = 6.dp,
+                    vertical = 0.dp
+                )
+
         ) {
 
-            Button(
-                onClick = onVolumeDown
-            ) {
-                Text("VOL -")
-            }
-
-            Button(
-                onClick = onMute
-            ) {
-                Text("MUTE")
-            }
-
-            Button(
-                onClick = onVolumeUp
-            ) {
-                Text("VOL +")
-            }
+            content()
         }
     }
 }
