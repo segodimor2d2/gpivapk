@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+import com.rec.gpiv.player.SEEK_SECONDS
+
 class PlayerViewModel(
     application: Application
 ) : AndroidViewModel(application) {

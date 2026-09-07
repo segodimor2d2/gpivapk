@@ -43,6 +43,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 
 import com.rec.gpiv.model.PlayerUiState
 import com.rec.gpiv.player.MpvNative
+import com.rec.gpiv.player.SEEK_SECONDS
 
 
 @Composable
@@ -306,7 +307,7 @@ fun PlayerScreen(
 
                     CompactButton(
                         onClick = {
-                            onSeekBackward(5.0)
+                            onSeekBackward(SEEK_SECONDS)
                         }
                     ) {
                         Text(
@@ -351,7 +352,7 @@ fun PlayerScreen(
 
                     CompactButton(
                         onClick = {
-                            onSeekForward(5.0)
+                            onSeekForward(SEEK_SECONDS)
                         }
                     ) {
                         Text(
