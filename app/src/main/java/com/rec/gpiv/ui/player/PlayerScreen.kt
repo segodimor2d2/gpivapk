@@ -298,7 +298,7 @@ fun PlayerScreen(
 
                 Row(
                     horizontalArrangement =
-                        Arrangement.spacedBy(2.dp)
+                        Arrangement.spacedBy(4.dp)
                 ) {
 
 
@@ -377,7 +377,7 @@ fun PlayerScreen(
                 Row(
 
                     horizontalArrangement =
-                        Arrangement.spacedBy(3.dp)
+                        Arrangement.spacedBy(4.dp)
                 ) {
 
                     CompactButton(
@@ -425,20 +425,23 @@ fun PlayerScreen(
 
                 Row(
 
-                    modifier =
-                        Modifier.fillMaxWidth(),
-
-                    horizontalArrangement =
-                        Arrangement.Center,
-
-                    verticalAlignment =
-                        Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
 
                     Text(
 
+                        text = uiState.filename ?: "abrir",
+                        fontSize = 9.sp,
+                        maxLines = 1,
+                        modifier = Modifier.clickable { onOpenVideo() }
+                    )
+
+                    Text(
+
                         text =
-                            "%.2f s".format(
+                            "  %.2f s".format(
                                 uiState.position
                             ),
 
@@ -450,6 +453,7 @@ fun PlayerScreen(
 
                         text =
                             "  |  Vol: ${uiState.volume}%",
+
 
                         fontSize = 9.sp
                     )
@@ -473,26 +477,15 @@ fun PlayerScreen(
 
                         fontSize = 9.sp
                     )
-                }
-
-                CompactButton(
-                    onClick = onOpenFolder
-                ) {
 
                     Text(
-                        text = "ABRIR PASTA",
-                        fontSize = 9.sp
+                        text = "  pasta",
+                        fontSize = 9.sp,
+                        maxLines = 1,
+                        modifier = Modifier.clickable { onOpenFolder() }
                     )
+
                 }
-
-
-                Text(
-
-                    text = uiState.filename ?: "abrir",
-                    fontSize = 9.sp,
-                    maxLines = 1,
-                    modifier = Modifier.clickable { onOpenVideo() }
-                )
 
             }
         }
