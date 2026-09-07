@@ -290,22 +290,17 @@ fun PlayerScreen(
                     Arrangement.spacedBy(3.dp)
             ) {
 
-
                 /*
                  * --------------------------------------------
-                 * ARQUIVO
+                 * REPRODUÇÃO
                  * --------------------------------------------
-                 *
-                 * BOTÕES TEMPORÁRIOS
-                 *
-                 * Servem para testar previousFile()
-                 * e nextFile() antes de implementar swipe.
                  */
 
                 Row(
                     horizontalArrangement =
                         Arrangement.spacedBy(2.dp)
                 ) {
+
 
                     CompactButton(
                         onClick = onPreviousFile
@@ -317,28 +312,7 @@ fun PlayerScreen(
                         )
                     }
 
-                    CompactButton(
-                        onClick = onNextFile
-                    ) {
 
-                        Text(
-                            text = "PRÓXIMO",
-                            fontSize = 9.sp
-                        )
-                    }
-                }
-
-
-                /*
-                 * --------------------------------------------
-                 * REPRODUÇÃO
-                 * --------------------------------------------
-                 */
-
-                Row(
-                    horizontalArrangement =
-                        Arrangement.spacedBy(2.dp)
-                ) {
 
                     CompactButton(
                         onClick = {
@@ -380,6 +354,17 @@ fun PlayerScreen(
                             fontSize = 9.sp
                         )
                     }
+
+                    CompactButton(
+                        onClick = onNextFile
+                    ) {
+
+                        Text(
+                            text = "PRÓXIMO",
+                            fontSize = 9.sp
+                        )
+                    }
+
                 }
 
 
@@ -490,42 +475,6 @@ fun PlayerScreen(
                     )
                 }
 
-
-                /*
-                 * --------------------------------------------
-                 * NOME DO ARQUIVO
-                 * --------------------------------------------
-                 */
-
-                Text(
-
-                    text =
-                        uiState.filename
-                            ?: "abrir",
-
-                    fontSize = 9.sp,
-
-                    maxLines = 1,
-
-                    modifier =
-                        Modifier.clickable {
-
-                            onOpenVideo()
-                        }
-                )
-
-
-                /*
-                 * --------------------------------------------
-                 * ABRIR PASTA
-                 * --------------------------------------------
-                 *
-                 * BOTÃO TEMPORÁRIO
-                 *
-                 * Será usado somente para testar
-                 * ACTION_OPEN_DOCUMENT_TREE.
-                 */
-
                 CompactButton(
                     onClick = onOpenFolder
                 ) {
@@ -535,6 +484,16 @@ fun PlayerScreen(
                         fontSize = 9.sp
                     )
                 }
+
+
+                Text(
+
+                    text = uiState.filename ?: "abrir",
+                    fontSize = 9.sp,
+                    maxLines = 1,
+                    modifier = Modifier.clickable { onOpenVideo() }
+                )
+
             }
         }
     }
