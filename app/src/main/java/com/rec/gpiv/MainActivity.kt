@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
 
                         onOpenVideo = {
                             openVideoLauncher.launch(
-                                arrayOf("video/*")
+                                arrayOf("*/*")
                             )
                         },
 
