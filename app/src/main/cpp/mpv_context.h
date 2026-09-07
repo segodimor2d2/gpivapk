@@ -12,11 +12,13 @@
 
 #include <atomic>
 #include <thread>
+#include <string>
 
 
 struct MpvStreamManager;
 
 struct MpvContext {
+
 
     /* ========================================================
      * MPV
@@ -26,6 +28,7 @@ struct MpvContext {
 
     mpv_render_context* renderContext;
 
+    std::string screenshotDirectory;
 
     /* ========================================================
      * EVENT LOOP
@@ -97,6 +100,11 @@ void mpv_context_destroy(
 void mpv_context_set_surface(
     MpvContext* context,
     ANativeWindow* window
+);
+
+void mpv_context_set_screenshot_directory(
+    MpvContext* context,
+    const char* directory
 );
 
 bool mpv_context_render(MpvContext* context);

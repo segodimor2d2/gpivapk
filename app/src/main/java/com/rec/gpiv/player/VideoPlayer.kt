@@ -7,7 +7,9 @@ interface VideoPlayer {
 
     val events: Flow<PlayerEvent>
 
-    fun initialize()
+    fun initialize(
+        screenshotDirectory: String
+    )
 
     fun load(uri: Uri)
 

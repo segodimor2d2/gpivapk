@@ -59,6 +59,7 @@ fun PlayerScreen(
 
     onFrameBackward: () -> Unit,
     onFrameForward: () -> Unit,
+    onScreenshot: () -> Unit,
 
     onTogglePlayPause: () -> Unit,
     onSeekBackward: (Double) -> Unit,
@@ -440,79 +441,62 @@ fun PlayerScreen(
                  * --------------------------------------------
                  */
 
-                Row(
-
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-
-
+                  Row(
+                      modifier = Modifier.fillMaxWidth(),
+                      horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                      verticalAlignment = Alignment.CenterVertically
+                  ) {
                     Text(
-
-                        text =
-                            "  %.2f s".format(
-                                uiState.position
-                            ),
-
-                        fontSize = 9.sp
+                        text = "%.2f s".format(uiState.position),
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(horizontal = 4.dp)
                     )
-
                     Text(
-
-                        text =
-                            " / %.2f s".format(
-                                uiState.duration
-                            ),
-
-                        fontSize = 9.sp
+                        text = "/ %.2f s".format(uiState.duration),
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(horizontal = 4.dp)
                     )
-
                     Text(
-
                         text =
                             if (uiState.duration > 0.0) {
-                                " / %.1f %%".format(
+                                "/ %.1f %%".format(
                                     (uiState.position / uiState.duration) * 100.0
                                 )
-
                             } else {
-
-                                " / 0.0 %"
+                                "/ 0.0 %"
                             },
-
-                        fontSize = 9.sp,
-                        maxLines = 1
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        modifier = Modifier.padding(horizontal = 4.dp)
                     )
-
-
-
                     Text(
-
                         text =
                             if (uiState.loading) {
-
-                                "  |  Carregando..."
-
+                                "|  Carregando..."
                             } else if (uiState.playing) {
-
-                                "  |  ▶"
-
+                                "|  ▶"
                             } else {
-
-                                "  |  ⏸"
+                                "|  ⏸"
                             },
-
-                        fontSize = 9.sp
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(horizontal = 4.dp)
                     )
-
                     Text(
-                        text = "  pasta",
-                        fontSize = 9.sp,
+                        text = "pasta",
+                        fontSize = 14.sp,
                         maxLines = 1,
-                        modifier = Modifier.clickable { onOpenFolder() }
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .clickable { onOpenFolder() }
                     )
-
+                    Text(
+                        text = "save",
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .clickable { onScreenshot() }
+                    )
                 }
 
                 Row(

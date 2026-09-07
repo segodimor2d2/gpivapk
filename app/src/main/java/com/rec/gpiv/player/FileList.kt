@@ -14,6 +14,7 @@ class FileList(
 
     private var currentIndex = -1
 
+    private var currentTreeUri: Uri? = null
 
     /*
      * ========================================================
@@ -35,7 +36,7 @@ class FileList(
 
         files.clear()
         currentIndex = -1
-
+        currentTreeUri = treeUri
 
         println(
             "FileList: carregando árvore = $treeUri"
@@ -389,6 +390,9 @@ class FileList(
         return files.isNotEmpty()
     }
 
+    fun getCurrentTreeUri(): Uri? {
+        return currentTreeUri
+    }
 
     fun setCurrent(
         uri: Uri

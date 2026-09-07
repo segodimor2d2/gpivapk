@@ -43,6 +43,57 @@ Java_com_rec_gpiv_player_MpvNative_nativeCreate(
     return reinterpret_cast<jlong>(context);
 }
 
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeSetScreenshotDirectory(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jstring directory
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !directory) {
+
+        LOGI(
+            "JNI: nativeSetScreenshotDirectory() -> contexto ou diretório inválido"
+        );
+
+        return;
+    }
+
+    const char* path =
+        env->GetStringUTFChars(
+            directory,
+            nullptr
+        );
+
+    if (!path) {
+
+        LOGI(
+            "JNI: GetStringUTFChars() falhou"
+        );
+
+        return;
+    }
+
+    LOGI(
+        "JNI: screenshot directory = %s",
+        path
+    );
+
+    mpv_context_set_screenshot_directory(
+        context,
+        path
+    );
+
+    env->ReleaseStringUTFChars(
+        directory,
+        path
+    );
+}
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -434,6 +485,48 @@ Java_com_rec_gpiv_player_MpvNative_nativeFrameBackward(
 
     LOGI(
         "JNI: mpv_command(frame-back-step) -> %d",
+        status
+    );
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeScreenshot(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeScreenshot() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    LOGI(
+        "JNI: screenshot(%p)",
+        static_cast<void*>(context)
+    );
+
+    const char* command[] = {
+        "screenshot",
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: mpv_command(screenshot) -> %d",
         status
     );
 }

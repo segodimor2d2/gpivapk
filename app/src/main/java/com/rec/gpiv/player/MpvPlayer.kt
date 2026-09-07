@@ -38,13 +38,17 @@ class MpvPlayer(
      */
     private var pendingPlaybackState: Boolean? = null
 
-    override fun initialize() {
+    override fun initialize(
+        screenshotDirectory: String
+    ) {
 
         println("MpvPlayer: initialize()")
 
         setupNativeListeners()
 
-        native.initialize()
+        native.initialize(
+            screenshotDirectory
+        )
 
         val version = native.getVersion()
 

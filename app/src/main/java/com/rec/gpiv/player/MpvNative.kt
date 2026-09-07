@@ -24,7 +24,9 @@ class MpvNative {
     private var loadingListener:
         ((Boolean) -> Unit)? = null
 
-    fun initialize() {
+    fun initialize(
+        screenshotDirectory: String
+    ) {
 
         nativeHandle = nativeCreate()
 
@@ -33,6 +35,11 @@ class MpvNative {
                 "Não foi possível criar o contexto libmpv"
             )
         }
+
+        nativeSetScreenshotDirectory(
+            nativeHandle,
+            screenshotDirectory
+        )
 
         nativeInitialize(nativeHandle)
 
@@ -188,7 +195,16 @@ class MpvNative {
     }
 
     fun screenshot() {
-        println("MpvNative: screenshot()")
+
+        checkInitialized()
+
+        println(
+            "MpvNative: screenshot()"
+        )
+
+        nativeScreenshot(
+            nativeHandle
+        )
     }
 
     fun release() {
@@ -266,6 +282,11 @@ class MpvNative {
 
     private external fun nativeCreate(): Long
 
+    private external fun nativeSetScreenshotDirectory(
+        handle: Long,
+        directory: String
+    )
+
     private external fun nativeInitialize(
         handle: Long
     )
@@ -305,6 +326,10 @@ class MpvNative {
     )
 
     private external fun nativeFrameBackward(
+        handle: Long
+    )
+
+    private external fun nativeScreenshot(
         handle: Long
     )
 

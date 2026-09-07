@@ -86,6 +86,8 @@ MpvContext* mpv_context_create()
 
     context->renderContext = nullptr;
 
+    context->screenshotDirectory.clear();
+
     context->streamManager = nullptr;
 
     context->eglDisplay = EGL_NO_DISPLAY;
@@ -263,4 +265,20 @@ void mpv_context_destroy(
     delete context;
 }
 
+void mpv_context_set_screenshot_directory(
+    MpvContext* context,
+    const char* directory
+)
+{
+    if (!context || !directory)
+        return;
 
+    context->screenshotDirectory =
+        directory;
+
+    LOGI(
+
+        "MpvContext: screenshot directory = %s",
+        context->screenshotDirectory.c_str()
+    );
+}

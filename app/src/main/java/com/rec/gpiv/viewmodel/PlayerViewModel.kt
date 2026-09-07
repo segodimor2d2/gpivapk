@@ -2,6 +2,7 @@ package com.rec.gpiv.viewmodel
 
 import android.app.Application
 import android.net.Uri
+import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,12 +12,15 @@ import com.rec.gpiv.player.MpvNative
 import com.rec.gpiv.player.MpvPlayer
 import com.rec.gpiv.player.PlayerEvent
 import com.rec.gpiv.player.VideoPlayer
+import com.rec.gpiv.player.SEEK_SECONDS
+import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-
-import com.rec.gpiv.player.SEEK_SECONDS
+import kotlinx.coroutines.withContext
 
 class PlayerViewModel(
     application: Application
@@ -50,7 +54,9 @@ class PlayerViewModel(
 
         observePlayerEvents()
 
-        player.initialize()
+        player.initialize(
+            application.cacheDir.absolutePath
+        )
     }
 
     fun onSurfaceReady() {
@@ -403,6 +409,297 @@ class PlayerViewModel(
         )
 
         player.frameBackward()
+    }
+
+    fun screenshot() {
+
+        println(
+            "PlayerViewModel: screenshot()"
+        )
+
+        val cacheDir =
+            getApplication<Application>()
+                .cacheDir
+
+        val treeUri =
+            fileList.getCurrentTreeUri()
+
+        if (treeUri == null) {
+
+            println(
+                "PlayerViewModel: nenhuma pasta SAF selecionada"
+            )
+
+            return
+        }
+
+        /*
+         * Guarda os screenshots existentes antes
+         * de disparar o novo screenshot.
+         */
+        val existingFiles =
+            cacheDir
+                .listFiles()
+                ?.filter {
+                    it.name.startsWith("mpv-shot") &&
+                    it.name.endsWith(".jpg")
+                }
+                ?.map {
+                    it.name
+                }
+                ?.toSet()
+                ?: emptySet()
+
+        /*
+         * Dispara o screenshot no mpv.
+         *
+         * O arquivo será criado assincronamente
+         * dentro do cacheDir.
+         */
+        player.screenshot()
+
+        viewModelScope.launch {
+
+            val screenshotFile =
+                waitForNewScreenshot(
+                    cacheDir,
+                    existingFiles
+                )
+
+            if (screenshotFile == null) {
+
+                println(
+                    "PlayerViewModel: screenshot não apareceu no cache"
+                )
+
+                return@launch
+            }
+
+            println(
+                "PlayerViewModel: screenshot encontrado = " +
+                    screenshotFile.absolutePath
+            )
+
+            copyScreenshotToTree(
+                screenshotFile,
+                treeUri
+            )
+        }
+    }
+
+    private suspend fun waitForNewScreenshot(
+        cacheDir: File,
+        existingFiles: Set<String>
+    ): File? {
+
+        repeat(50) {
+
+            val file =
+                cacheDir
+                    .listFiles()
+                    ?.firstOrNull {
+
+                        it.isFile &&
+                        it.name.startsWith("mpv-shot") &&
+                        it.name.endsWith(".jpg") &&
+                        it.name !in existingFiles
+                    }
+
+            if (file != null) {
+
+                /*
+                 * O mpv pode ter criado o arquivo,
+                 * mas ainda estar escrevendo nele.
+                 *
+                 * Esperamos o tamanho estabilizar.
+                 */
+
+                var previousSize =
+                    file.length()
+
+                repeat(10) {
+
+                    delay(100)
+
+                    val currentSize =
+                        file.length()
+
+                    if (
+                        currentSize > 0L &&
+                        currentSize == previousSize
+                    ) {
+
+                        return file
+                    }
+
+                    previousSize =
+                        currentSize
+                }
+            }
+
+            delay(100)
+        }
+
+        return null
+    }
+
+
+    private suspend fun copyScreenshotToTree(
+        screenshotFile: File,
+        treeUri: Uri
+    ) {
+
+        withContext(Dispatchers.IO) {
+
+            try {
+
+                val resolver =
+                    getApplication<Application>()
+                        .contentResolver
+
+                /*
+                 * ------------------------------------------------
+                 * CONVERTER treeUri -> documentUri DA PASTA
+                 * ------------------------------------------------
+                 */
+
+                val treeDocumentId =
+                    DocumentsContract.getTreeDocumentId(
+                        treeUri
+                    )
+
+                val parentDocumentUri =
+                    DocumentsContract.buildDocumentUriUsingTree(
+                        treeUri,
+                        treeDocumentId
+                    )
+
+                println(
+                    "PlayerViewModel: pasta destino = " +
+                        parentDocumentUri
+                )
+
+
+                /*
+                 * ------------------------------------------------
+                 * NOME DO SCREENSHOT
+                 * ------------------------------------------------
+                 */
+
+                val originalName =
+                    _uiState.value.filename
+                        ?: "screenshot"
+
+                val baseName =
+                    originalName
+                        .substringBeforeLast(
+                            ".",
+                            originalName
+                        )
+
+                val destinationName =
+                    "$baseName-screenshot.jpg"
+
+
+                println(
+                    "PlayerViewModel: criando arquivo SAF = " +
+                        destinationName
+                )
+
+
+                /*
+                 * ------------------------------------------------
+                 * CRIAR ARQUIVO NA PASTA
+                 * ------------------------------------------------
+                 */
+
+                val destinationUri =
+                    DocumentsContract.createDocument(
+                        resolver,
+                        parentDocumentUri,
+                        "image/jpeg",
+                        destinationName
+                    )
+
+                if (destinationUri == null) {
+
+                    println(
+                        "PlayerViewModel: não foi possível criar " +
+                            "arquivo SAF"
+                    )
+
+                    return@withContext
+                }
+
+
+                println(
+                    "PlayerViewModel: destino = " +
+                        destinationUri
+                )
+
+
+                /*
+                 * ------------------------------------------------
+                 * COPIAR JPEG
+                 * ------------------------------------------------
+                 */
+
+                resolver
+                    .openOutputStream(
+                        destinationUri
+                    )
+                    ?.use { output ->
+
+                        screenshotFile
+                            .inputStream()
+                            .use { input ->
+
+                                input.copyTo(
+                                    output
+                                )
+                            }
+                    }
+                    ?: run {
+
+                        println(
+                            "PlayerViewModel: não foi possível " +
+                                "abrir outputStream"
+                        )
+
+                        return@withContext
+                    }
+
+
+                /*
+                 * ------------------------------------------------
+                 * SUCESSO
+                 * ------------------------------------------------
+                 */
+
+                println(
+                    "PlayerViewModel: screenshot copiado " +
+                        "com sucesso para a pasta SAF"
+                )
+
+                println(
+                    "PlayerViewModel: arquivo = " +
+                        destinationName
+                )
+
+                println(
+                    "PlayerViewModel: tamanho = " +
+                        screenshotFile.length() +
+                        " bytes"
+                )
+
+            } catch (e: Exception) {
+
+                println(
+                    "PlayerViewModel: erro ao copiar screenshot: " +
+                        e.message
+                )
+            }
+        }
     }
 
     fun volumeUp(

@@ -198,6 +198,8 @@ class MainActivity : ComponentActivity() {
                         onFrameForward =
                             viewModel::frameForward,
 
+                        onScreenshot = viewModel::screenshot,
+
                         onTogglePlayPause =
                             viewModel::togglePlayPause,
 

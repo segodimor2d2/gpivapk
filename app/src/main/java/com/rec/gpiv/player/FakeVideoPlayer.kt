@@ -9,7 +9,9 @@ class FakeVideoPlayer : VideoPlayer {
     override val events: Flow<PlayerEvent> =
         emptyFlow()
 
-    override fun initialize() {
+    override fun initialize(
+        screenshotDirectory: String
+    ) {
         println("FakeVideoPlayer: initialize()")
     }
 

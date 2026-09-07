@@ -79,6 +79,31 @@ bool mpv_context_mpv_configure(
         return false;
     }
 
+    if (!context->screenshotDirectory.empty()) {
+
+        status =
+            mpv_set_option_string(
+                context->mpv,
+                "screenshot-dir",
+                context->screenshotDirectory.c_str()
+            );
+
+        if (status < 0) {
+
+            LOGI(
+                "mpv_set_option_string(screenshot-dir) falhou: %s",
+                mpv_error_string(status)
+            );
+
+            return false;
+        }
+
+        LOGI(
+            "mpv: screenshot-dir = %s",
+            context->screenshotDirectory.c_str()
+        );
+    }
+
     return true;
 }
 
