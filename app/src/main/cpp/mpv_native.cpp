@@ -788,6 +788,43 @@ Java_com_rec_gpiv_player_MpvNative_nativeSetVolume(
     );
 }
 
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeMute(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+        LOGI(
+            "JNI: nativeMute() -> contexto inválido"
+        );
+        return;
+    }
+
+    const char* command[] = {
+        "cycle",
+        "mute",
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: mute -> %d",
+        status
+    );
+}
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeLoad(

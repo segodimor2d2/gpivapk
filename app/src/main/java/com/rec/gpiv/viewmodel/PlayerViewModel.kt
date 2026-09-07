@@ -33,6 +33,8 @@ class PlayerViewModel(
     val mpvNative =
         MpvNative()
 
+    private var volumeBeforeMute = 100.0
+
     private val player: VideoPlayer =
         MpvPlayer(
             application.contentResolver,
@@ -869,13 +871,36 @@ class PlayerViewModel(
 
     fun mute() {
 
-        player.mute()
+        val state =
+            _uiState.value
 
-        _uiState.value =
-            _uiState.value.copy(
-                volume = 0.0,
-                muted = true
+        if (!state.muted) {
+
+            volumeBeforeMute =
+                state.volume
+
+            player.mute()
+
+            _uiState.value =
+                state.copy(
+                    volume = 0.0,
+                    muted = true
+                )
+
+        } else {
+
+            player.mute()
+
+            player.setVolume(
+                volumeBeforeMute
             )
+
+            _uiState.value =
+                state.copy(
+                    volume = volumeBeforeMute,
+                    muted = false
+                )
+        }
     }
 
     override fun onCleared() {

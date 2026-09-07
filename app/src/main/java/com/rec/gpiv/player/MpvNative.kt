@@ -173,7 +173,13 @@ class MpvNative {
     }
 
     fun mute() {
+        checkInitialized()
+
         println("MpvNative: mute()")
+
+        nativeMute(
+            nativeHandle
+        )
     }
 
     fun frameForward() {
@@ -426,4 +432,7 @@ class MpvNative {
         value: Double
     )
 
+    private external fun nativeMute(
+        handle: Long
+    )
 }
