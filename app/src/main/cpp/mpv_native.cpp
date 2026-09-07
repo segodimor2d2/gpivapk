@@ -703,6 +703,93 @@ Java_com_rec_gpiv_player_MpvNative_nativeResetView(
 
 extern "C"
 JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeRotateClockwise(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeRotateClockwise() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    const char* command[] = {
+        "cycle-values",
+        "video-rotate",
+        "90",
+        "180",
+        "270",
+        "0",
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: rotate clockwise -> %d",
+        status
+    );
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeSetVolume(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jdouble value
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeSetVolume() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    std::string volume =
+        std::to_string(value);
+
+    const char* command[] = {
+        "set",
+        "volume",
+        volume.c_str(),
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: set volume %.1f -> %d",
+        value,
+        status
+    );
+}
+
+extern "C"
+JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeLoad(
     JNIEnv* env,
     jobject thiz,

@@ -74,6 +74,8 @@ fun PlayerScreen(
     onFrameForward: () -> Unit,
     onScreenshot: () -> Unit,
 
+    onRotate: () -> Unit,
+
     onTogglePlayPause: () -> Unit,
     onSeekBackward: (Double) -> Unit,
     onSeekForward: (Double) -> Unit,
@@ -692,8 +694,8 @@ fun PlayerScreen(
                         )
                     }
 
-                }
 
+                }
 
                 /*
                  * --------------------------------------------
@@ -701,61 +703,86 @@ fun PlayerScreen(
                  * --------------------------------------------
                  */
 
-                  Row(
-                      modifier = Modifier.fillMaxWidth(),
-                      horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                      verticalAlignment = Alignment.CenterVertically
-                  ) {
-                    Text(
-                        text = "%.2f s".format(uiState.position),
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(horizontal = 4.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+
+                    horizontalArrangement =
+                        Arrangement.spacedBy(
+                            8.dp,
+                            Alignment.CenterHorizontally
+                        ),
+
+                    verticalAlignment =
+                        Alignment.CenterVertically
+                ) {
+
+                    StatusText(
+                        text =
+                            "%.2f s".format(
+                                uiState.position
+                            )
                     )
-                    Text(
-                        text = "/ %.2f s".format(uiState.duration),
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(horizontal = 4.dp)
+
+                    StatusText(
+                        text =
+                            "%.2f s".format(
+                                uiState.duration
+                            )
                     )
-                    Text(
+
+                    StatusText(
                         text =
                             if (uiState.duration > 0.0) {
-                                "/ %.1f %%".format(
-                                    (uiState.position / uiState.duration) * 100.0
+
+                                "%.1f %%".format(
+                                    (uiState.position /
+                                        uiState.duration) * 100.0
                                 )
+
                             } else {
-                                "/ 0.0 %"
-                            },
-                        fontSize = 14.sp,
-                        maxLines = 1,
-                        modifier = Modifier.padding(horizontal = 4.dp)
+
+                                "0.0 %"
+                            }
                     )
-                    Text(
+
+                    StatusText(
                         text =
                             if (uiState.loading) {
-                                "|  Carregando..."
+
+                                "Carregando..."
+
                             } else if (uiState.playing) {
-                                "|  ▶"
+
+                                "▶"
+
                             } else {
-                                "|  ⏸"
-                            },
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(horizontal = 4.dp)
+
+                                "⏸"
+                            }
                     )
-                    Text(
+
+                    StatusText(
                         text = "pasta",
-                        fontSize = 14.sp,
-                        maxLines = 1,
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .clickable { onOpenFolder() }
+                        modifier =
+                            Modifier.clickable {
+                                onOpenFolder()
+                            }
                     )
-                    Text(
+
+                    StatusText(
+                        text = "R",
+                        modifier =
+                            Modifier.clickable {
+                                onRotate()
+                            }
+                    )
+
+                    StatusText(
                         text = "save",
-                        fontSize = 14.sp,
-                        maxLines = 1,
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .clickable { onScreenshot() }
+                        modifier =
+                            Modifier.clickable {
+                                onScreenshot()
+                            }
                     )
                 }
 
@@ -765,13 +792,12 @@ fun PlayerScreen(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
-                    Text(
-
+                    StatusText(
                         text = uiState.filename ?: "abrir",
-                        fontSize = 9.sp,
-                        maxLines = 1,
-                        modifier = Modifier.clickable { onOpenVideo() }
+                        modifier = Modifier
+                            .clickable {
+                                onOpenVideo()
+                            }
                     )
                 }
 
@@ -813,7 +839,7 @@ private fun CompactButton(
                 .height(24.dp),
 
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Black.copy(alpha = 0.8f),
+                containerColor = Color.Black.copy(alpha = 0.2f),
                 contentColor = Color.White
             ),
 
@@ -828,4 +854,26 @@ private fun CompactButton(
             content()
         }
     }
+}
+
+@Composable
+private fun StatusText(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+
+    Text(
+        text = text,
+        fontSize = 14.sp,
+        color = Color.White,
+        maxLines = 1,
+        modifier = modifier
+            .background(
+                Color.Black.copy(alpha = 0.2f)
+            )
+            .padding(
+                horizontal = 6.dp,
+                vertical = 3.dp
+            )
+    )
 }

@@ -14,6 +14,9 @@ import com.rec.gpiv.player.PlayerEvent
 import com.rec.gpiv.player.VideoPlayer
 import com.rec.gpiv.player.SEEK_SECONDS
 import com.rec.gpiv.player.FILE_JUMP
+import com.rec.gpiv.player.MAX_VOLUME
+import com.rec.gpiv.player.VOLUME_STEP
+
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -829,7 +832,7 @@ class PlayerViewModel(
         val newVolume =
             minOf(
                 state.volume + amount,
-                100.0
+                MAX_VOLUME
             )
 
         player.setVolume(
@@ -845,7 +848,6 @@ class PlayerViewModel(
     fun volumeDown(
         amount: Double = 5.0
     ) {
-
         val state =
             _uiState.value
 

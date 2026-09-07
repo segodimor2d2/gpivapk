@@ -161,9 +161,14 @@ class MpvNative {
         )
     }
 
-    fun setVolume(volume: Double) {
-        println(
-            "MpvNative: setVolume($volume)"
+    fun setVolume(value: Double) {
+        checkInitialized()
+
+        println("MpvNative: setVolume($value)")
+
+        nativeSetVolume(
+            nativeHandle,
+            value
         )
     }
 
@@ -250,6 +255,14 @@ class MpvNative {
         nativeResetView(
             nativeHandle
         )
+    }
+
+    fun rotateClockwise() {
+        checkInitialized()
+
+        println("MpvNative: rotateClockwise()")
+
+        nativeRotateClockwise(nativeHandle)
     }
 
     fun release() {
@@ -402,6 +415,15 @@ class MpvNative {
 
     private external fun nativeResetView(
         handle: Long
+    )
+
+    private external fun nativeRotateClockwise(
+        handle: Long
+    )
+
+    private external fun nativeSetVolume(
+        handle: Long,
+        value: Double
     )
 
 }
