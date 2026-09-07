@@ -56,6 +56,9 @@ fun PlayerScreen(
     onPreviousFile: () -> Unit,
     onNextFile: () -> Unit,
 
+    onFrameBackward: () -> Unit,
+    onFrameForward: () -> Unit,
+
     onTogglePlayPause: () -> Unit,
     onSeekBackward: (Double) -> Unit,
     onSeekForward: (Double) -> Unit,
@@ -301,27 +304,22 @@ fun PlayerScreen(
                         Arrangement.spacedBy(4.dp)
                 ) {
 
-
-                    CompactButton(
-                        onClick = onPreviousFile
-                    ) {
-
-                        Text(
-                            text = "ANTERIOR",
-                            fontSize = 9.sp
-                        )
-                    }
-
-
-
                     CompactButton(
                         onClick = {
                             onSeekBackward(5.0)
                         }
                     ) {
-
                         Text(
                             text = "-5s",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick = onFrameBackward
+                    ) {
+                        Text(
+                            text = "FRAME -",
                             fontSize = 9.sp
                         )
                     }
@@ -342,25 +340,22 @@ fun PlayerScreen(
                         )
                     }
 
+                    CompactButton(
+                        onClick = onFrameForward
+                    ) {
+                        Text(
+                            text = "FRAME +",
+                            fontSize = 9.sp
+                        )
+                    }
 
                     CompactButton(
                         onClick = {
                             onSeekForward(5.0)
                         }
                     ) {
-
                         Text(
                             text = "+5s",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick = onNextFile
-                    ) {
-
-                        Text(
-                            text = "PRÓXIMO",
                             fontSize = 9.sp
                         )
                     }
@@ -379,6 +374,15 @@ fun PlayerScreen(
                     horizontalArrangement =
                         Arrangement.spacedBy(4.dp)
                 ) {
+
+                    CompactButton(
+                        onClick = onPreviousFile
+                    ) {
+                        Text(
+                            text = "ANTERIOR",
+                            fontSize = 9.sp
+                        )
+                    }
 
                     CompactButton(
                         onClick =
@@ -412,6 +416,20 @@ fun PlayerScreen(
                             fontSize = 9.sp
                         )
                     }
+
+                    CompactButton(
+                        onClick = onNextFile
+                    ) {
+
+                        Text(
+                            text = "PRÓXIMO",
+                            fontSize = 9.sp
+                        )
+                    }
+
+
+
+
                 }
 
 

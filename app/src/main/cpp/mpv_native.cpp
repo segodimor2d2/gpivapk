@@ -286,6 +286,80 @@ Java_com_rec_gpiv_player_MpvNative_nativeSeekForward(
     );
 }
 
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeFrameForward(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeFrameForward() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    const char* command[] = {
+        "frame-step",
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: mpv_command(frame-step) -> %d",
+        status
+    );
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeFrameBackward(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeFrameBackward() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    const char* command[] = {
+        "frame-back-step",
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: mpv_command(frame-back-step) -> %d",
+        status
+    );
+}
 
 extern "C"
 JNIEXPORT void JNICALL

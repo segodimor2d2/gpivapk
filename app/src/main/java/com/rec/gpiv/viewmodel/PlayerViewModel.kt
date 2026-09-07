@@ -385,6 +385,24 @@ class PlayerViewModel(
         )
     }
 
+    fun frameForward() {
+
+        println(
+            "PlayerViewModel: frameForward()"
+        )
+
+        player.frameForward()
+    }
+
+    fun frameBackward() {
+
+        println(
+            "PlayerViewModel: frameBackward()"
+        )
+
+        player.frameBackward()
+    }
+
     fun volumeUp(
         amount: Double = 5.0
     ) {

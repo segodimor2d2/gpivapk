@@ -192,6 +192,12 @@ class MainActivity : ComponentActivity() {
                         onNextFile =
                             viewModel::nextFile,
 
+                        onFrameBackward =
+                            viewModel::frameBackward,
+
+                        onFrameForward =
+                            viewModel::frameForward,
+
                         onTogglePlayPause =
                             viewModel::togglePlayPause,
 
