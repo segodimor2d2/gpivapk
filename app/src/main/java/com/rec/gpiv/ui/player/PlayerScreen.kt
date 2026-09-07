@@ -8,7 +8,7 @@ import android.view.SurfaceView
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.Text
 
@@ -235,37 +236,86 @@ fun PlayerScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-
         /*
          * ----------------------------------------------------
-         * ÁREA DE TOQUE
+         * ÁREA DE SWIPE
          * ----------------------------------------------------
          *
-         * Dois toques:
+         * Somente os 80dp inferiores da tela respondem.
+         *
+         * Um swipe curto para cima:
          *
          * escondido -> mostra
          * mostrado  -> esconde
          *
-         * Não fazemos nada no toque simples.
+         * A distância é acumulada durante o gesto.
+         *
+         * Um único swipe pode alternar o menu apenas uma vez.
          */
 
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .height(80.dp)
+                .align(Alignment.BottomCenter)
                 .pointerInput(Unit) {
 
-                    detectTapGestures(
+                    var accumulatedDrag = 0f
+                    var gestureHandled = false
 
-                        onDoubleTap = {
+                    detectVerticalDragGestures(
 
-                            controlsVisible =
-                                !controlsVisible
+                        onDragStart = {
+                            accumulatedDrag = 0f
+                            gestureHandled = false
+                        },
 
-                            println(
-                                "PlayerScreen: " +
-                                    "controlsVisible=" +
-                                    controlsVisible
-                            )
+                        onVerticalDrag = { _, dragAmount ->
+
+                            if (gestureHandled) {
+                                return@detectVerticalDragGestures
+                            }
+
+                            /*
+                             * Para cima = valor negativo.
+                             *
+                             * Acumulamos somente movimentos
+                             * para cima.
+                             */
+
+                            if (dragAmount < 0f) {
+
+                                accumulatedDrag += -dragAmount
+
+                                /*
+                                 * Aproximadamente 20dp de swipe
+                                 * já são suficientes.
+                                 */
+                                if (accumulatedDrag >= 20.dp.toPx()) {
+
+                                    controlsVisible =
+                                        !controlsVisible
+
+                                    gestureHandled = true
+
+                                    println(
+                                        "PlayerScreen: " +
+                                            "swipe up -> " +
+                                            "controlsVisible=" +
+                                            controlsVisible
+                                    )
+                                }
+                            }
+                        },
+
+                        onDragEnd = {
+                            accumulatedDrag = 0f
+                            gestureHandled = false
+                        },
+
+                        onDragCancel = {
+                            accumulatedDrag = 0f
+                            gestureHandled = false
                         }
                     )
                 }
@@ -310,6 +360,15 @@ fun PlayerScreen(
                     horizontalArrangement =
                         Arrangement.spacedBy(4.dp)
                 ) {
+
+                    CompactButton(
+                        onClick = onPreviousFile
+                    ) {
+                        Text(
+                            text = "ANTERIOR",
+                            fontSize = 9.sp
+                        )
+                    }
 
                     CompactButton(
                         onClick = {
@@ -367,47 +426,6 @@ fun PlayerScreen(
                         )
                     }
 
-                }
-
-
-                /*
-                 * --------------------------------------------
-                 * NAVEGAÇÃO DE ARQUIVOS
-                 * ------------------------------
-                 */
-
-                Row(
-                    horizontalArrangement =
-                        Arrangement.spacedBy(4.dp)
-                ) {
-
-                    CompactButton(
-                        onClick = onFirstFile
-                    ) {
-                        Text(
-                            text = "PRIMEIRO",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick = onJumpFilesBackward
-                    ) {
-                        Text(
-                            text = "-10",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick = onPreviousFile
-                    ) {
-                        Text(
-                            text = "ANTERIOR",
-                            fontSize = 9.sp
-                        )
-                    }
-
                     CompactButton(
                         onClick = onNextFile
                     ) {
@@ -417,23 +435,6 @@ fun PlayerScreen(
                         )
                     }
 
-                    CompactButton(
-                        onClick = onJumpFilesForward
-                    ) {
-                        Text(
-                            text = "+10",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick = onLastFile
-                    ) {
-                        Text(
-                            text = "ÚLTIMO",
-                            fontSize = 9.sp
-                        )
-                    }
                 }
 
 
@@ -450,10 +451,19 @@ fun PlayerScreen(
                 ) {
 
                     CompactButton(
-                        onClick = onPreviousFile
+                        onClick = onFirstFile
                     ) {
                         Text(
-                            text = "ANTERIOR",
+                            text = "PRIMEIRO",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick = onJumpFilesBackward
+                    ) {
+                        Text(
+                            text = "-10",
                             fontSize = 9.sp
                         )
                     }
@@ -492,17 +502,22 @@ fun PlayerScreen(
                     }
 
                     CompactButton(
-                        onClick = onNextFile
+                        onClick = onJumpFilesForward
                     ) {
-
                         Text(
-                            text = "PRÓXIMO",
+                            text = "+10",
                             fontSize = 9.sp
                         )
                     }
 
-
-
+                    CompactButton(
+                        onClick = onLastFile
+                    ) {
+                        Text(
+                            text = "ÚLTIMO",
+                            fontSize = 9.sp
+                        )
+                    }
 
                 }
 
@@ -623,6 +638,11 @@ private fun CompactButton(
 
             modifier = modifier
                 .height(24.dp),
+
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Black.copy(alpha = 0.8f),
+                contentColor = Color.White
+            ),
 
             contentPadding =
                 PaddingValues(
