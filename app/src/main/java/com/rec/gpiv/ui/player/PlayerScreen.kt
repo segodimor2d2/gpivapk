@@ -8,7 +8,6 @@ import android.view.SurfaceView
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +18,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.pointerInput
 
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,6 +44,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.geometry.Offset
+import kotlin.math.hypot
 
 import androidx.compose.ui.viewinterop.AndroidView
 
@@ -234,6 +241,172 @@ fun PlayerScreen(
             },
 
             modifier = Modifier.fillMaxSize()
+        )
+
+        /*
+         * ----------------------------------------------------
+         * ZOOM/PAN
+         * ----------------------------------------------------
+         */
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 80.dp)
+                .pointerInput(Unit) {
+
+                    awaitEachGesture {
+
+                        awaitFirstDown(
+                            requireUnconsumed = false
+                        )
+
+                        var previousCentroid = Offset.Zero
+                        var previousDistance = 0f
+                        var trackingTwoPointers = false
+
+                        while (true) {
+
+                            val event = awaitPointerEvent()
+
+                            val pressedPointers =
+                                event.changes.filter {
+                                    it.pressed
+                                }
+
+                            /*
+                             * ------------------------------------------------
+                             * DOIS DEDOS
+                             * ------------------------------------------------
+                             */
+
+                            if (pressedPointers.size >= 2) {
+
+                                val first =
+                                    pressedPointers[0].position
+
+                                val second =
+                                    pressedPointers[1].position
+
+                                val centroid =
+                                    Offset(
+                                        x = (first.x + second.x) / 2f,
+                                        y = (first.y + second.y) / 2f
+                                    )
+
+                                val distance =
+                                    hypot(
+                                        second.x - first.x,
+                                        second.y - first.y
+                                    )
+
+                                /*
+                                 * Primeiro evento com dois dedos:
+                                 *
+                                 * apenas estabelece a posição inicial.
+                                 */
+
+                                if (!trackingTwoPointers) {
+
+                                    previousCentroid = centroid
+                                    previousDistance = distance
+
+                                    trackingTwoPointers = true
+
+                                } else {
+
+                                    /*
+                                     * ----------------------------------------
+                                     * PAN
+                                     * ----------------------------------------
+                                     */
+
+                                    val pan =
+                                        centroid - previousCentroid
+
+                                    if (
+                                        pan.x != 0f ||
+                                        pan.y != 0f
+                                    ) {
+
+                                        val panX =
+                                            pan.x /
+                                                size.width.toFloat()
+
+                                        val panY =
+                                            pan.y /
+                                                size.height.toFloat()
+
+                                        mpvNative.pan(
+                                            panX.toDouble(),
+                                            panY.toDouble()
+                                        )
+                                    }
+
+
+                                    /*
+                                     * ----------------------------------------
+                                     * ZOOM
+                                     * ----------------------------------------
+                                     */
+
+                                    if (previousDistance > 0f) {
+
+                                        val zoomFactor =
+                                            distance /
+                                                previousDistance
+
+                                        if (
+                                            zoomFactor > 0f &&
+                                            zoomFactor != 1f
+                                        ) {
+
+                                            val zoomAmount =
+                                                kotlin.math.ln(
+                                                    zoomFactor.toDouble()
+                                                ) /
+                                                kotlin.math.ln(2.0)
+
+                                            mpvNative.changeZoom(
+                                                zoomAmount
+                                            )
+                                        }
+                                    }
+
+
+                                    previousCentroid =
+                                        centroid
+
+                                    previousDistance =
+                                        distance
+                                }
+
+                            } else {
+
+                                /*
+                                 * Menos de dois dedos.
+                                 *
+                                 * Reinicia a referência para que,
+                                 * quando o segundo dedo entrar,
+                                 * comecemos uma nova medição.
+                                 */
+
+                                trackingTwoPointers = false
+                            }
+
+
+                            /*
+                             * Todos os dedos foram retirados.
+                             */
+
+                            if (
+                                pressedPointers.isEmpty()
+                            ) {
+                                break
+                            }
+                        }
+                    }
+                }
         )
 
         /*

@@ -207,6 +207,51 @@ class MpvNative {
         )
     }
 
+    fun changeZoom(amount: Double) {
+
+        checkInitialized()
+
+        println(
+            "MpvNative: changeZoom($amount)"
+        )
+
+        nativeChangeZoom(
+            nativeHandle,
+            amount
+        )
+    }
+
+    fun pan(
+        x: Double,
+        y: Double
+    ) {
+
+        checkInitialized()
+
+        println(
+            "MpvNative: pan($x, $y)"
+        )
+
+        nativePan(
+            nativeHandle,
+            x,
+            y
+        )
+    }
+
+    fun resetView() {
+
+        checkInitialized()
+
+        println(
+            "MpvNative: resetView()"
+        )
+
+        nativeResetView(
+            nativeHandle
+        )
+    }
+
     fun release() {
 
         if (nativeHandle != 0L) {
@@ -343,5 +388,20 @@ class MpvNative {
     fun render(): Boolean {
         return nativeRender(nativeHandle)
     }
+
+    private external fun nativeChangeZoom(
+        handle: Long,
+        amount: Double
+    )
+
+    private external fun nativePan(
+        handle: Long,
+        x: Double,
+        y: Double
+    )
+
+    private external fun nativeResetView(
+        handle: Long
+    )
 
 }

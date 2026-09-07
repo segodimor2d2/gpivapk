@@ -533,6 +533,176 @@ Java_com_rec_gpiv_player_MpvNative_nativeScreenshot(
 
 extern "C"
 JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeChangeZoom(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jdouble amount
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeChangeZoom() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    std::string value =
+        std::to_string(amount);
+
+    const char* command[] = {
+        "add",
+        "video-zoom",
+        value.c_str(),
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: video-zoom %+f -> %d",
+        amount,
+        status
+    );
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativePan(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jdouble x,
+    jdouble y
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativePan() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    std::string xValue =
+        std::to_string(x);
+
+    std::string yValue =
+        std::to_string(y);
+
+    const char* commandX[] = {
+        "add",
+        "video-pan-x",
+        xValue.c_str(),
+        nullptr
+    };
+
+    const char* commandY[] = {
+        "add",
+        "video-pan-y",
+        yValue.c_str(),
+        nullptr
+    };
+
+    int statusX =
+        mpv_command(
+            context->mpv,
+            commandX
+        );
+
+    int statusY =
+        mpv_command(
+            context->mpv,
+            commandY
+        );
+
+    LOGI(
+        "JNI: pan x=%f y=%f -> %d / %d",
+        x,
+        y,
+        statusX,
+        statusY
+    );
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeResetView(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeResetView() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    const char* zoomCommand[] = {
+        "set",
+        "video-zoom",
+        "0",
+        nullptr
+    };
+
+    const char* panXCommand[] = {
+        "set",
+        "video-pan-x",
+        "0",
+        nullptr
+    };
+
+    const char* panYCommand[] = {
+        "set",
+        "video-pan-y",
+        "0",
+        nullptr
+    };
+
+    mpv_command(
+        context->mpv,
+        zoomCommand
+    );
+
+    mpv_command(
+        context->mpv,
+        panXCommand
+    );
+
+    mpv_command(
+        context->mpv,
+        panYCommand
+    );
+
+    LOGI(
+        "JNI: resetView()"
+    );
+}
+
+extern "C"
+JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeLoad(
     JNIEnv* env,
     jobject thiz,
