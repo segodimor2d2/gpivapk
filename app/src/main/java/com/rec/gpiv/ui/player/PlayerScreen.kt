@@ -390,16 +390,8 @@ fun PlayerScreen(
                 ) {
 
                     Text(
-                        text = "ABRIR",
-                        fontSize = 10.sp,
-                        modifier = Modifier.clickable {
-                            onOpenVideo()
-                        }
-                    )
 
-                    Text(
-
-                        text = " | %.2f s".format(uiState.position),
+                        text = "%.2f s".format(uiState.position),
                         fontSize = 9.sp
                     )
 
@@ -428,9 +420,12 @@ fun PlayerScreen(
                  */
 
                 Text(
-                    text = uiState.filename ?: "Nenhum arquivo",
+                    text = uiState.filename ?: "abrir",
                     fontSize = 9.sp,
-                    maxLines = 1
+                    maxLines = 1,
+                    modifier = Modifier.clickable {
+                        onOpenVideo()
+                    }
                 )
 
                 /*
