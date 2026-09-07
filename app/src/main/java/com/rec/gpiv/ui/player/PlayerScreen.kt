@@ -393,16 +393,14 @@ fun PlayerScreen(
 
 
                     CompactButton(
-                        onClick =
-                            onMute
+                        onClick = onMute
                     ) {
 
                         Text(
-                            text = "MUTE",
+                            text = "${uiState.volume}%",
                             fontSize = 9.sp
                         )
                     }
-
 
                     CompactButton(
                         onClick =
@@ -430,13 +428,6 @@ fun PlayerScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
 
-                    Text(
-
-                        text = uiState.filename ?: "abrir",
-                        fontSize = 9.sp,
-                        maxLines = 1,
-                        modifier = Modifier.clickable { onOpenVideo() }
-                    )
 
                     Text(
 
@@ -448,15 +439,33 @@ fun PlayerScreen(
                         fontSize = 9.sp
                     )
 
+                    Text(
+
+                        text =
+                            " / %.2f s".format(
+                                uiState.duration
+                            ),
+
+                        fontSize = 9.sp
+                    )
 
                     Text(
 
                         text =
-                            "  |  Vol: ${uiState.volume}%",
+                            if (uiState.duration > 0.0) {
+                                " / %.1f %%".format(
+                                    (uiState.position / uiState.duration) * 100.0
+                                )
 
+                            } else {
 
-                        fontSize = 9.sp
+                                " / 0.0 %"
+                            },
+
+                        fontSize = 9.sp,
+                        maxLines = 1
                     )
+
 
 
                     Text(
@@ -485,6 +494,22 @@ fun PlayerScreen(
                         modifier = Modifier.clickable { onOpenFolder() }
                     )
 
+                }
+
+                Row(
+
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    Text(
+
+                        text = uiState.filename ?: "abrir",
+                        fontSize = 9.sp,
+                        maxLines = 1,
+                        modifier = Modifier.clickable { onOpenVideo() }
+                    )
                 }
 
             }
