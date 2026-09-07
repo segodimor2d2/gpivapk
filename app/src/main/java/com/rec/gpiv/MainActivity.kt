@@ -189,6 +189,18 @@ class MainActivity : ComponentActivity() {
                         onPreviousFile =
                             viewModel::previousFile,
 
+
+                        onFirstFile =
+                            viewModel::firstFile,
+
+                        onLastFile =
+                            viewModel::lastFile,
+
+                        onJumpFilesBackward =
+                            viewModel::jumpFilesBackward,
+
+                        onJumpFilesForward =
+                            viewModel::jumpFilesForward,
                         onNextFile =
                             viewModel::nextFile,
 

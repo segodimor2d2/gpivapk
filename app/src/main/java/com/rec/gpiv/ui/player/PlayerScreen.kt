@@ -55,6 +55,11 @@ fun PlayerScreen(
     onOpenFolder: () -> Unit,
 
     onPreviousFile: () -> Unit,
+    onFirstFile: () -> Unit,
+    onLastFile: () -> Unit,
+    onJumpFilesBackward: () -> Unit,
+    onJumpFilesForward: () -> Unit,
+
     onNextFile: () -> Unit,
 
     onFrameBackward: () -> Unit,
@@ -292,7 +297,7 @@ fun PlayerScreen(
                     Alignment.CenterHorizontally,
 
                 verticalArrangement =
-                    Arrangement.spacedBy(3.dp)
+                    Arrangement.spacedBy(6.dp)
             ) {
 
                 /*
@@ -367,6 +372,73 @@ fun PlayerScreen(
 
                 /*
                  * --------------------------------------------
+                 * NAVEGAÇÃO DE ARQUIVOS
+                 * ------------------------------
+                 */
+
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(4.dp)
+                ) {
+
+                    CompactButton(
+                        onClick = onFirstFile
+                    ) {
+                        Text(
+                            text = "PRIMEIRO",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick = onJumpFilesBackward
+                    ) {
+                        Text(
+                            text = "-10",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick = onPreviousFile
+                    ) {
+                        Text(
+                            text = "ANTERIOR",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick = onNextFile
+                    ) {
+                        Text(
+                            text = "PRÓXIMO",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick = onJumpFilesForward
+                    ) {
+                        Text(
+                            text = "+10",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick = onLastFile
+                    ) {
+                        Text(
+                            text = "ÚLTIMO",
+                            fontSize = 9.sp
+                        )
+                    }
+                }
+
+
+                /*
+                 * --------------------------------------------
                  * VOLUME
                  * --------------------------------------------
                  */
@@ -374,7 +446,7 @@ fun PlayerScreen(
                 Row(
 
                     horizontalArrangement =
-                        Arrangement.spacedBy(4.dp)
+                        Arrangement.spacedBy(6.dp)
                 ) {
 
                     CompactButton(

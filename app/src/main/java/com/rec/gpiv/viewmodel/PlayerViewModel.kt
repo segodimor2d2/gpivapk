@@ -13,6 +13,7 @@ import com.rec.gpiv.player.MpvPlayer
 import com.rec.gpiv.player.PlayerEvent
 import com.rec.gpiv.player.VideoPlayer
 import com.rec.gpiv.player.SEEK_SECONDS
+import com.rec.gpiv.player.FILE_JUMP
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -355,6 +356,122 @@ class PlayerViewModel(
 
         player.load(file.uri)
     }
+
+    fun firstFile() {
+
+        val file =
+            fileList.first()
+
+        if (file == null) {
+            println(
+                "PlayerViewModel: lista vazia"
+            )
+            return
+        }
+
+        println(
+            "PlayerViewModel: primeiro arquivo = " +
+                file.name
+        )
+
+        println(
+            "PlayerViewModel: currentIndex = " +
+                fileList.currentIndex()
+        )
+
+        selectedUri = file.uri
+
+        _uiState.value =
+            _uiState.value.copy(
+                filename = file.name,
+                loading = true,
+                position = 0.0,
+                duration = 0.0
+            )
+
+        player.load(file.uri)
+    }
+
+    fun lastFile() {
+
+        val file =
+            fileList.last()
+
+        if (file == null) {
+            println(
+                "PlayerViewModel: lista vazia"
+            )
+            return
+        }
+
+        println(
+            "PlayerViewModel: último arquivo = " +
+                file.name
+        )
+
+        println(
+            "PlayerViewModel: currentIndex = " +
+                fileList.currentIndex()
+        )
+
+        selectedUri = file.uri
+
+        _uiState.value =
+            _uiState.value.copy(
+                filename = file.name,
+                loading = true,
+                position = 0.0,
+                duration = 0.0
+            )
+
+        player.load(file.uri)
+    }
+
+    fun jumpFiles(offset: Int) {
+
+        val file =
+            fileList.jump(offset)
+
+        if (file == null) {
+            println(
+                "PlayerViewModel: não foi possível pular arquivos"
+            )
+            return
+        }
+
+        println(
+            "PlayerViewModel: salto de " +
+                offset +
+                " arquivos -> " +
+                file.name
+        )
+
+        println(
+            "PlayerViewModel: currentIndex = " +
+                fileList.currentIndex()
+        )
+
+        selectedUri = file.uri
+
+        _uiState.value =
+            _uiState.value.copy(
+                filename = file.name,
+                loading = true,
+                position = 0.0,
+                duration = 0.0
+            )
+
+        player.load(file.uri)
+    }
+
+    fun jumpFilesForward() {
+        jumpFiles(FILE_JUMP)
+    }
+
+    fun jumpFilesBackward() {
+        jumpFiles(-FILE_JUMP)
+    }
+
 
     fun togglePlayPause() {
 

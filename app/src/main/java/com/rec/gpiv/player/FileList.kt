@@ -550,6 +550,68 @@ class FileList(
      * ========================================================
      */
 
+
+    /*
+     * ========================================================
+     * FIRST
+     * ========================================================
+     */
+
+    fun first(): FileItem? {
+
+        if (files.isEmpty()) {
+            return null
+        }
+
+        currentIndex = 0
+
+        return files[currentIndex]
+    }
+
+
+    /*
+     * ========================================================
+     * LAST
+     * ========================================================
+     */
+
+    fun last(): FileItem? {
+
+        if (files.isEmpty()) {
+            return null
+        }
+
+        currentIndex = files.lastIndex
+
+        return files[currentIndex]
+    }
+
+
+    /*
+     * ========================================================
+     * JUMP
+     * ========================================================
+     */
+
+    fun jump(offset: Int): FileItem? {
+
+        if (files.isEmpty()) {
+            return null
+        }
+
+        if (currentIndex < 0) {
+            return null
+        }
+
+        currentIndex =
+            (currentIndex + offset).coerceIn(
+                0,
+                files.lastIndex
+            )
+
+        return files[currentIndex]
+    }
+
     fun size(): Int {
 
         return files.size
