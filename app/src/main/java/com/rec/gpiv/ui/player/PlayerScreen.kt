@@ -91,7 +91,7 @@ fun PlayerScreen(
      */
 
     var controlsVisible by remember {
-        mutableStateOf(true)
+        mutableStateOf(false)
     }
 
     /*
@@ -127,7 +127,10 @@ fun PlayerScreen(
          */
 
         PlayerGestures(
-            mpvNative = mpvNative
+            mpvNative = mpvNative,
+            onDoubleTap = {
+                controlsVisible = !controlsVisible
+            }
         )
 
         /*

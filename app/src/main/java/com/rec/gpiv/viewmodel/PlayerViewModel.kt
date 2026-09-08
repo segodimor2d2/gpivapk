@@ -1074,6 +1074,8 @@ class PlayerViewModel(
             )
         }
 
+        mpvNative.resetView()
+
         _uiState.value =
             state.copy(
                 brightness = 0.0,

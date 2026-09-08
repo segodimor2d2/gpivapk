@@ -11,10 +11,12 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.rec.gpiv.player.MpvNative
+import com.rec.gpiv.player.ZOOM_DOUBLE_TAP_DRAG
 
 @Composable
 fun PlayerGestures(
     mpvNative: MpvNative,
+    onDoubleTap: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -54,6 +56,8 @@ fun PlayerGestures(
 
                         if (isDoubleTap) {
 
+                            var doubleTapMoved = false
+
                             while (true) {
 
                                 val event =
@@ -88,11 +92,12 @@ fun PlayerGestures(
                                 if (delta.y != 0f) {
 
                                     moved = true
+                                    doubleTapMoved = true
 
                                     val zoomAmount =
                                         -delta.y /
                                             size.height.toFloat() *
-                                            2.0
+                                            ZOOM_DOUBLE_TAP_DRAG
 
                                     mpvNative.changeZoom(
                                         zoomAmount
@@ -101,6 +106,10 @@ fun PlayerGestures(
 
                                 previousPosition =
                                     position
+                            }
+
+                            if (!doubleTapMoved) {
+                                onDoubleTap()
                             }
 
                             continue
