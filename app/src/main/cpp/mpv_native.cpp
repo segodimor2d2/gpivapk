@@ -860,6 +860,13 @@ Java_com_rec_gpiv_player_MpvNative_nativeResetView(
         nullptr
     };
 
+    const char* rotateCommand[] = {
+        "set",
+        "video-rotate",
+        "0",
+        nullptr
+    };
+
     mpv_command(
         context->mpv,
         zoomCommand
@@ -873,6 +880,11 @@ Java_com_rec_gpiv_player_MpvNative_nativeResetView(
     mpv_command(
         context->mpv,
         panYCommand
+    );
+
+    mpv_command(
+        context->mpv,
+        rotateCommand
     );
 
     LOGI(
