@@ -79,6 +79,19 @@ fun PlayerScreen(
     onVolumeDown: () -> Unit,
     onVolumeUp: () -> Unit,
     onMute: () -> Unit,
+
+    onBrightnessDown: () -> Unit,
+    onBrightnessUp: () -> Unit,
+
+    onContrastDown: () -> Unit,
+    onContrastUp: () -> Unit,
+
+    onGammaDown: () -> Unit,
+    onGammaUp: () -> Unit,
+
+    onSaturationDown: () -> Unit,
+    onSaturationUp: () -> Unit,
+
     onSurfaceReady: () -> Unit,
 
     modifier: Modifier = Modifier
@@ -521,6 +534,172 @@ fun PlayerScreen(
                 verticalArrangement =
                     Arrangement.spacedBy(6.dp)
             ) {
+
+                /*
+                 * --------------------------------------------
+                 * CONTRAST
+                 * --------------------------------------------
+                 */
+
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(6.dp)
+                ) {
+
+                    CompactButton(
+                        onClick =
+                            onContrastDown
+                    ) {
+                        Text(
+                            text = "-",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick = {}
+                    ) {
+                        Text(
+                            text = "C ${uiState.contrast}",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick =
+                            onContrastUp
+                    ) {
+                        Text(
+                            text = "+",
+                            fontSize = 9.sp
+                        )
+                    }
+                }
+
+
+                /*
+                 * --------------------------------------------
+                 * GAMMA
+                 * --------------------------------------------
+                 */
+
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(6.dp)
+                ) {
+
+                    CompactButton(
+                        onClick =
+                            onGammaDown
+                    ) {
+                        Text(
+                            text = "-",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick = {}
+                    ) {
+                        Text(
+                            text = "G ${uiState.gamma}",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick =
+                            onGammaUp
+                    ) {
+                        Text(
+                            text = "+",
+                            fontSize = 9.sp
+                        )
+                    }
+                }
+
+
+                /*
+                 * --------------------------------------------
+                 * SATURATION
+                 * --------------------------------------------
+                 */
+
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(6.dp)
+                ) {
+
+                    CompactButton(
+                        onClick =
+                            onSaturationDown
+                    ) {
+                        Text(
+                            text = "-",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick = {}
+                    ) {
+                        Text(
+                            text = "S ${uiState.saturation}",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick =
+                            onSaturationUp
+                    ) {
+                        Text(
+                            text = "+",
+                            fontSize = 9.sp
+                        )
+                    }
+                }
+                /*
+                 * --------------------------------------------
+                 * BRIGHTNESS
+                 * --------------------------------------------
+                 */
+
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(6.dp)
+                ) {
+
+                    CompactButton(
+                        onClick =
+                            onBrightnessDown
+                    ) {
+                        Text(
+                            text = "-",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick = {}
+                    ) {
+                        Text(
+                            text = "B ${uiState.brightness}",
+                            fontSize = 9.sp
+                        )
+                    }
+
+                    CompactButton(
+                        onClick =
+                            onBrightnessUp
+                    ) {
+                        Text(
+                            text = "+",
+                            fontSize = 9.sp
+                        )
+                    }
+                }
+
 
                 /*
                  * --------------------------------------------

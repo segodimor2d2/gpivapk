@@ -210,6 +210,34 @@ class MpvPlayer(
         native.release()
     }
 
+    fun changeBrightness(amount: Double) {
+        println(
+            "MpvPlayer: changeBrightness($amount)"
+        )
+        native.changeBrightness(amount)
+    }
+
+    fun changeContrast(amount: Double) {
+        println(
+            "MpvPlayer: changeContrast($amount)"
+        )
+        native.changeContrast(amount)
+    }
+
+    fun changeGamma(amount: Double) {
+        println(
+            "MpvPlayer: changeGamma($amount)"
+        )
+        native.changeGamma(amount)
+    }
+
+    fun changeSaturation(amount: Double) {
+        println(
+            "MpvPlayer: changeSaturation($amount)"
+        )
+        native.changeSaturation(amount)
+    }
+
     private fun setupNativeListeners() {
 
         native.setPropertyListener { name, value ->

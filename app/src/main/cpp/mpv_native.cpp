@@ -578,6 +578,185 @@ Java_com_rec_gpiv_player_MpvNative_nativeChangeZoom(
 
 extern "C"
 JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeChangeBrightness(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jdouble amount
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeChangeBrightness() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    std::string value =
+        std::to_string(amount);
+
+    const char* command[] = {
+        "add",
+        "brightness",
+        value.c_str(),
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: brightness %+f -> %d",
+        amount,
+        status
+    );
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeChangeContrast(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jdouble amount
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeChangeContrast() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    std::string value =
+        std::to_string(amount);
+
+    const char* command[] = {
+        "add",
+        "contrast",
+        value.c_str(),
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: contrast %+f -> %d",
+        amount,
+        status
+    );
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeChangeGamma(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jdouble amount
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeChangeGamma() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    std::string value =
+        std::to_string(amount);
+
+    const char* command[] = {
+        "add",
+        "gamma",
+        value.c_str(),
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: gamma %+f -> %d",
+        amount,
+        status
+    );
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeChangeSaturation(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jdouble amount
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeChangeSaturation() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    std::string value =
+        std::to_string(amount);
+
+    const char* command[] = {
+        "add",
+        "saturation",
+        value.c_str(),
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: saturation %+f -> %d",
+        amount,
+        status
+    );
+}
+
+extern "C"
+JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativePan(
     JNIEnv* env,
     jobject thiz,

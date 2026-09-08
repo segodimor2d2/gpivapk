@@ -271,6 +271,62 @@ class MpvNative {
         nativeRotateClockwise(nativeHandle)
     }
 
+    fun changeBrightness(amount: Double) {
+
+        checkInitialized()
+
+        println(
+            "MpvNative: changeBrightness($amount)"
+        )
+
+        nativeChangeBrightness(
+            nativeHandle,
+            amount
+        )
+    }
+
+    fun changeContrast(amount: Double) {
+
+        checkInitialized()
+
+        println(
+            "MpvNative: changeContrast($amount)"
+        )
+
+        nativeChangeContrast(
+            nativeHandle,
+            amount
+        )
+    }
+
+    fun changeGamma(amount: Double) {
+
+        checkInitialized()
+
+        println(
+            "MpvNative: changeGamma($amount)"
+        )
+
+        nativeChangeGamma(
+            nativeHandle,
+            amount
+        )
+    }
+
+    fun changeSaturation(amount: Double) {
+
+        checkInitialized()
+
+        println(
+            "MpvNative: changeSaturation($amount)"
+        )
+
+        nativeChangeSaturation(
+            nativeHandle,
+            amount
+        )
+    }
+
     fun release() {
 
         if (nativeHandle != 0L) {
@@ -435,4 +491,25 @@ class MpvNative {
     private external fun nativeMute(
         handle: Long
     )
+
+    private external fun nativeChangeBrightness(
+        handle: Long,
+        amount: Double
+    )
+
+    private external fun nativeChangeContrast(
+        handle: Long,
+        amount: Double
+    )
+
+    private external fun nativeChangeGamma(
+        handle: Long,
+        amount: Double
+    )
+
+    private external fun nativeChangeSaturation(
+        handle: Long,
+        amount: Double
+    )
+
 }

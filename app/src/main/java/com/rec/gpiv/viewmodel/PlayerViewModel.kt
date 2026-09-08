@@ -17,6 +17,11 @@ import com.rec.gpiv.player.FILE_JUMP
 import com.rec.gpiv.player.MAX_VOLUME
 import com.rec.gpiv.player.VOLUME_STEP
 
+import com.rec.gpiv.player.BRIGHTNESS_STEP
+import com.rec.gpiv.player.CONTRAST_STEP
+import com.rec.gpiv.player.GAMMA_STEP
+import com.rec.gpiv.player.SATURATION_STEP
+
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -866,6 +871,176 @@ class PlayerViewModel(
         _uiState.value =
             state.copy(
                 volume = newVolume
+            )
+    }
+
+
+  fun brightnessUp() {
+
+      val state =
+          _uiState.value
+
+      val newValue =
+          minOf(
+              state.brightness + BRIGHTNESS_STEP,
+              100.0
+          )
+
+      mpvNative.changeBrightness(
+          BRIGHTNESS_STEP
+      )
+
+      _uiState.value =
+          state.copy(
+              brightness = newValue
+          )
+  }
+
+  fun brightnessDown() {
+
+      val state =
+          _uiState.value
+
+      val newValue =
+          maxOf(
+              state.brightness - BRIGHTNESS_STEP,
+              -100.0
+          )
+
+      mpvNative.changeBrightness(
+          -BRIGHTNESS_STEP
+      )
+
+      _uiState.value =
+          state.copy(
+              brightness = newValue
+          )
+  }
+
+
+    fun contrastUp() {
+
+        val state =
+            _uiState.value
+
+        val newValue =
+            minOf(
+                state.contrast + CONTRAST_STEP,
+                100.0
+            )
+
+        mpvNative.changeContrast(
+            CONTRAST_STEP
+        )
+
+        _uiState.value =
+            state.copy(
+                contrast = newValue
+            )
+    }
+
+    fun contrastDown() {
+
+        val state =
+            _uiState.value
+
+        val newValue =
+            maxOf(
+                state.contrast - CONTRAST_STEP,
+                -100.0
+            )
+
+        mpvNative.changeContrast(
+            -CONTRAST_STEP
+        )
+
+        _uiState.value =
+            state.copy(
+                contrast = newValue
+            )
+    }
+
+    fun gammaUp() {
+
+        val state =
+            _uiState.value
+
+        val newValue =
+            minOf(
+                state.gamma + GAMMA_STEP,
+                100.0
+            )
+
+        mpvNative.changeGamma(
+            GAMMA_STEP
+        )
+
+        _uiState.value =
+            state.copy(
+                gamma = newValue
+            )
+    }
+
+    fun gammaDown() {
+
+        val state =
+            _uiState.value
+
+        val newValue =
+            maxOf(
+                state.gamma - GAMMA_STEP,
+                -100.0
+            )
+
+        mpvNative.changeGamma(
+            -GAMMA_STEP
+        )
+
+        _uiState.value =
+            state.copy(
+                gamma = newValue
+            )
+    }
+
+    fun saturationUp() {
+
+        val state =
+            _uiState.value
+
+        val newValue =
+            minOf(
+                state.saturation + SATURATION_STEP,
+                100.0
+            )
+
+        mpvNative.changeSaturation(
+            SATURATION_STEP
+        )
+
+        _uiState.value =
+            state.copy(
+                saturation = newValue
+            )
+    }
+
+    fun saturationDown() {
+
+        val state =
+            _uiState.value
+
+        val newValue =
+            maxOf(
+                state.saturation - SATURATION_STEP,
+                -100.0
+            )
+
+        mpvNative.changeSaturation(
+            -SATURATION_STEP
+        )
+
+        _uiState.value =
+            state.copy(
+                saturation = newValue
             )
     }
 
