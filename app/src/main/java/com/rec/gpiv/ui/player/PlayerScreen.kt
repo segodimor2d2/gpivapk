@@ -179,6 +179,37 @@ fun PlayerScreen(
                         verticalArrangement =
                             Arrangement.spacedBy(10.dp)
                     ) {
+                        /*
+                         * --------------------------------------------
+                         * VOLUME
+                         * --------------------------------------------
+                         */
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
+
+                            CompactButton(
+                                text = "volume ${uiState.volume}",
+                                onClick = onMute
+                            )
+
+                            CompactButton(
+                                text = "-",
+                                onClick = onVolumeDown
+                            )
+
+
+                            CompactButton(
+                                text = "+",
+                                onClick = onVolumeUp
+                            )
+                        }
 
                         /*
                          * --------------------------------------------
@@ -326,37 +357,6 @@ fun PlayerScreen(
                             )
                         }
 
-                        /*
-                         * --------------------------------------------
-                         * VOLUME
-                         * --------------------------------------------
-                         */
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-                            CompactButton(
-                                text = "volume ${uiState.volume}",
-                                onClick = onMute
-                            )
-
-                            CompactButton(
-                                text = "-",
-                                onClick = onVolumeDown
-                            )
-
-
-                            CompactButton(
-                                text = "+",
-                                onClick = onVolumeUp
-                            )
-                        }
                     }
                 }
 
@@ -384,8 +384,8 @@ fun PlayerScreen(
                         ) {
 
                             CompactButton(
-                                text = "A",
-                                onClick = onFirstFile
+                                text = "+10",
+                                onClick = onJumpFilesForward
                             )
 
                             CompactButton(
@@ -394,8 +394,8 @@ fun PlayerScreen(
                             )
 
                             CompactButton(
-                                text = "+10",
-                                onClick = onJumpFilesForward
+                                text = "A",
+                                onClick = onFirstFile
                             )
 
                             CompactButton(
@@ -448,6 +448,11 @@ fun PlayerScreen(
                         ) {
 
                             CompactButton(
+                                text = "N",
+                                onClick = onNextFile
+                            )
+
+                            CompactButton(
                                 text = "P",
                                 onClick = onPreviousFile
                             )
@@ -457,11 +462,6 @@ fun PlayerScreen(
                                     if (uiState.playing) { "▶" }
                                     else { "⏸" },
                                 onClick = onTogglePlayPause
-                            )
-
-                            CompactButton(
-                                text = "N",
-                                onClick = onNextFile
                             )
                         }
                     }
@@ -486,10 +486,10 @@ fun PlayerScreen(
 
 
                     StatusText(
-                        text = "↻",
-                        modifier =
-                            Modifier.clickable {
-                                onRotate()
+                        text = "R",
+                        modifier = Modifier
+                            .clickable {
+                                onResetVideoAdjustments()
                             }
                     )
 
@@ -522,12 +522,13 @@ fun PlayerScreen(
                     )
 
                     StatusText(
-                        text = "R",
-                        modifier = Modifier
-                            .clickable {
-                                onResetVideoAdjustments()
+                        text = "↻",
+                        modifier =
+                            Modifier.clickable {
+                                onRotate()
                             }
                     )
+
 
 
 
