@@ -21,9 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.ui.input.pointer.pointerInput
 
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -540,7 +537,7 @@ fun PlayerScreen(
                         onClick = onPreviousFile
                     ) {
                         Text(
-                            text = "ANTERIOR",
+                            text = "P",
                             fontSize = 9.sp
                         )
                     }
@@ -551,7 +548,7 @@ fun PlayerScreen(
                         }
                     ) {
                         Text(
-                            text = "-5s",
+                            text = "<<",
                             fontSize = 9.sp
                         )
                     }
@@ -560,7 +557,7 @@ fun PlayerScreen(
                         onClick = onFrameBackward
                     ) {
                         Text(
-                            text = "FRAME -",
+                            text = "<",
                             fontSize = 9.sp
                         )
                     }
@@ -573,10 +570,12 @@ fun PlayerScreen(
                         Text(
                             text =
                                 if (uiState.playing) {
-                                    "PAUSAR"
+                                    "▶"
                                 } else {
-                                    "PLAY"
+                                    "⏸"
                                 },
+
+
                             fontSize = 9.sp
                         )
                     }
@@ -585,7 +584,7 @@ fun PlayerScreen(
                         onClick = onFrameForward
                     ) {
                         Text(
-                            text = "FRAME +",
+                            text = ">",
                             fontSize = 9.sp
                         )
                     }
@@ -596,7 +595,7 @@ fun PlayerScreen(
                         }
                     ) {
                         Text(
-                            text = "+5s",
+                            text = ">>",
                             fontSize = 9.sp
                         )
                     }
@@ -605,7 +604,7 @@ fun PlayerScreen(
                         onClick = onNextFile
                     ) {
                         Text(
-                            text = "PRÓXIMO",
+                            text = "N",
                             fontSize = 9.sp
                         )
                     }
@@ -629,7 +628,7 @@ fun PlayerScreen(
                         onClick = onFirstFile
                     ) {
                         Text(
-                            text = "PRIMEIRO",
+                            text = "A",
                             fontSize = 9.sp
                         )
                     }
@@ -649,7 +648,7 @@ fun PlayerScreen(
                     ) {
 
                         Text(
-                            text = "VOL -",
+                            text = "-",
                             fontSize = 9.sp
                         )
                     }
@@ -671,7 +670,7 @@ fun PlayerScreen(
                     ) {
 
                         Text(
-                            text = "VOL +",
+                            text = "+",
                             fontSize = 9.sp
                         )
                     }
@@ -689,7 +688,7 @@ fun PlayerScreen(
                         onClick = onLastFile
                     ) {
                         Text(
-                            text = "ÚLTIMO",
+                            text = "Z",
                             fontSize = 9.sp
                         )
                     }
@@ -717,56 +716,19 @@ fun PlayerScreen(
                 ) {
 
                     StatusText(
-                        text =
-                            "%.2f s".format(
-                                uiState.position
-                            )
-                    )
-
-                    StatusText(
-                        text =
-                            "%.2f s".format(
-                                uiState.duration
-                            )
-                    )
-
-                    StatusText(
-                        text =
-                            if (uiState.duration > 0.0) {
-
-                                "%.1f %%".format(
-                                    (uiState.position /
-                                        uiState.duration) * 100.0
-                                )
-
-                            } else {
-
-                                "0.0 %"
-                            }
-                    )
-
-                    StatusText(
-                        text =
-                            if (uiState.loading) {
-
-                                "Carregando..."
-
-                            } else if (uiState.playing) {
-
-                                "▶"
-
-                            } else {
-
-                                "⏸"
-                            }
-                    )
-
-                    StatusText(
-                        text = "pasta",
+                        text = "S",
                         modifier =
                             Modifier.clickable {
-                                onOpenFolder()
+                                onScreenshot()
                             }
+                    )
+
+                    StatusText(
+                        text =
+                            "%.2f/%.2f".format(
+                                uiState.position,
+                                uiState.duration
+                            )
                     )
 
                     StatusText(
@@ -778,12 +740,24 @@ fun PlayerScreen(
                     )
 
                     StatusText(
-                        text = "save",
+                        text =
+                            if (uiState.duration > 0.0) {
+                                "%.1f %%".format(
+                                    (uiState.position /
+                                        uiState.duration) * 100.0
+                                )
+
+                            } else { "0.0 %" }
+                    )
+
+                    StatusText(
+                        text = "PP",
                         modifier =
                             Modifier.clickable {
-                                onScreenshot()
+                                onOpenFolder()
                             }
                     )
+
                 }
 
                 Row(
@@ -793,7 +767,7 @@ fun PlayerScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     StatusText(
-                        text = uiState.filename ?: "abrir",
+                        text = uiState.filename ?: "++++++",
                         modifier = Modifier
                             .clickable {
                                 onOpenVideo()
@@ -839,7 +813,7 @@ private fun CompactButton(
                 .height(24.dp),
 
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Black.copy(alpha = 0.2f),
+                containerColor = Color.Black.copy(alpha = 0.3f),
                 contentColor = Color.White
             ),
 
@@ -869,7 +843,7 @@ private fun StatusText(
         maxLines = 1,
         modifier = modifier
             .background(
-                Color.Black.copy(alpha = 0.2f)
+                Color.Black.copy(alpha = 0.3f)
             )
             .padding(
                 horizontal = 6.dp,
