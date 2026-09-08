@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -92,6 +94,16 @@ fun PlayerScreen(
 
     var controlsVisible by remember {
         mutableStateOf(false)
+    }
+
+    var controlRow by remember {
+        mutableStateOf(0)
+    }
+
+    fun nextControlRow() {
+
+        controlRow =
+            (controlRow + 1) % 2
     }
 
     /*
@@ -161,185 +173,190 @@ fun PlayerScreen(
                     Arrangement.spacedBy(6.dp)
             ) {
 
+                if (controlRow == 1) {
 
-                Row(
-                    horizontalArrangement =
-                        Arrangement.spacedBy(6.dp)
-                ) {
-
-                    CompactButton(
-                        onClick =
-                            onResetVideoAdjustments
+                    Column(
+                        verticalArrangement =
+                            Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(
-                            text = "RESET",
-                            fontSize = 9.sp
-                        )
-                    }
-                }
 
-                /*
-                 * --------------------------------------------
-                 * CONTRAST
-                 * --------------------------------------------
-                 */
+                        /*
+                         * --------------------------------------------
+                         * SCREENSHOT
+                         * --------------------------------------------
+                         */
 
-                Row(
-                    horizontalArrangement =
-                        Arrangement.spacedBy(6.dp)
-                ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
 
-                    CompactButton(
-                        onClick =
-                            onContrastDown
-                    ) {
-                        Text(
-                            text = "-",
-                            fontSize = 9.sp
-                        )
-                    }
+                            CompactButton(
+                                text = "screenshot",
+                                onClick = onScreenshot
+                            )
+                        }
 
-                    CompactButton(
-                        onClick = {}
-                    ) {
-                        Text(
-                            text = "C ${uiState.contrast}",
-                            fontSize = 9.sp
-                        )
-                    }
+                        /*
+                         * --------------------------------------------
+                         * CONTRAST
+                         * --------------------------------------------
+                         */
 
-                    CompactButton(
-                        onClick =
-                            onContrastUp
-                    ) {
-                        Text(
-                            text = "+",
-                            fontSize = 9.sp
-                        )
-                    }
-                }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
 
 
-                /*
-                 * --------------------------------------------
-                 * GAMMA
-                 * --------------------------------------------
-                 */
+                            CompactButton(
+                                text = "contrast ${uiState.contrast}",
+                                onClick = {}
+                            )
 
-                Row(
-                    horizontalArrangement =
-                        Arrangement.spacedBy(6.dp)
-                ) {
+                            CompactButton(
+                                text = "-",
+                                onClick = onContrastDown
+                            )
 
-                    CompactButton(
-                        onClick =
-                            onGammaDown
-                    ) {
-                        Text(
-                            text = "-",
-                            fontSize = 9.sp
-                        )
-                    }
+                            CompactButton(
+                                text = "+",
+                                onClick = onContrastUp
+                            )
+                        }
 
-                    CompactButton(
-                        onClick = {}
-                    ) {
-                        Text(
-                            text = "G ${uiState.gamma}",
-                            fontSize = 9.sp
-                        )
-                    }
+                        /*
+                         * --------------------------------------------
+                         * GAMMA
+                         * --------------------------------------------
+                         */
 
-                    CompactButton(
-                        onClick =
-                            onGammaUp
-                    ) {
-                        Text(
-                            text = "+",
-                            fontSize = 9.sp
-                        )
-                    }
-                }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
+
+                            CompactButton(
+                                text = "gamma ${uiState.gamma}",
+                                onClick = {}
+                            )
+
+                            CompactButton(
+                                text = "-",
+                                onClick = onGammaDown
+                            )
+
+                            CompactButton(
+                                text = "+",
+                                onClick = onGammaUp
+                            )
+                        }
+
+                        /*
+                         * --------------------------------------------
+                         * SATURATION
+                         * --------------------------------------------
+                         */
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
+
+                            CompactButton(
+                                text = "saturation ${uiState.saturation}",
+                                onClick = {}
+                            )
+
+                            CompactButton(
+                                text = "-",
+                                onClick = onSaturationDown
+                            )
+
+                            CompactButton(
+                                text = "+",
+                                onClick = onSaturationUp
+                            )
+                        }
+
+                        /*
+                         * --------------------------------------------
+                         * BRIGHTNESS
+                         * --------------------------------------------
+                         */
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
+
+                            CompactButton(
+                                text = "brightness ${uiState.brightness}",
+                                onClick = {}
+                            )
+
+                            CompactButton(
+                                text = "-",
+                                onClick = onBrightnessDown
+                            )
+
+                            CompactButton(
+                                text = "+",
+                                onClick = onBrightnessUp
+                            )
+                        }
+
+                        /*
+                         * --------------------------------------------
+                         * VOLUME
+                         * --------------------------------------------
+                         */
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
+
+                            CompactButton(
+                                text = "volume ${uiState.volume}",
+                                onClick = onMute
+                            )
+
+                            CompactButton(
+                                text = "-",
+                                onClick = onVolumeDown
+                            )
 
 
-                /*
-                 * --------------------------------------------
-                 * SATURATION
-                 * --------------------------------------------
-                 */
-
-                Row(
-                    horizontalArrangement =
-                        Arrangement.spacedBy(6.dp)
-                ) {
-
-                    CompactButton(
-                        onClick =
-                            onSaturationDown
-                    ) {
-                        Text(
-                            text = "-",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick = {}
-                    ) {
-                        Text(
-                            text = "S ${uiState.saturation}",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick =
-                            onSaturationUp
-                    ) {
-                        Text(
-                            text = "+",
-                            fontSize = 9.sp
-                        )
-                    }
-                }
-                /*
-                 * --------------------------------------------
-                 * BRIGHTNESS
-                 * --------------------------------------------
-                 */
-
-                Row(
-                    horizontalArrangement =
-                        Arrangement.spacedBy(6.dp)
-                ) {
-
-                    CompactButton(
-                        onClick =
-                            onBrightnessDown
-                    ) {
-                        Text(
-                            text = "-",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick = {}
-                    ) {
-                        Text(
-                            text = "B ${uiState.brightness}",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick =
-                            onBrightnessUp
-                    ) {
-                        Text(
-                            text = "+",
-                            fontSize = 9.sp
-                        )
+                            CompactButton(
+                                text = "+",
+                                onClick = onVolumeUp
+                            )
+                        }
                     }
                 }
 
@@ -350,173 +367,106 @@ fun PlayerScreen(
                  * --------------------------------------------
                  */
 
-                Row(
-                    horizontalArrangement =
-                        Arrangement.spacedBy(4.dp)
-                ) {
+                if (controlRow == 0) {
 
-                    CompactButton(
-                        onClick = onPreviousFile
+                    Column(
+                        verticalArrangement =
+                            Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(
-                            text = "P",
-                            fontSize = 9.sp
-                        )
-                    }
 
-                    CompactButton(
-                        onClick = {
-                            onSeekBackward(SEEK_SECONDS)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
+
+                            CompactButton(
+                                text = "A",
+                                onClick = onFirstFile
+                            )
+
+                            CompactButton(
+                                text = "-10",
+                                onClick = onJumpFilesBackward
+                            )
+
+                            CompactButton(
+                                text = "+10",
+                                onClick = onJumpFilesForward
+                            )
+
+                            CompactButton(
+                                text = "Z",
+                                onClick = onLastFile
+                            )
                         }
-                    ) {
-                        Text(
-                            text = "<<",
-                            fontSize = 9.sp
-                        )
-                    }
 
-                    CompactButton(
-                        onClick = onFrameBackward
-                    ) {
-                        Text(
-                            text = "<",
-                            fontSize = 9.sp
-                        )
-                    }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
 
+                            CompactButton(
+                                text = "<<",
+                                onClick = {
+                                    onSeekBackward(SEEK_SECONDS)
+                                }
+                            )
 
-                    CompactButton(
-                        onClick = onTogglePlayPause
-                    ) {
+                            CompactButton(
+                                text = "<",
+                                onClick = onFrameBackward
+                            )
 
-                        Text(
-                            text =
-                                if (uiState.playing) {
-                                    "▶"
-                                } else {
-                                    "⏸"
-                                },
+                            CompactButton(
+                                text = ">",
+                                onClick = onFrameForward
+                            )
 
-
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick = onFrameForward
-                    ) {
-                        Text(
-                            text = ">",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick = {
-                            onSeekForward(SEEK_SECONDS)
+                            CompactButton(
+                                text = ">>",
+                                onClick = {
+                                    onSeekForward(SEEK_SECONDS)
+                                }
+                            )
                         }
-                    ) {
-                        Text(
-                            text = ">>",
-                            fontSize = 9.sp
-                        )
-                    }
 
-                    CompactButton(
-                        onClick = onNextFile
-                    ) {
-                        Text(
-                            text = "N",
-                            fontSize = 9.sp
-                        )
-                    }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
 
+                            CompactButton(
+                                text = "P",
+                                onClick = onPreviousFile
+                            )
+
+                            CompactButton(
+                                text =
+                                    if (uiState.playing) { "▶" }
+                                    else { "⏸" },
+                                onClick = onTogglePlayPause
+                            )
+
+                            CompactButton(
+                                text = "N",
+                                onClick = onNextFile
+                            )
+                        }
+                    }
                 }
 
-
-                /*
-                 * --------------------------------------------
-                 * VOLUME
-                 * --------------------------------------------
-                 */
-
-                Row(
-
-                    horizontalArrangement =
-                        Arrangement.spacedBy(6.dp)
-                ) {
-
-                    CompactButton(
-                        onClick = onFirstFile
-                    ) {
-                        Text(
-                            text = "A",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick = onJumpFilesBackward
-                    ) {
-                        Text(
-                            text = "-10",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick =
-                            onVolumeDown
-                    ) {
-
-                        Text(
-                            text = "-",
-                            fontSize = 9.sp
-                        )
-                    }
-
-
-                    CompactButton(
-                        onClick = onMute
-                    ) {
-
-                        Text(
-                            text = "${uiState.volume}%",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick =
-                            onVolumeUp
-                    ) {
-
-                        Text(
-                            text = "+",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick = onJumpFilesForward
-                    ) {
-                        Text(
-                            text = "+10",
-                            fontSize = 9.sp
-                        )
-                    }
-
-                    CompactButton(
-                        onClick = onLastFile
-                    ) {
-                        Text(
-                            text = "Z",
-                            fontSize = 9.sp
-                        )
-                    }
-
-
-                }
 
                 /*
                  * --------------------------------------------
@@ -528,48 +478,28 @@ fun PlayerScreen(
                     modifier = Modifier.fillMaxWidth(),
 
                     horizontalArrangement =
-                        Arrangement.spacedBy(
-                            8.dp,
-                            Alignment.CenterHorizontally
-                        ),
+                        Arrangement.spacedBy( 10.dp, Alignment.CenterHorizontally),
 
                     verticalAlignment =
                         Alignment.CenterVertically
                 ) {
 
-                    StatusText(
-                        text = "S",
-                        modifier =
-                            Modifier.clickable {
-                                onScreenshot()
-                            }
-                    )
 
                     StatusText(
-                        text =
-                            "%.2f/%.2f".format(
-                                uiState.position,
-                                uiState.duration
-                            )
-                    )
-
-                    StatusText(
-                        text = "R",
+                        text = "↻",
                         modifier =
                             Modifier.clickable {
                                 onRotate()
                             }
                     )
 
+
                     StatusText(
                         text =
-                            if (uiState.duration > 0.0) {
-                                "%.1f %%".format(
-                                    (uiState.position /
-                                        uiState.duration) * 100.0
-                                )
-
-                            } else { "0.0 %" }
+                            "%.2f / %.2f".format(
+                                uiState.position,
+                                uiState.duration
+                            )
                     )
 
                     StatusText(
@@ -580,14 +510,48 @@ fun PlayerScreen(
                             }
                     )
 
+                    StatusText(
+                        text =
+                            if (uiState.duration > 0.0) {
+                                "%.1f%%".format(
+                                    (uiState.position /
+                                        uiState.duration) * 100.0
+                                )
+
+                            } else { "0.0%" }
+                    )
+
+                    StatusText(
+                        text = "R",
+                        modifier = Modifier
+                            .clickable {
+                                onResetVideoAdjustments()
+                            }
+                    )
+
+
+
                 }
 
                 Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp),
 
-                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+
+                    verticalAlignment =
+                        Alignment.CenterVertically
                 ) {
+
+                    StatusText(
+                        text = "#",
+                        modifier =
+                            Modifier.clickable {
+                                nextControlRow()
+                            }
+                    )
+
                     StatusText(
                         text = uiState.filename ?: "++++++",
                         modifier = Modifier
@@ -595,6 +559,8 @@ fun PlayerScreen(
                                 onOpenVideo()
                             }
                     )
+
+
                 }
 
             }
@@ -615,39 +581,49 @@ fun PlayerScreen(
 
 @Composable
 private fun CompactButton(
+    text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    modifier: Modifier = Modifier
 ) {
 
     CompositionLocalProvider(
-
         LocalMinimumInteractiveComponentSize
             provides 0.dp
-
     ) {
 
         Button(
-
             onClick = onClick,
 
             modifier = modifier
-                .height(24.dp),
+                .height(28.dp),
 
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Black.copy(alpha = 0.3f),
-                contentColor = Color.White
+                containerColor =
+                    Color.Black.copy(alpha = 0.0f),
+                contentColor =
+                    Color.White
             ),
 
             contentPadding =
                 PaddingValues(
-                    horizontal = 6.dp,
+                    horizontal = 8.dp,
                     vertical = 0.dp
                 )
-
         ) {
 
-            content()
+            Text(
+                text = text,
+                fontSize = 16.sp,
+
+                style = LocalTextStyle.current.copy(
+                    shadow = Shadow(
+                        Color.Black.copy(alpha = 1.0f),
+                        offset = Offset(0f, 0f),
+                        blurRadius = 8f
+                    )
+                )
+
+            )
         }
     }
 }
@@ -660,16 +636,25 @@ private fun StatusText(
 
     Text(
         text = text,
-        fontSize = 14.sp,
+        fontSize = 16.sp,
         color = Color.White,
         maxLines = 1,
+
+        style = LocalTextStyle.current.copy(
+            shadow = Shadow(
+                Color.Black.copy(alpha = 1.0f),
+                offset = Offset(0f, 0f),
+                blurRadius = 8f
+            )
+        ),
+
         modifier = modifier
             .background(
-                Color.Black.copy(alpha = 0.3f)
+                Color.Black.copy(alpha = 0.0f),
             )
             .padding(
-                horizontal = 6.dp,
-                vertical = 3.dp
+                horizontal = 8.dp,
+                vertical = 5.dp
             )
     )
 }
