@@ -37,9 +37,6 @@ import com.rec.gpiv.model.PlayerUiState
 import com.rec.gpiv.player.MpvNative
 import com.rec.gpiv.player.SEEK_SECONDS
 
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-
 @Composable
 fun PlayerScreen(
     uiState: PlayerUiState,
@@ -94,7 +91,7 @@ fun PlayerScreen(
      */
 
     var controlsVisible by remember {
-        mutableStateOf(false)
+        mutableStateOf(true)
     }
 
     /*
@@ -132,92 +129,6 @@ fun PlayerScreen(
         PlayerGestures(
             mpvNative = mpvNative
         )
-
-        /*
-         * ----------------------------------------------------
-         * ÁREA DE SWIPE
-         * ----------------------------------------------------
-         *
-         * Somente os 80dp inferiores da tela respondem.
-         *
-         * Um swipe curto para cima:
-         *
-         * escondido -> mostra
-         * mostrado  -> esconde
-         *
-         * A distância é acumulada durante o gesto.
-         *
-         * Um único swipe pode alternar o menu apenas uma vez.
-         */
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .align(Alignment.BottomCenter)
-                .pointerInput(Unit) {
-
-                    var accumulatedDrag = 0f
-                    var gestureHandled = false
-
-                    detectVerticalDragGestures(
-
-                        onDragStart = {
-                            accumulatedDrag = 0f
-                            gestureHandled = false
-                        },
-
-                        onVerticalDrag = { _, dragAmount ->
-
-                            if (gestureHandled) {
-                                return@detectVerticalDragGestures
-                            }
-
-                            /*
-                             * Para cima = valor negativo.
-                             *
-                             * Acumulamos somente movimentos
-                             * para cima.
-                             */
-
-                            if (dragAmount < 0f) {
-
-                                accumulatedDrag += -dragAmount
-
-                                /*
-                                 * Aproximadamente 20dp de swipe
-                                 * já são suficientes.
-                                 */
-                                if (accumulatedDrag >= 20.dp.toPx()) {
-
-                                    controlsVisible =
-                                        !controlsVisible
-
-                                    gestureHandled = true
-
-                                    println(
-                                        "PlayerScreen: " +
-                                            "swipe up -> " +
-                                            "controlsVisible=" +
-                                            controlsVisible
-                                    )
-                                }
-                            }
-                        },
-
-                        onDragEnd = {
-                            accumulatedDrag = 0f
-                            gestureHandled = false
-                        },
-
-                        onDragCancel = {
-                            accumulatedDrag = 0f
-                            gestureHandled = false
-                        }
-                    )
-                }
-        )
-
 
         /*
          * ----------------------------------------------------

@@ -1,5 +1,6 @@
 package com.rec.gpiv.ui.player
 
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -7,12 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.rec.gpiv.player.MpvNative
-import kotlin.math.hypot
-import kotlin.math.ln
 
 @Composable
 fun PlayerGestures(
@@ -27,146 +25,184 @@ fun PlayerGestures(
 
                 awaitPointerEventScope {
 
+                    var lastTapTime = 0L
+
                     while (true) {
 
-                        /*
-                         * Espera o primeiro dedo.
-                         */
-                        awaitFirstDown(
+                        val down = awaitFirstDown(
                             requireUnconsumed = false
                         )
 
-                        var previousCentroid = Offset.Zero
-                        var previousDistance = 0f
-                        var trackingTwoPointers = false
+                        val now =
+                            System.currentTimeMillis()
+
+                        val isDoubleTap =
+                            now - lastTapTime < 300
+
+                        lastTapTime = now
+
+                        var previousPosition =
+                            down.position
+
+                        var moved = false
 
                         /*
-                         * Processa esta interação até
-                         * todos os dedos serem retirados.
+                         * ==================================================
+                         * SEGUNDO TAP MANTIDO
+                         * ==================================================
                          */
+
+                        if (isDoubleTap) {
+
+                            while (true) {
+
+                                val event =
+                                    awaitPointerEvent(
+                                        pass = PointerEventPass.Main
+                                    )
+
+                                val pressed =
+                                    event.changes.filter {
+                                        it.pressed
+                                    }
+
+                                if (pressed.size != 1) {
+                                    break
+                                }
+
+                                val position =
+                                    pressed[0].position
+
+                                val delta =
+                                    position -
+                                        previousPosition
+
+                                /*
+                                 * Arrastar para cima:
+                                 * aumenta zoom.
+                                 *
+                                 * Arrastar para baixo:
+                                 * diminui zoom.
+                                 */
+
+                                if (delta.y != 0f) {
+
+                                    moved = true
+
+                                    val zoomAmount =
+                                        -delta.y /
+                                            size.height.toFloat() *
+                                            2.0
+
+                                    mpvNative.changeZoom(
+                                        zoomAmount
+                                    )
+                                }
+
+                                previousPosition =
+                                    position
+                            }
+
+                            continue
+                        }
+
+                        /*
+                         * ==================================================
+                         * PRIMEIRO TAP / PAN
+                         * ==================================================
+                         */
+
                         while (true) {
 
-                            val event = awaitPointerEvent(
-                                pass = PointerEventPass.Main
-                            )
+                            val event =
+                                awaitPointerEvent(
+                                    pass = PointerEventPass.Main
+                                )
 
-                            val pressedPointers =
+                            val pressed =
                                 event.changes.filter {
                                     it.pressed
                                 }
 
                             /*
-                             * ====================================================
-                             * DOIS DEDOS
-                             * ====================================================
+                             * Dois dedos:
+                             * ignoramos completamente.
                              */
-                            if (pressedPointers.size >= 2) {
 
-                                val first =
-                                    pressedPointers[0].position
+                            if (pressed.size >= 2) {
+                                moved = true
 
-                                val second =
-                                    pressedPointers[1].position
+                                while (true) {
 
-                                val centroid =
-                                    Offset(
-                                        x = (first.x + second.x) / 2f,
-                                        y = (first.y + second.y) / 2f
-                                    )
-
-                                val distance =
-                                    hypot(
-                                        second.x - first.x,
-                                        second.y - first.y
-                                    )
-
-                                /*
-                                 * Primeiro evento com dois dedos:
-                                 * somente estabelece a referência.
-                                 */
-                                if (!trackingTwoPointers) {
-
-                                    previousCentroid = centroid
-                                    previousDistance = distance
-                                    trackingTwoPointers = true
-
-                                } else {
-
-                                    /*
-                                     * ====================================================
-                                     * PAN
-                                     * ====================================================
-                                     */
-                                    val pan =
-                                        centroid - previousCentroid
-
-                                    if (
-                                        pan.x != 0f ||
-                                        pan.y != 0f
-                                    ) {
-
-                                        val panX =
-                                            pan.x /
-                                                size.width.toFloat()
-
-                                        val panY =
-                                            pan.y /
-                                                size.height.toFloat()
-
-                                        mpvNative.pan(
-                                            panX.toDouble(),
-                                            panY.toDouble()
+                                    val twoFingerEvent =
+                                        awaitPointerEvent(
+                                            pass =
+                                                PointerEventPass.Main
                                         )
-                                    }
 
-                                    /*
-                                     * ====================================================
-                                     * ZOOM
-                                     * ====================================================
-                                     */
-                                    if (previousDistance > 0f) {
-
-                                        val zoomFactor =
-                                            distance /
-                                                previousDistance
-
-                                        if (
-                                            zoomFactor > 0f &&
-                                            zoomFactor != 1f
-                                        ) {
-
-                                            val zoomAmount =
-                                                ln(
-                                                    zoomFactor.toDouble()
-                                                ) /
-                                                    ln(2.0)
-
-                                            mpvNative.changeZoom(
-                                                zoomAmount
-                                            )
+                                    val pointers =
+                                        twoFingerEvent.changes.filter {
+                                            it.pressed
                                         }
+
+                                    if (pointers.size != 1) {
+                                        if (pointers.isEmpty()) {
+                                            break
+                                        }
+                                        continue
                                     }
 
-                                    previousCentroid = centroid
-                                    previousDistance = distance
+                                    previousPosition =
+                                        pointers[0].position
                                 }
+
+                                break
+                            }
+
+                            /*
+                             * Um dedo:
+                             * pan direto.
+                             */
+
+                            if (pressed.size == 1) {
+
+                                val position =
+                                    pressed[0].position
+
+                                val delta =
+                                    position -
+                                        previousPosition
+
+                                if (
+                                    delta.x != 0f ||
+                                    delta.y != 0f
+                                ) {
+
+                                    moved = true
+
+                                    val panX =
+                                        delta.x /
+                                            size.width.toFloat()
+
+                                    val panY =
+                                        delta.y /
+                                            size.height.toFloat()
+
+                                    mpvNative.pan(
+                                        panX.toDouble(),
+                                        panY.toDouble()
+                                    )
+                                }
+
+                                previousPosition =
+                                    position
 
                             } else {
 
                                 /*
-                                 * Menos de dois dedos:
-                                 * a próxima entrada do segundo dedo
-                                 * começa uma nova referência.
+                                 * Dedo levantado.
                                  */
-                                trackingTwoPointers = false
-                            }
 
-                            /*
-                             * ====================================================
-                             * TODOS OS DEDOS RETIRADOS
-                             * ====================================================
-                             */
-                            if (pressedPointers.isEmpty()) {
                                 break
                             }
                         }
