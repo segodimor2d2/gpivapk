@@ -256,6 +256,9 @@ class MainActivity : ComponentActivity() {
                         onSaturationUp =
                             viewModel::saturationUp,
 
+                        onResetVideoAdjustments =
+                            viewModel::resetVideoAdjustments,
+
                         onSurfaceReady =
                             viewModel::onSurfaceReady,
 

@@ -82,15 +82,13 @@ fun PlayerScreen(
 
     onBrightnessDown: () -> Unit,
     onBrightnessUp: () -> Unit,
-
     onContrastDown: () -> Unit,
     onContrastUp: () -> Unit,
-
     onGammaDown: () -> Unit,
     onGammaUp: () -> Unit,
-
     onSaturationDown: () -> Unit,
     onSaturationUp: () -> Unit,
+    onResetVideoAdjustments: () -> Unit,
 
     onSurfaceReady: () -> Unit,
 
@@ -534,6 +532,23 @@ fun PlayerScreen(
                 verticalArrangement =
                     Arrangement.spacedBy(6.dp)
             ) {
+
+
+                Row(
+                    horizontalArrangement =
+                        Arrangement.spacedBy(6.dp)
+                ) {
+
+                    CompactButton(
+                        onClick =
+                            onResetVideoAdjustments
+                    ) {
+                        Text(
+                            text = "RESET",
+                            fontSize = 9.sp
+                        )
+                    }
+                }
 
                 /*
                  * --------------------------------------------

@@ -1044,6 +1044,45 @@ class PlayerViewModel(
             )
     }
 
+
+    fun resetVideoAdjustments() {
+
+        val state =
+            _uiState.value
+
+        if (state.brightness != 0.0) {
+            mpvNative.changeBrightness(
+                -state.brightness
+            )
+        }
+
+        if (state.contrast != 0.0) {
+            mpvNative.changeContrast(
+                -state.contrast
+            )
+        }
+
+        if (state.gamma != 0.0) {
+            mpvNative.changeGamma(
+                -state.gamma
+            )
+        }
+
+        if (state.saturation != 0.0) {
+            mpvNative.changeSaturation(
+                -state.saturation
+            )
+        }
+
+        _uiState.value =
+            state.copy(
+                brightness = 0.0,
+                contrast = 0.0,
+                gamma = 0.0,
+                saturation = 0.0
+            )
+    }
+
     fun mute() {
 
         val state =
