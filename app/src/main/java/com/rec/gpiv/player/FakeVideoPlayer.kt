@@ -55,6 +55,10 @@ class FakeVideoPlayer : VideoPlayer {
         println("FakeVideoPlayer: screenshot()")
     }
 
+    override fun screenshotMpv() {
+        println("FakeVideoPlayer: screenshotMpv()")
+    }
+
     override fun release() {
         println("FakeVideoPlayer: release()")
     }

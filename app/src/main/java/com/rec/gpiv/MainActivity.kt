@@ -212,6 +212,8 @@ class MainActivity : ComponentActivity() {
 
                         onScreenshot = viewModel::screenshot,
 
+                        onSetScreenshotMethod = viewModel::setScreenshotMethod,
+
                         onRotate = viewModel.mpvNative::rotateClockwise,
 
                         onTogglePlayPause =

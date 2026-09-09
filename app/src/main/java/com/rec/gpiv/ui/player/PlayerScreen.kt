@@ -58,6 +58,7 @@ fun PlayerScreen(
     onFrameBackward: () -> Unit,
     onFrameForward: () -> Unit,
     onScreenshot: () -> Unit,
+    onSetScreenshotMethod: (String) -> Unit,
 
     onRotate: () -> Unit,
 
@@ -560,6 +561,16 @@ fun PlayerScreen(
                         text = "S",
                         modifier = Modifier
                             .clickable {
+                                onSetScreenshotMethod("FRAMEBUFFER")
+                                onScreenshot()
+                            }
+                    )
+
+                    StatusText(
+                        text = "SS",
+                        modifier = Modifier
+                            .clickable {
+                                onSetScreenshotMethod("MPV")
                                 onScreenshot()
                             }
                     )

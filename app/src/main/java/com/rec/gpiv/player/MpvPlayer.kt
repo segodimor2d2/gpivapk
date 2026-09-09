@@ -210,6 +210,15 @@ class MpvPlayer(
         native.screenshot()
     }
 
+    override fun screenshotMpv() {
+
+        println(
+            "MpvPlayer: screenshotMpv()"
+        )
+
+        native.screenshotMpv()
+    }
+
     override fun release() {
 
         println(

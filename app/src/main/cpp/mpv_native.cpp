@@ -532,6 +532,41 @@ Java_com_rec_gpiv_player_MpvNative_nativeScreenshot(
 
 extern "C"
 JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeScreenshotMpv(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+        LOGI("JNI: nativeScreenshotMpv() -> contexto inválido");
+        return;
+    }
+
+    LOGI("JNI: screenshot MPV(%p)", static_cast<void*>(context));
+
+    const char* command[] = {
+        "screenshot",
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: mpv_command(screenshot) -> %d",
+        status
+    );
+}
+
+extern "C"
+JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeChangeZoom(
     JNIEnv* env,
     jobject thiz,

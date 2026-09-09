@@ -33,9 +33,17 @@ import kotlinx.coroutines.withContext
 import android.content.ContentResolver
 import android.util.Log
 
+private enum class ScreenshotMethod {
+    FRAMEBUFFER,
+    MPV
+}
+
 class PlayerViewModel(
     application: Application
 ) : AndroidViewModel(application) {
+
+private var screenshotMethod =
+        ScreenshotMethod.FRAMEBUFFER
 
     val mpvNative =
         MpvNative()
@@ -615,7 +623,17 @@ class PlayerViewModel(
          * O arquivo será criado assincronamente
          * dentro do cacheDir.
          */
-        player.screenshot()
+
+        when (screenshotMethod) {
+
+            ScreenshotMethod.FRAMEBUFFER -> {
+                player.screenshot()
+            }
+
+            ScreenshotMethod.MPV -> {
+                player.screenshotMpv()
+            }
+        }
 
         viewModelScope.launch {
 
@@ -644,6 +662,23 @@ class PlayerViewModel(
                 treeUri
             )
         }
+    }
+
+    fun setScreenshotMethod(method: String) {
+
+        screenshotMethod =
+            when (method) {
+
+                "MPV" ->
+                    ScreenshotMethod.MPV
+
+                else ->
+                    ScreenshotMethod.FRAMEBUFFER
+            }
+
+        println(
+            "PlayerViewModel: screenshot method = $screenshotMethod"
+        )
     }
 
     private suspend fun waitForNewScreenshot(

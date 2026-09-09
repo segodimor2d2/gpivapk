@@ -31,5 +31,7 @@ interface VideoPlayer {
 
     fun screenshot()
 
+    fun screenshotMpv()
+
     fun release()
 }

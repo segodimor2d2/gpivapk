@@ -351,6 +351,12 @@ class MpvNative {
         )
     }
 
+    fun screenshotMpv() {
+        checkInitialized()
+        println("MpvNative: screenshotMpv()")
+        nativeScreenshotMpv(nativeHandle)
+    }
+
     fun changeZoom(amount: Double) {
 
         checkInitialized()
@@ -585,6 +591,8 @@ class MpvNative {
     private external fun nativeScreenshot(
         handle: Long
     )
+
+    private external fun nativeScreenshotMpv(handle: Long)
 
     private external fun nativeSetSurface(
         handle: Long,
