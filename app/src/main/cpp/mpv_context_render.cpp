@@ -5,6 +5,10 @@
 #include <android/log.h>
 #include <mpv/render_gl.h>
 
+#include <GLES2/gl2.h>
+
+#include <vector>
+
 #define LOG_TAG "GPIV_NATIVE"
 
 #define LOGI(...) \
@@ -153,6 +157,176 @@ void mpv_context_render_destroy(
     );
 }
 
+static void capture_framebuffer(
+    MpvContext* context,
+    int width,
+    int height
+)
+{
+    if (!context)
+        return;
+
+    if (!context->javaVm)
+        return;
+
+    if (!context->nativeObject)
+        return;
+
+    if (!context->onScreenshot)
+        return;
+
+    const size_t size =
+        static_cast<size_t>(width) *
+        static_cast<size_t>(height) *
+        4;
+
+    std::vector<unsigned char> pixels(size);
+
+    glReadPixels(
+        0,
+        0,
+        width,
+        height,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        pixels.data()
+    );
+
+    GLenum error = glGetError();
+
+    if (error != GL_NO_ERROR) {
+
+        LOGE(
+            "Screenshot: glReadPixels falhou: 0x%x",
+            error
+        );
+
+        return;
+    }
+
+    /*
+     * OpenGL usa origem inferior esquerda.
+     * O Bitmap Android usa origem superior esquerda.
+     *
+     * Invertendo as linhas antes de enviar ao Kotlin.
+     */
+
+    const size_t rowSize =
+        static_cast<size_t>(width) * 4;
+
+    for (int y = 0; y < height / 2; ++y) {
+
+        unsigned char* top =
+            pixels.data() +
+            static_cast<size_t>(y) * rowSize;
+
+        unsigned char* bottom =
+            pixels.data() +
+            static_cast<size_t>(height - 1 - y) * rowSize;
+
+        for (size_t x = 0; x < rowSize; ++x) {
+
+            unsigned char temp = top[x];
+
+            top[x] = bottom[x];
+
+            bottom[x] = temp;
+        }
+    }
+
+    JNIEnv* env = nullptr;
+
+    bool attached = false;
+
+    jint result =
+        context->javaVm->GetEnv(
+            reinterpret_cast<void**>(&env),
+            JNI_VERSION_1_6
+        );
+
+    if (result == JNI_EDETACHED) {
+
+        if (
+            context->javaVm->AttachCurrentThread(
+                &env,
+                nullptr
+            ) != JNI_OK
+        ) {
+
+            LOGE(
+                "Screenshot: AttachCurrentThread falhou"
+            );
+
+            return;
+        }
+
+        attached = true;
+
+    } else if (result != JNI_OK) {
+
+        LOGE(
+            "Screenshot: GetEnv falhou"
+        );
+
+        return;
+    }
+
+    jbyteArray array =
+        env->NewByteArray(
+            static_cast<jsize>(size)
+        );
+
+    if (!array) {
+
+        LOGE(
+            "Screenshot: NewByteArray falhou"
+        );
+
+        if (attached)
+            context->javaVm->DetachCurrentThread();
+
+        return;
+    }
+
+    env->SetByteArrayRegion(
+        array,
+        0,
+        static_cast<jsize>(size),
+        reinterpret_cast<const jbyte*>(
+            pixels.data()
+        )
+    );
+
+    env->CallVoidMethod(
+        context->nativeObject,
+        context->onScreenshot,
+        array,
+        width,
+        height
+    );
+
+    if (env->ExceptionCheck()) {
+
+        LOGE(
+            "Screenshot: exceção no callback Kotlin"
+        );
+
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
+
+    env->DeleteLocalRef(array);
+
+    if (attached)
+        context->javaVm->DetachCurrentThread();
+
+    LOGI(
+        "Screenshot: framebuffer capturado %dx%d",
+        width,
+        height
+    );
+}
+
 bool mpv_context_render_frame(
     MpvContext* context
 )
@@ -208,6 +382,15 @@ bool mpv_context_render_frame(
 
     if (!render_mpv(context, params))
         return false;
+
+    if (context->screenshotRequested.exchange(false)) {
+
+        capture_framebuffer(
+            context,
+            width,
+            height
+        );
+    }
 
     if (!mpv_context_egl_swap(context))
         return false;
