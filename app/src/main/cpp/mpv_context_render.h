@@ -15,4 +15,8 @@ bool mpv_context_render_frame(
     MpvContext* context
 );
 
+bool mpv_context_render_capture(
+    MpvContext* context
+);
+
 #endif

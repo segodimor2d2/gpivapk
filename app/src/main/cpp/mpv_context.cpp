@@ -88,6 +88,8 @@ MpvContext* mpv_context_create()
 
     context->screenshotDirectory.clear();
 
+    context->screenshotRequested = false;
+
     context->streamManager = nullptr;
 
     context->eglDisplay = EGL_NO_DISPLAY;

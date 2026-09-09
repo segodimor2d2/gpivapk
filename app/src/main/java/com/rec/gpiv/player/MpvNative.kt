@@ -95,6 +95,17 @@ class MpvNative {
         )
     }
 
+    private fun onNativeScreenshot(
+        pixels: ByteArray,
+        width: Int,
+        height: Int
+    ) {
+        println(
+            "MpvNative: screenshot recebido " +
+                "${width}x${height}, ${pixels.size} bytes"
+        )
+    }
+
     fun getVersion(): String {
         return nativeGetVersion()
     }

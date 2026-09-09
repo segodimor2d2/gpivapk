@@ -222,6 +222,16 @@ Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
             "(Z)V"
         );
 
+    /* ========================================================
+     * CALLBACK SCREENSHOT
+     * ======================================================== */
+
+    context->onScreenshot =
+        env->GetMethodID(
+            clazz,
+            "onNativeScreenshot",
+            "([BII)V"
+        );
 
     env->DeleteLocalRef(clazz);
 
@@ -234,7 +244,8 @@ Java_com_rec_gpiv_player_MpvNative_nativeInitialize(
         !context->onDoubleProperty ||
         !context->onBooleanProperty ||
         !context->onStringProperty ||
-        !context->onLoadingChanged
+        !context->onLoadingChanged ||
+        !context->onScreenshot
     ) {
 
         LOGI(
@@ -501,11 +512,9 @@ Java_com_rec_gpiv_player_MpvNative_nativeScreenshot(
         reinterpret_cast<MpvContext*>(handle);
 
     if (!context || !context->mpv) {
-
         LOGI(
             "JNI: nativeScreenshot() -> contexto inválido"
         );
-
         return;
     }
 
@@ -514,20 +523,10 @@ Java_com_rec_gpiv_player_MpvNative_nativeScreenshot(
         static_cast<void*>(context)
     );
 
-    const char* command[] = {
-        "screenshot",
-        nullptr
-    };
-
-    int status =
-        mpv_command(
-            context->mpv,
-            command
-        );
+    context->screenshotRequested = true;
 
     LOGI(
-        "JNI: mpv_command(screenshot) -> %d",
-        status
+        "JNI: screenshot solicitado"
     );
 }
 

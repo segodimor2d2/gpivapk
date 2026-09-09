@@ -69,6 +69,23 @@ bool mpv_context_mpv_configure(
             "yes"
         );
 
+    status =
+        mpv_set_option_string(
+            context->mpv,
+            "screenshot-sw",
+            "no"
+        );
+
+    if (status < 0) {
+
+        LOGI(
+            "mpv_set_option_string(screenshot-sw) falhou: %s",
+            mpv_error_string(status)
+        );
+
+        return false;
+    }
+
     if (status < 0) {
 
         LOGI(

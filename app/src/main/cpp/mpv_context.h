@@ -30,6 +30,8 @@ struct MpvContext {
 
     std::string screenshotDirectory;
 
+    std::atomic<bool> screenshotRequested;
+
     /* ========================================================
      * EVENT LOOP
      * ======================================================== */
@@ -54,7 +56,8 @@ struct MpvContext {
     jmethodID onStringProperty;
 
     jmethodID onLoadingChanged;
-
+  
+    jmethodID onScreenshot;
 
     /* ========================================================
      * ANDROID SURFACE
