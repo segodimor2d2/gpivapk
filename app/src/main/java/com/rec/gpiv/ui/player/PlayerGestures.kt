@@ -16,6 +16,7 @@ import com.rec.gpiv.player.ZOOM_DOUBLE_TAP_DRAG
 @Composable
 fun PlayerGestures(
     mpvNative: MpvNative,
+    gestureTool: GestureTool,
     onDoubleTap: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -23,7 +24,7 @@ fun PlayerGestures(
         modifier = modifier
             .fillMaxSize()
             .padding(bottom = 80.dp)
-            .pointerInput(Unit) {
+            .pointerInput(gestureTool) {
 
                 awaitPointerEventScope {
 
@@ -90,18 +91,43 @@ fun PlayerGestures(
                                  */
 
                                 if (delta.y != 0f) {
-
                                     moved = true
                                     doubleTapMoved = true
 
                                     val zoomAmount =
-                                        -delta.y /
-                                            size.height.toFloat() *
-                                            ZOOM_DOUBLE_TAP_DRAG
+                                        -delta.y / size.height.toFloat() *
+                                        ZOOM_DOUBLE_TAP_DRAG
 
-                                    mpvNative.changeZoom(
-                                        zoomAmount
-                                    )
+                                    when (gestureTool) {
+                                        GestureTool.ZOOM -> {
+                                            mpvNative.changeZoom(zoomAmount)
+                                        }
+
+                                        GestureTool.BRIGHTNESS -> {
+                                            mpvNative.changeBrightness(zoomAmount)
+                                        }
+
+                                        GestureTool.CONTRAST -> {
+                                            mpvNative.changeContrast(zoomAmount)
+                                        }
+
+                                        GestureTool.GAMMA -> {
+                                            mpvNative.changeGamma(zoomAmount)
+                                        }
+
+                                        GestureTool.SATURATION -> {
+                                            mpvNative.changeSaturation(zoomAmount)
+                                        }
+
+                                        GestureTool.VOLUME -> {
+                                            // Volume ainda não implementado.
+                                        }
+
+                                        GestureTool.NONE -> {
+                                        }
+                                    }
+
+
                                 }
 
                                 previousPosition =
@@ -183,8 +209,8 @@ fun PlayerGestures(
                                         previousPosition
 
                                 if (
-                                    delta.x != 0f ||
-                                    delta.y != 0f
+                                    gestureTool == GestureTool.ZOOM &&
+                                    (delta.x != 0f || delta.y != 0f)
                                 ) {
 
                                     moved = true

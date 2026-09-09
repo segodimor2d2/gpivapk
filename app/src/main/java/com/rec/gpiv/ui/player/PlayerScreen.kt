@@ -105,6 +105,10 @@ fun PlayerScreen(
         mutableStateOf(0)
     }
 
+    var gestureTool by remember {
+        mutableStateOf(GestureTool.NONE)
+    }
+
     fun nextControlRow() {
 
         controlRow =
@@ -142,9 +146,9 @@ fun PlayerScreen(
          * ZOOM/PAN
          * ----------------------------------------------------
          */
-
         PlayerGestures(
             mpvNative = mpvNative,
+            gestureTool = gestureTool,
             onDoubleTap = {
                 controlsVisible = !controlsVisible
             }
@@ -574,6 +578,59 @@ fun PlayerScreen(
                                 onScreenshot()
                             }
                     )
+
+                    StatusText(
+                        text = "Z",
+                        modifier = Modifier
+                            .clickable {
+                                gestureTool =
+                                    if (gestureTool == GestureTool.ZOOM) {
+                                        GestureTool.NONE
+                                    } else {
+                                        GestureTool.ZOOM
+                                    }
+                            }
+                    )
+
+                    StatusText(
+                        text = "B",
+                        modifier = Modifier
+                            .clickable {
+                                gestureTool =
+                                    if (gestureTool == GestureTool.BRIGHTNESS) {
+                                        GestureTool.NONE
+                                    } else {
+                                        GestureTool.BRIGHTNESS
+                                    }
+                            }
+                    )
+
+                    StatusText(
+                        text = "C",
+                        modifier = Modifier
+                            .clickable {
+                                gestureTool =
+                                    if (gestureTool == GestureTool.CONTRAST) {
+                                        GestureTool.NONE
+                                    } else {
+                                        GestureTool.CONTRAST
+                                    }
+                            }
+                    )
+
+                    StatusText(
+                        text = "G",
+                        modifier = Modifier
+                            .clickable {
+                                gestureTool =
+                                    if (gestureTool == GestureTool.GAMMA) {
+                                        GestureTool.NONE
+                                    } else {
+                                        GestureTool.GAMMA
+                                    }
+                            }
+                    )
+
 
 
                 }
