@@ -213,27 +213,6 @@ fun PlayerScreen(
 
                         /*
                          * --------------------------------------------
-                         * SCREENSHOT
-                         * --------------------------------------------
-                         */
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-                            CompactButton(
-                                text = "screenshot",
-                                onClick = onScreenshot
-                            )
-                        }
-
-                        /*
-                         * --------------------------------------------
                          * CONTRAST
                          * --------------------------------------------
                          */
@@ -457,12 +436,6 @@ fun PlayerScreen(
                                 onClick = onPreviousFile
                             )
 
-                            CompactButton(
-                                text =
-                                    if (uiState.playing) { "▶" }
-                                    else { "⏸" },
-                                onClick = onTogglePlayPause
-                            )
                         }
                     }
                 }
@@ -496,11 +469,28 @@ fun PlayerScreen(
 
                     StatusText(
                         text =
-                            "%.2f / %.2f".format(
-                                uiState.position,
+                            "%.2f".format(
+                                uiState.position
+                            )
+                    )
+
+                    StatusText(
+                        text =
+                            if (uiState.playing) { "▶" }
+                            else { "⏸" },
+                        modifier =
+                            Modifier.clickable {
+                                onTogglePlayPause()
+                            }
+                    )
+
+                    StatusText(
+                        text =
+                            "%.2f".format(
                                 uiState.duration
                             )
                     )
+
 
                     StatusText(
                         text = "PP",
@@ -558,6 +548,14 @@ fun PlayerScreen(
                         modifier = Modifier
                             .clickable {
                                 onOpenVideo()
+                            }
+                    )
+
+                    StatusText(
+                        text = "S",
+                        modifier = Modifier
+                            .clickable {
+                                onScreenshot()
                             }
                     )
 

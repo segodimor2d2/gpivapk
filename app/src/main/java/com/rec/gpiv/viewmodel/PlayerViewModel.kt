@@ -12,7 +12,6 @@ import com.rec.gpiv.player.MpvNative
 import com.rec.gpiv.player.MpvPlayer
 import com.rec.gpiv.player.PlayerEvent
 import com.rec.gpiv.player.VideoPlayer
-import com.rec.gpiv.player.SEEK_SECONDS
 import com.rec.gpiv.player.FILE_JUMP
 import com.rec.gpiv.player.MAX_VOLUME
 import com.rec.gpiv.player.VOLUME_STEP
