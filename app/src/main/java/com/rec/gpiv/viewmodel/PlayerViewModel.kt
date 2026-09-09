@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 import android.content.ContentResolver
+import android.util.Log
 
 class PlayerViewModel(
     application: Application
@@ -116,7 +117,19 @@ class PlayerViewModel(
 
                     is PlayerEvent.FilenameChanged -> {
 
-                        if (!pickerVideoLoaded) {
+                        /*
+                         * Quando existe uma lista de arquivos carregada,
+                         * o nome oficial vem do FileItem.
+                         *
+                         * O mpv pode informar um filename diferente
+                         * quando o vídeo foi aberto através de FD/URI.
+                         * Não devemos deixar esse evento sobrescrever
+                         * o nome real obtido pelo SAF.
+                         */
+                        if (
+                            fileList.size() == 0 &&
+                            !pickerVideoLoaded
+                        ) {
 
                             _uiState.value =
                                 _uiState.value.copy(
@@ -139,64 +152,68 @@ class PlayerViewModel(
 
     fun load(uri: Uri) {
 
-        val filename =
-            getFileName(uri)
-
-        selectedUri = uri
-
-        pickerVideoLoaded = true
-
         println(
-            "PlayerViewModel: carregando arquivo = $filename"
+            "PlayerViewModel: load(uri) = $uri"
         )
 
         /*
-         * Se a FileList já foi carregada através de uma pasta,
-         * tenta posicionar o arquivo selecionado.
+         * Primeiro tentamos encontrar o arquivo na FileList.
+         *
+         * Quando a pasta já foi carregada, o FileList possui
+         * o nome real obtido de COLUMN_DISPLAY_NAME.
          */
-        if (fileList.size() > 0) {
+        val fileFromList =
+            fileList
+                .all()
+                .firstOrNull { file ->
+                    try {
+                        DocumentsContract.getDocumentId(file.uri) ==
+                            DocumentsContract.getDocumentId(uri)
+                    } catch (e: Exception) {
+                        false
+                    }
+                }
 
-            val found =
-                fileList.setCurrent(
-                    uri
-                )
+        val filename =
+            fileFromList?.name
+                ?: getFileName(uri)
 
-            println(
-                "PlayerViewModel: arquivo encontrado " +
-                    "na FileList = $found"
-            )
+        println(
+            "PlayerViewModel: filename = $filename"
+        )
 
-            println(
-                "PlayerViewModel: posição atual = " +
-                    fileList.currentIndex()
-            )
-        }
+        selectedUri =
+            uri
+
+        pickerVideoLoaded =
+            true
 
         _uiState.value =
             _uiState.value.copy(
                 filename = filename,
+                playing = false,
                 loading = true,
                 position = 0.0,
                 duration = 0.0
             )
 
-        try {
+        /*
+         * Se a FileList já estiver carregada, sincroniza
+         * o currentIndex com o vídeo selecionado.
+         */
+        val found =
+            fileList.setCurrent(uri)
 
-            player.load(uri)
+        println(
+            "PlayerViewModel: arquivo encontrado na FileList = $found"
+        )
 
-        } catch (e: Exception) {
+        println(
+            "PlayerViewModel: currentIndex = " +
+                fileList.currentIndex()
+        )
 
-            _uiState.value =
-                _uiState.value.copy(
-                    loading = false,
-                    playing = false
-                )
-
-            println(
-                "PlayerViewModel: erro ao carregar vídeo: " +
-                    e.message
-            )
-        }
+        player.load(uri)
     }
 
     fun loadFolder(
@@ -248,50 +265,55 @@ class PlayerViewModel(
                 "PlayerViewModel: posição atual depois = " +
                     fileList.currentIndex()
             )
+
+            if (found) {
+
+                val currentFile =
+                    fileList.current()
+
+                if (currentFile != null) {
+
+                    println(
+                        "PlayerViewModel: nome real recuperado da FileList = " +
+                            currentFile.name
+                    )
+
+                    _uiState.value =
+                        _uiState.value.copy(
+                            filename = currentFile.name
+                        )
+                }
+            }
+
         }
     }
 
-    private fun getFileName(
-        uri: Uri
-    ): String {
+    private fun getFileName(uri: Uri): String {
+        val resolver = getApplication<Application>().contentResolver
 
-        val resolver =
-            getApplication<Application>()
-                .contentResolver
-
-        resolver.query(
-            uri,
-            arrayOf(
-                OpenableColumns.DISPLAY_NAME
-            ),
-            null,
-            null,
-            null
-        )?.use { cursor ->
-
-            if (cursor.moveToFirst()) {
-
+        return try {
+            resolver.query(
+                uri,
+                arrayOf(OpenableColumns.DISPLAY_NAME),
+                null,
+                null,
+                null
+            )?.use { cursor ->
                 val nameIndex =
-                    cursor.getColumnIndex(
-                        OpenableColumns.DISPLAY_NAME
-                    )
+                    cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
 
-                if (nameIndex >= 0) {
-
-                    val name =
-                        cursor.getString(
-                            nameIndex
-                        )
-
-                    if (!name.isNullOrBlank()) {
-                        return name
-                    }
+                if (nameIndex >= 0 && cursor.moveToFirst()) {
+                    cursor.getString(nameIndex)
+                        ?.takeIf { it.isNotBlank() }
+                        ?: "Nenhum arquivo"
+                } else {
+                    "Nenhum arquivo"
                 }
-            }
+            } ?: "Nenhum arquivo"
+        } catch (e: Exception) {
+            Log.e("PlayerViewModel", "Erro ao obter nome do arquivo: $uri", e)
+            "Nenhum arquivo"
         }
-
-        return uri.lastPathSegment
-            ?: "Nenhum arquivo"
     }
 
     fun nextFile() {
@@ -675,7 +697,8 @@ class PlayerViewModel(
     private fun findNextScreenshotName(
         resolver: ContentResolver,
         parentDocumentUri: Uri,
-        baseName: String
+        baseName: String,
+        screenshotExtension: String
     ): String {
 
         val childrenUri =
@@ -718,13 +741,13 @@ class PlayerViewModel(
                 if (!name.startsWith(prefix))
                     continue
 
-                if (!name.endsWith(".jpg"))
+                if (!name.endsWith(screenshotExtension))
                     continue
 
                 val numberText =
                     name
                         .removePrefix(prefix)
-                        .removeSuffix(".jpg")
+                        .removeSuffix(screenshotExtension)
 
                 val number =
                     numberText.toIntOrNull()
@@ -742,9 +765,10 @@ class PlayerViewModel(
         }
 
         return String.format(
-            "%s%03d.jpg",
+            "%s_%03d%s",
             baseName,
-            number
+            number,
+            screenshotExtension
         )
     }
 
@@ -794,18 +818,32 @@ class PlayerViewModel(
                     _uiState.value.filename
                         ?: "screenshot"
 
+                val lastDot = originalName.lastIndexOf(".")
+
                 val baseName =
-                    originalName
-                        .substringBeforeLast(
-                            ".",
-                            originalName
-                        )
+                    if (lastDot > 0) {
+                        originalName.substring(0, lastDot)
+                    } else {
+                        originalName
+                    }
+
+                val hasExtension =
+                    lastDot > 0 &&
+                        lastDot < originalName.length - 1
+
+                val screenshotExtension =
+                    if (hasExtension) {
+                        ".jpg"
+                    } else {
+                        ""
+                    }
 
                 val destinationName =
                     findNextScreenshotName(
                         resolver,
                         parentDocumentUri,
-                        baseName
+                        baseName,
+                        screenshotExtension
                     )
 
                 println(
