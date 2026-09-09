@@ -1,6 +1,10 @@
 package com.rec.gpiv.player
 
+import android.graphics.Bitmap
+import android.graphics.Color
 import android.view.Surface
+import java.io.File
+import java.io.FileOutputStream
 
 class MpvNative {
 
@@ -11,6 +15,8 @@ class MpvNative {
     }
 
     private var nativeHandle: Long = 0L
+
+    private var screenshotDirectory: String? = null
 
     private var propertyListener:
         ((String, Double) -> Unit)? = null
@@ -27,6 +33,8 @@ class MpvNative {
     fun initialize(
         screenshotDirectory: String
     ) {
+
+        this.screenshotDirectory = screenshotDirectory
 
         nativeHandle = nativeCreate()
 
@@ -96,14 +104,128 @@ class MpvNative {
     }
 
     private fun onNativeScreenshot(
-        pixels: ByteArray,
-        width: Int,
-        height: Int
+      pixels: ByteArray,
+      width: Int,
+      height: Int
     ) {
+
+      println(
+        "MpvNative: screenshot recebido " +
+        "${width}x${height}, ${pixels.size} bytes"
+      )
+
+      val directory =
+      screenshotDirectory?.let {
+        File(it)
+      }
+
+      if (directory == null) {
         println(
-            "MpvNative: screenshot recebido " +
-                "${width}x${height}, ${pixels.size} bytes"
+          "MpvNative: screenshot directory não definido"
         )
+        return
+      }
+
+      if (!directory.exists()) {
+        directory.mkdirs()
+      }
+
+      val expectedSize =
+      width * height * 4
+
+      if (pixels.size != expectedSize) {
+        println(
+          "MpvNative: tamanho RGBA inválido: " +
+          "${pixels.size}, esperado $expectedSize"
+        )
+        return
+      }
+
+      val bitmap =
+      Bitmap.createBitmap(
+        width,
+        height,
+        Bitmap.Config.ARGB_8888
+      )
+
+      val colors =
+      IntArray(width * height)
+
+      var pixelIndex = 0
+      var byteIndex = 0
+
+      while (pixelIndex < colors.size) {
+
+        val r =
+        pixels[byteIndex].toInt() and 0xFF
+
+        val g =
+        pixels[byteIndex + 1].toInt() and 0xFF
+
+        val b =
+        pixels[byteIndex + 2].toInt() and 0xFF
+
+        val a =
+        pixels[byteIndex + 3].toInt() and 0xFF
+
+        colors[pixelIndex] =
+        Color.argb(
+          a,
+          r,
+          g,
+          b
+        )
+
+        pixelIndex++
+        byteIndex += 4
+      }
+
+      bitmap.setPixels(
+        colors,
+        0,
+        width,
+        0,
+        0,
+        width,
+        height
+      )
+
+      val filename =
+      "mpv-shot-${System.currentTimeMillis()}.jpg"
+
+      val file =
+      File(
+        directory,
+        filename
+      )
+
+      try {
+
+        FileOutputStream(file).use { output ->
+
+          bitmap.compress(
+            Bitmap.CompressFormat.JPEG,
+            95,
+            output
+          )
+        }
+
+        println(
+          "MpvNative: screenshot salvo = " +
+          file.absolutePath
+        )
+
+      } catch (e: Exception) {
+
+        println(
+          "MpvNative: erro ao salvar screenshot: " +
+          e.message
+        )
+
+      } finally {
+
+        bitmap.recycle()
+      }
     }
 
     fun getVersion(): String {
