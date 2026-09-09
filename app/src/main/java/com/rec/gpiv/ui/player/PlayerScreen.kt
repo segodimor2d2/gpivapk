@@ -83,6 +83,10 @@ fun PlayerScreen(
     modifier: Modifier = Modifier
 ) {
 
+    println(
+        "PlayerScreen: uiState.playing = ${uiState.playing}"
+    )
+
     /*
      * --------------------------------------------------------
      * CONTROLES
@@ -480,6 +484,7 @@ fun PlayerScreen(
                             else { "⏸" },
                         modifier =
                             Modifier.clickable {
+                                println( "PlayerScreen: CLIQUE PLAY/PAUSE")
                                 onTogglePlayPause()
                             }
                     )

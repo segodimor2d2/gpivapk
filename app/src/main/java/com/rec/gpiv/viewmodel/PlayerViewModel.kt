@@ -113,6 +113,11 @@ class PlayerViewModel(
                             _uiState.value.copy(
                                 playing = !event.paused
                             )
+
+                        println(
+                            "PlayerViewModel: UI STATE após PauseChanged = " +
+                                "playing=${_uiState.value.playing}"
+                        )
                     }
 
                     is PlayerEvent.FilenameChanged -> {
@@ -505,8 +510,12 @@ class PlayerViewModel(
         jumpFiles(-FILE_JUMP)
     }
 
-
     fun togglePlayPause() {
+
+        println(
+            "PlayerViewModel: togglePlayPause() " +
+                "playing=${_uiState.value.playing}"
+        )
 
         if (_uiState.value.playing) {
             pause()

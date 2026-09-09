@@ -30,6 +30,9 @@ class MpvPlayer(
      */
     private var lastKnownPlaying = false
 
+    private var hasLoadedVideo = false
+
+
     /*
      * Estado que deverá ser aplicado ao próximo
      * vídeo depois que ele terminar de carregar.
@@ -82,11 +85,19 @@ class MpvPlayer(
          * o novo deverá permanecer pausado.
          */
         pendingPlaybackState =
-            lastKnownPlaying
+            if (hasLoadedVideo) {
+                lastKnownPlaying
+            } else {
+                false
+            }
+
+        hasLoadedVideo = true
 
         println(
             "MpvPlayer: estado anterior = " +
-                "playing=$lastKnownPlaying"
+                "playing=$lastKnownPlaying " +
+                "loaded=$hasLoadedVideo " +
+                "pending=$pendingPlaybackState"
         )
 
         val opened =
@@ -336,6 +347,11 @@ class MpvPlayer(
                 val playbackState =
                     pendingPlaybackState
 
+                println(
+                    "pending=$pendingPlaybackState " +
+                    "playbackState=$playbackState"
+                )
+
                 if (playbackState != null) {
 
                     println(
@@ -345,6 +361,15 @@ class MpvPlayer(
 
                     native.setPause(
                         !playbackState
+                    )
+
+                    lastKnownPlaying =
+                        playbackState
+
+                    _events.tryEmit(
+                        PlayerEvent.PauseChanged(
+                            paused = !playbackState
+                        )
                     )
 
                     pendingPlaybackState =
