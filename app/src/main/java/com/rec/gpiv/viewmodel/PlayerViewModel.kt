@@ -31,6 +31,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+import android.content.ContentResolver
+
 class PlayerViewModel(
     application: Application
 ) : AndroidViewModel(application) {
@@ -671,6 +673,82 @@ class PlayerViewModel(
     }
 
 
+    private fun findNextScreenshotName(
+        resolver: ContentResolver,
+        parentDocumentUri: Uri,
+        baseName: String
+    ): String {
+
+        val childrenUri =
+            DocumentsContract.buildChildDocumentsUriUsingTree(
+                parentDocumentUri,
+                DocumentsContract.getDocumentId(
+                    parentDocumentUri
+                )
+            )
+
+        val usedNumbers =
+            mutableSetOf<Int>()
+
+        resolver.query(
+            childrenUri,
+            arrayOf(
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+
+            val nameColumn =
+                cursor.getColumnIndex(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                )
+
+            while (cursor.moveToNext()) {
+
+                if (nameColumn < 0)
+                    continue
+
+                val name =
+                    cursor.getString(nameColumn)
+
+                val prefix =
+                    baseName
+
+                if (!name.startsWith(prefix))
+                    continue
+
+                if (!name.endsWith(".jpg"))
+                    continue
+
+                val numberText =
+                    name
+                        .removePrefix(prefix)
+                        .removeSuffix(".jpg")
+
+                val number =
+                    numberText.toIntOrNull()
+
+                if (number != null) {
+                    usedNumbers.add(number)
+                }
+            }
+        }
+
+        var number = 1
+
+        while (number in usedNumbers) {
+            number++
+        }
+
+        return String.format(
+            "%s%03d.jpg",
+            baseName,
+            number
+        )
+    }
+
     private suspend fun copyScreenshotToTree(
         screenshotFile: File,
         treeUri: Uri
@@ -725,8 +803,11 @@ class PlayerViewModel(
                         )
 
                 val destinationName =
-                    "$baseName-screenshot.jpg"
-
+                    findNextScreenshotName(
+                        resolver,
+                        parentDocumentUri,
+                        baseName
+                    )
 
                 println(
                     "PlayerViewModel: criando arquivo SAF = " +
