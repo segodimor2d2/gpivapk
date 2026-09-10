@@ -495,7 +495,7 @@ fun PlayerScreen(
                             "%.2f".format(
                                 uiState.position
                             ),
-                        modifier = Modifier.clickable { onResetVideoAdjustments() }
+                        modifier = Modifier.clickable { controlsVisible = false }
                     )
 
                     StatusText(
@@ -535,7 +535,7 @@ fun PlayerScreen(
                                 )
 
                             } else { "0.0%" },
-                        modifier = Modifier.clickable { nextControlRow() }
+                        modifier = Modifier.clickable { onResetVideoAdjustments() }
                     )
 
                     StatusText(
