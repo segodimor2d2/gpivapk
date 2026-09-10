@@ -468,6 +468,19 @@ class MpvNative {
         )
     }
 
+    fun resetVideoAdjustments() {
+
+        checkInitialized()
+
+        println(
+            "MpvNative: resetVideoAdjustments()"
+        )
+
+        nativeResetVideoAdjustments(
+            nativeHandle
+        )
+    }
+
     fun release() {
 
         if (nativeHandle != 0L) {
@@ -655,6 +668,10 @@ class MpvNative {
     private external fun nativeChangeSaturation(
         handle: Long,
         amount: Double
+    )
+
+    private external fun nativeResetVideoAdjustments(
+        handle: Long
     )
 
 }

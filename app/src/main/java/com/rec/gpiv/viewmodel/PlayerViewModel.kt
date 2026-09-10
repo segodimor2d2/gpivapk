@@ -475,6 +475,8 @@ private var screenshotMethod =
         _uiState.value =
             _uiState.value.copy(
                 filename = file.name,
+                fileIndex = fileList.currentIndex(),
+                fileCount = fileList.size(),
                 loading = true,
                 position = 0.0,
                 duration = 0.0
@@ -1218,36 +1220,10 @@ private var screenshotMethod =
             )
     }
 
-
     fun resetVideoAdjustments() {
+        val state = _uiState.value
 
-        val state =
-            _uiState.value
-
-        if (state.brightness != 0.0) {
-            mpvNative.changeBrightness(
-                -state.brightness
-            )
-        }
-
-        if (state.contrast != 0.0) {
-            mpvNative.changeContrast(
-                -state.contrast
-            )
-        }
-
-        if (state.gamma != 0.0) {
-            mpvNative.changeGamma(
-                -state.gamma
-            )
-        }
-
-        if (state.saturation != 0.0) {
-            mpvNative.changeSaturation(
-                -state.saturation
-            )
-        }
-
+        mpvNative.resetVideoAdjustments()
         mpvNative.resetView()
 
         _uiState.value =

@@ -360,11 +360,60 @@ fun PlayerScreen(
                         ) {
 
                             StatusText(
-                                text = "${uiState.fileIndex + 1} / ${uiState.fileCount}  ${uiState.filename ?: "++++++"}"
+                                text = "${uiState.fileIndex + 1} / ${uiState.fileCount}"
                             )
-                            // StatusText(
-                            //     text = ${uiState.fileIndex + 1} / ${uiState.fileCount}
-                            // )
+
+                            StatusText(
+                                text = "Z",
+                                modifier = Modifier
+                                    .clickable {
+                                        gestureTool =
+                                            if (gestureTool == GestureTool.ZOOM) {
+                                                GestureTool.NONE
+                                            } else {
+                                                GestureTool.ZOOM
+                                            }
+                                    }
+                            )
+
+                            StatusText(
+                                text = "B",
+                                modifier = Modifier
+                                    .clickable {
+                                        gestureTool =
+                                            if (gestureTool == GestureTool.BRIGHTNESS) {
+                                                GestureTool.NONE
+                                            } else {
+                                                GestureTool.BRIGHTNESS
+                                            }
+                                    }
+                            )
+
+                            StatusText(
+                                text = "C",
+                                modifier = Modifier
+                                    .clickable {
+                                        gestureTool =
+                                            if (gestureTool == GestureTool.CONTRAST) {
+                                                GestureTool.NONE
+                                            } else {
+                                                GestureTool.CONTRAST
+                                            }
+                                    }
+                            )
+
+                            StatusText(
+                                text = "G",
+                                modifier = Modifier
+                                    .clickable {
+                                        gestureTool =
+                                            if (gestureTool == GestureTool.GAMMA) {
+                                                GestureTool.NONE
+                                            } else {
+                                                GestureTool.GAMMA
+                                            }
+                                    }
+                            )
                         }
 
                     }
@@ -623,7 +672,7 @@ fun PlayerScreen(
                     )
 
                     StatusText(
-                        text = "${uiState.fileIndex + 1} / ${uiState.fileCount}  ${uiState.filename ?: "++++++"}",
+                        text = "(${uiState.fileIndex + 1}) ${uiState.filename ?: "++++++"}",
                         modifier = Modifier
                             .clickable {
                                 onOpenVideo()
@@ -642,47 +691,6 @@ fun PlayerScreen(
                                     }
                             }
                     )
-
-                    StatusText(
-                        text = "B",
-                        modifier = Modifier
-                            .clickable {
-                                gestureTool =
-                                    if (gestureTool == GestureTool.BRIGHTNESS) {
-                                        GestureTool.NONE
-                                    } else {
-                                        GestureTool.BRIGHTNESS
-                                    }
-                            }
-                    )
-
-                    StatusText(
-                        text = "C",
-                        modifier = Modifier
-                            .clickable {
-                                gestureTool =
-                                    if (gestureTool == GestureTool.CONTRAST) {
-                                        GestureTool.NONE
-                                    } else {
-                                        GestureTool.CONTRAST
-                                    }
-                            }
-                    )
-
-                    StatusText(
-                        text = "G",
-                        modifier = Modifier
-                            .clickable {
-                                gestureTool =
-                                    if (gestureTool == GestureTool.GAMMA) {
-                                        GestureTool.NONE
-                                    } else {
-                                        GestureTool.GAMMA
-                                    }
-                            }
-                    )
-
-
 
                 }
 

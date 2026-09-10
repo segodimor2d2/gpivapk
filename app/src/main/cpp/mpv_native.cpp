@@ -801,6 +801,79 @@ Java_com_rec_gpiv_player_MpvNative_nativeChangeSaturation(
 
 extern "C"
 JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeResetVideoAdjustments(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeResetVideoAdjustments() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    const char* brightnessCommand[] = {
+        "set",
+        "brightness",
+        "0",
+        nullptr
+    };
+
+    const char* contrastCommand[] = {
+        "set",
+        "contrast",
+        "0",
+        nullptr
+    };
+
+    const char* gammaCommand[] = {
+        "set",
+        "gamma",
+        "0",
+        nullptr
+    };
+
+    const char* saturationCommand[] = {
+        "set",
+        "saturation",
+        "0",
+        nullptr
+    };
+
+    mpv_command(
+        context->mpv,
+        brightnessCommand
+    );
+
+    mpv_command(
+        context->mpv,
+        contrastCommand
+    );
+
+    mpv_command(
+        context->mpv,
+        gammaCommand
+    );
+
+    mpv_command(
+        context->mpv,
+        saturationCommand
+    );
+
+    LOGI(
+        "JNI: resetVideoAdjustments()"
+    );
+}
+
+extern "C"
+JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativePan(
     JNIEnv* env,
     jobject thiz,
