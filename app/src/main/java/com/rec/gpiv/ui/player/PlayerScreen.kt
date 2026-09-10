@@ -208,6 +208,15 @@ fun PlayerScreen(
                                 )
                         ) {
 
+                            StatusText(
+                                text = "SS MPV",
+                                modifier = Modifier
+                                    .clickable {
+                                        onSetScreenshotMethod("MPV")
+                                        onScreenshot()
+                                    }
+                            )
+
                             CompactButton(
                                 text = "volume ${uiState.volume}",
                                 onClick = onMute
@@ -334,24 +343,6 @@ fun PlayerScreen(
                                     }
                             )
 
-                            StatusText(
-                                text = "pp",
-                                backgroundColor =
-                                    if (gestureTool == GestureTool.SEEK) {
-                                        Color(0x9900994C)
-                                    } else {
-                                        Color.Transparent
-                                    },
-                                modifier = Modifier
-                                    .clickable {
-                                        gestureTool =
-                                            if (gestureTool == GestureTool.SEEK) {
-                                                GestureTool.NONE
-                                            } else {
-                                                GestureTool.SEEK
-                                            }
-                                    }
-                            )
 
                             StatusText(
                                 text = "0",
@@ -378,6 +369,27 @@ fun PlayerScreen(
                         verticalArrangement =
                             Arrangement.spacedBy(10.dp)
                     ) {
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
+
+                            CompactButton(
+                                text = "+",
+                                onClick = onNextFile
+                            )
+
+                            CompactButton(
+                                text = "-",
+                                onClick = onPreviousFile
+                            )
+
+                        }
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -472,26 +484,7 @@ fun PlayerScreen(
                             )
                         }
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
 
-                            CompactButton(
-                                text = "+",
-                                onClick = onNextFile
-                            )
-
-                            CompactButton(
-                                text = "-",
-                                onClick = onPreviousFile
-                            )
-
-                        }
                     }
                 }
 
@@ -586,7 +579,8 @@ fun PlayerScreen(
                 ) {
 
                     StatusText(
-                        text = "S",
+                        text = "[SS]",
+
                         modifier = Modifier
                             .clickable {
                                 onSetScreenshotMethod("FRAMEBUFFER")
@@ -594,14 +588,6 @@ fun PlayerScreen(
                             }
                     )
 
-                    StatusText(
-                        text = "SS",
-                        modifier = Modifier
-                            .clickable {
-                                onSetScreenshotMethod("MPV")
-                                onScreenshot()
-                            }
-                    )
 
                     StatusText(
                         text = "(${uiState.fileIndex + 1}) ${uiState.filename ?: "++++++"}",
@@ -626,6 +612,25 @@ fun PlayerScreen(
                                         GestureTool.NONE
                                     } else {
                                         GestureTool.ZOOM
+                                    }
+                            }
+                    )
+
+                    StatusText(
+                        text = "pp",
+                        backgroundColor =
+                            if (gestureTool == GestureTool.SEEK) {
+                                Color(0x9900994C)
+                            } else {
+                                Color.Transparent
+                            },
+                        modifier = Modifier
+                            .clickable {
+                                gestureTool =
+                                    if (gestureTool == GestureTool.SEEK) {
+                                        GestureTool.NONE
+                                    } else {
+                                        GestureTool.SEEK
                                     }
                             }
                     )
