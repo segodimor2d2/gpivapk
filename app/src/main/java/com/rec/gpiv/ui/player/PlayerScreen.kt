@@ -350,6 +350,22 @@ fun PlayerScreen(
                                 onClick = onBrightnessUp
                             )
                         }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
+
+                            StatusText(
+                                text = "${uiState.fileIndex + 1} / ${uiState.fileCount}  ${uiState.filename ?: "++++++"}"
+                            )
+                            // StatusText(
+                            //     text = ${uiState.fileIndex + 1} / ${uiState.fileCount}
+                            // )
+                        }
 
                     }
                 }
@@ -607,7 +623,7 @@ fun PlayerScreen(
                     )
 
                     StatusText(
-                        text = uiState.filename ?: "++++++",
+                        text = "${uiState.fileIndex + 1} / ${uiState.fileCount}  ${uiState.filename ?: "++++++"}",
                         modifier = Modifier
                             .clickable {
                                 onOpenVideo()

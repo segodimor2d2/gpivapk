@@ -201,15 +201,6 @@ private var screenshotMethod =
         pickerVideoLoaded =
             true
 
-        _uiState.value =
-            _uiState.value.copy(
-                filename = filename,
-                playing = false,
-                loading = true,
-                position = 0.0,
-                duration = 0.0
-            )
-
         /*
          * Se a FileList já estiver carregada, sincroniza
          * o currentIndex com o vídeo selecionado.
@@ -225,6 +216,17 @@ private var screenshotMethod =
             "PlayerViewModel: currentIndex = " +
                 fileList.currentIndex()
         )
+
+        _uiState.value =
+            _uiState.value.copy(
+                filename = filename,
+                fileIndex = fileList.currentIndex(),
+                fileCount = fileList.size(),
+                playing = false,
+                loading = true,
+                position = 0.0,
+                duration = 0.0
+            )
 
         player.load(uri)
     }
@@ -502,6 +504,8 @@ private var screenshotMethod =
         _uiState.value =
             _uiState.value.copy(
                 filename = file.name,
+                fileIndex = fileList.currentIndex(),
+                fileCount = fileList.size(),
                 loading = true,
                 position = 0.0,
                 duration = 0.0
