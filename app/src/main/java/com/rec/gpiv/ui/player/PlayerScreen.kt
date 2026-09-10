@@ -150,6 +150,9 @@ fun PlayerScreen(
             mpvNative = mpvNative,
             gestureTool = gestureTool,
             onDoubleTap = {
+                nextControlRow()
+            },
+            onTwoFingerTap = {
                 controlsVisible = !controlsVisible
             }
         )

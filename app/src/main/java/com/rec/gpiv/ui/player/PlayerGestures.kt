@@ -18,6 +18,7 @@ fun PlayerGestures(
     mpvNative: MpvNative,
     gestureTool: GestureTool,
     onDoubleTap: () -> Unit,
+    onTwoFingerTap: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -166,13 +167,12 @@ fun PlayerGestures(
 
                             if (pressed.size >= 2) {
                                 moved = true
-
+                                onTwoFingerTap()
+                                
                                 while (true) {
-
                                     val twoFingerEvent =
                                         awaitPointerEvent(
-                                            pass =
-                                                PointerEventPass.Main
+                                            pass = PointerEventPass.Main
                                         )
 
                                     val pointers =
@@ -180,15 +180,9 @@ fun PlayerGestures(
                                             it.pressed
                                         }
 
-                                    if (pointers.size != 1) {
-                                        if (pointers.isEmpty()) {
-                                            break
-                                        }
-                                        continue
+                                    if (pointers.isEmpty()) {
+                                        break
                                     }
-
-                                    previousPosition =
-                                        pointers[0].position
                                 }
 
                                 break
