@@ -38,6 +38,8 @@ import androidx.compose.ui.geometry.Offset
 import com.rec.gpiv.model.PlayerUiState
 import com.rec.gpiv.player.MpvNative
 import com.rec.gpiv.player.SEEK_SECONDS
+import com.rec.gpiv.player.SEEK_FRAMES
+import com.rec.gpiv.player.SEEK_FRAMES_PLUS
 
 @Composable
 fun PlayerScreen(
@@ -55,16 +57,17 @@ fun PlayerScreen(
 
     onNextFile: () -> Unit,
 
-    onFrameBackward: () -> Unit,
-    onFrameForward: () -> Unit,
+    onFrameBackward: (Int) -> Unit,
+    onFrameForward: (Int) -> Unit,
+    onSeekBackward: (Double) -> Unit,
+    onSeekForward: (Double) -> Unit,
+
     onScreenshot: () -> Unit,
     onSetScreenshotMethod: (String) -> Unit,
 
     onRotate: () -> Unit,
 
     onTogglePlayPause: () -> Unit,
-    onSeekBackward: (Double) -> Unit,
-    onSeekForward: (Double) -> Unit,
     onVolumeDown: () -> Unit,
     onVolumeUp: () -> Unit,
     onMute: () -> Unit,
@@ -404,6 +407,22 @@ fun PlayerScreen(
                                 )
                         ) {
 
+
+
+                            CompactButton(
+                                text = "<=",
+                                onClick = {
+                                    onFrameBackward(SEEK_FRAMES_PLUS)
+                                }
+                            )
+
+                            CompactButton(
+                                text = "=>",
+                                onClick = {
+                                    onFrameForward(SEEK_FRAMES_PLUS)
+                                }
+                            )
+
                             CompactButton(
                                 text = "<<",
                                 onClick = {
@@ -412,19 +431,32 @@ fun PlayerScreen(
                             )
 
                             CompactButton(
+                                text = ">>",
+                                onClick = {
+                                    onSeekForward(SEEK_SECONDS)
+                                }
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
+
+                            CompactButton(
                                 text = "<",
-                                onClick = onFrameBackward
+                                onClick = {
+                                    onFrameBackward(SEEK_FRAMES)
+                                }
                             )
 
                             CompactButton(
                                 text = ">",
-                                onClick = onFrameForward
-                            )
-
-                            CompactButton(
-                                text = ">>",
                                 onClick = {
-                                    onSeekForward(SEEK_SECONDS)
+                                    onFrameForward(SEEK_FRAMES)
                                 }
                             )
                         }
@@ -439,12 +471,12 @@ fun PlayerScreen(
                         ) {
 
                             CompactButton(
-                                text = "N",
+                                text = "+",
                                 onClick = onNextFile
                             )
 
                             CompactButton(
-                                text = "P",
+                                text = "-",
                                 onClick = onPreviousFile
                             )
 
@@ -487,13 +519,10 @@ fun PlayerScreen(
                     )
 
                     StatusText(
-                        text =
-                            if (uiState.playing) { "▶" }
-                            else { "⏸" },
+                        text = "PP",
                         modifier =
                             Modifier.clickable {
-                                println( "PlayerScreen: CLIQUE PLAY/PAUSE")
-                                onTogglePlayPause()
+                                onOpenFolder()
                             }
                     )
 
@@ -504,14 +533,17 @@ fun PlayerScreen(
                             )
                     )
 
-
                     StatusText(
-                        text = "PP",
+                        text =
+                            if (uiState.playing) { "▶" }
+                            else { "⏸" },
                         modifier =
                             Modifier.clickable {
-                                onOpenFolder()
+                                println( "PlayerScreen: CLIQUE PLAY/PAUSE")
+                                onTogglePlayPause()
                             }
                     )
+
 
                     StatusText(
                         text =
@@ -557,14 +589,6 @@ fun PlayerScreen(
                     )
 
                     StatusText(
-                        text = uiState.filename ?: "++++++",
-                        modifier = Modifier
-                            .clickable {
-                                onOpenVideo()
-                            }
-                    )
-
-                    StatusText(
                         text = "S",
                         modifier = Modifier
                             .clickable {
@@ -579,6 +603,14 @@ fun PlayerScreen(
                             .clickable {
                                 onSetScreenshotMethod("MPV")
                                 onScreenshot()
+                            }
+                    )
+
+                    StatusText(
+                        text = uiState.filename ?: "++++++",
+                        modifier = Modifier
+                            .clickable {
+                                onOpenVideo()
                             }
                     )
 

@@ -25,9 +25,8 @@ interface VideoPlayer {
 
     fun mute()
 
-    fun frameForward()
-
-    fun frameBackward()
+    fun frameForward(frames: Int)
+    fun frameBackward(frames: Int)
 
     fun screenshot()
 

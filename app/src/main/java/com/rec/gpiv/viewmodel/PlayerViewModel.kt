@@ -560,22 +560,22 @@ private var screenshotMethod =
         )
     }
 
-    fun frameForward() {
+    fun frameForward(frames: Int) {
 
         println(
-            "PlayerViewModel: frameForward()"
+            "PlayerViewModel: frameForward($frames)"
         )
 
-        player.frameForward()
+        player.frameForward(frames)
     }
 
-    fun frameBackward() {
+    fun frameBackward(frames: Int) {
 
         println(
-            "PlayerViewModel: frameBackward()"
+            "PlayerViewModel: frameBackward($frames)"
         )
 
-        player.frameBackward()
+        player.frameBackward(frames)
     }
 
     fun screenshot() {

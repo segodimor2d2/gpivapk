@@ -43,12 +43,12 @@ class FakeVideoPlayer : VideoPlayer {
         println("FakeVideoPlayer: mute()")
     }
 
-    override fun frameForward() {
-        println("FakeVideoPlayer: frameForward()")
+    override fun frameForward(frames: Int) {
+        println("FakeVideoPlayer: frameForward($frames)")
     }
 
-    override fun frameBackward() {
-        println("FakeVideoPlayer: frameBackward()")
+    override fun frameBackward(frames: Int) {
+        println("FakeVideoPlayer: frameBackward($frames)")
     }
 
     override fun screenshot() {

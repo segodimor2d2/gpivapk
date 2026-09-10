@@ -183,22 +183,22 @@ class MpvPlayer(
         native.mute()
     }
 
-    override fun frameForward() {
+    override fun frameForward(frames: Int) {
 
         println(
-            "MpvPlayer: frameForward()"
+            "MpvPlayer: frameForward($frames)"
         )
 
-        native.frameForward()
+        native.frameForward(frames)
     }
 
-    override fun frameBackward() {
+    override fun frameBackward(frames: Int) {
 
         println(
-            "MpvPlayer: frameBackward()"
+            "MpvPlayer: frameBackward($frames)"
         )
 
-        native.frameBackward()
+        native.frameBackward(frames)
     }
 
     override fun screenshot() {

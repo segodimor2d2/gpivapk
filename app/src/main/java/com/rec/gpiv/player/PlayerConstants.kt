@@ -1,6 +1,8 @@
 package com.rec.gpiv.player
 
-const val SEEK_SECONDS = 0.05
+const val SEEK_FRAMES = 1
+const val SEEK_FRAMES_PLUS = 20
+const val SEEK_SECONDS = 1.0
 
 const val FILE_JUMP = 10
 

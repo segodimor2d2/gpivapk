@@ -315,26 +315,28 @@ class MpvNative {
         )
     }
 
-    fun frameForward() {
+    fun frameForward(frames: Int) {
         checkInitialized()
         println(
-            "MpvNative: frameForward()"
+            "MpvNative: frameForward($frames)"
         )
         nativeFrameForward(
-            nativeHandle
+            nativeHandle,
+            frames
         )
     }
 
-    fun frameBackward() {
+    fun frameBackward(frames: Int) {
 
         checkInitialized()
 
         println(
-            "MpvNative: frameBackward()"
+            "MpvNative: frameBackward($frames)"
         )
 
         nativeFrameBackward(
-            nativeHandle
+            nativeHandle,
+            frames
         )
     }
 
@@ -581,11 +583,13 @@ class MpvNative {
     )
 
     private external fun nativeFrameForward(
-        handle: Long
+        handle: Long,
+        frames: Int
     )
 
     private external fun nativeFrameBackward(
-        handle: Long
+        handle: Long,
+        frames: Int
     )
 
     private external fun nativeScreenshot(

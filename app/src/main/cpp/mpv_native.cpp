@@ -430,7 +430,8 @@ JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeFrameForward(
     JNIEnv* env,
     jobject thiz,
-    jlong handle
+    jlong handle,
+    jint frames
 )
 {
     MpvContext* context =
@@ -445,8 +446,11 @@ Java_com_rec_gpiv_player_MpvNative_nativeFrameForward(
         return;
     }
 
+    std::string frameCount = std::to_string(frames);
+
     const char* command[] = {
         "frame-step",
+        frameCount.c_str(),
         nullptr
     };
 
@@ -457,7 +461,8 @@ Java_com_rec_gpiv_player_MpvNative_nativeFrameForward(
         );
 
     LOGI(
-        "JNI: mpv_command(frame-step) -> %d",
+        "JNI: mpv_command(frame-step %d) -> %d",
+        frames,
         status
     );
 }
@@ -468,7 +473,8 @@ JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeFrameBackward(
     JNIEnv* env,
     jobject thiz,
-    jlong handle
+    jlong handle,
+    jint frames
 )
 {
     MpvContext* context =
@@ -483,8 +489,11 @@ Java_com_rec_gpiv_player_MpvNative_nativeFrameBackward(
         return;
     }
 
+    std::string frameCount = std::to_string(-frames);
+
     const char* command[] = {
-        "frame-back-step",
+        "frame-step",
+        frameCount.c_str(),
         nullptr
     };
 
@@ -495,7 +504,8 @@ Java_com_rec_gpiv_player_MpvNative_nativeFrameBackward(
         );
 
     LOGI(
-        "JNI: mpv_command(frame-back-step) -> %d",
+        "JNI: mpv_command(frame-step %d) -> %d",
+        -frames,
         status
     );
 }
