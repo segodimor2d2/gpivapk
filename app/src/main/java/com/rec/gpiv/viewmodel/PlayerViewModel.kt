@@ -295,7 +295,9 @@ private var screenshotMethod =
 
                     _uiState.value =
                         _uiState.value.copy(
-                            filename = currentFile.name
+                            filename = currentFile.name,
+                            fileIndex = fileList.currentIndex(),
+                            fileCount = fileList.size()
                         )
                 }
             }
@@ -360,6 +362,8 @@ private var screenshotMethod =
         _uiState.value =
             _uiState.value.copy(
                 filename = file.name,
+                fileIndex = fileList.currentIndex(),
+                fileCount = fileList.size(),
                 loading = true,
                 position = 0.0,
                 duration = 0.0
@@ -397,6 +401,8 @@ private var screenshotMethod =
         _uiState.value =
             _uiState.value.copy(
                 filename = file.name,
+                fileIndex = fileList.currentIndex(),
+                fileCount = fileList.size(),
                 loading = true,
                 position = 0.0,
                 duration = 0.0
@@ -432,6 +438,8 @@ private var screenshotMethod =
         _uiState.value =
             _uiState.value.copy(
                 filename = file.name,
+                fileIndex = fileList.currentIndex(),
+                fileCount = fileList.size(),
                 loading = true,
                 position = 0.0,
                 duration = 0.0
