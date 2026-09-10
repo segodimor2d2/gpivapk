@@ -134,13 +134,13 @@ fun PlayerGestures(
                                                 propAmount * SEEK_GESTURE_SENSITIVITY
 
                                             while (seekAccumulator >= 1.0) {
-                                                onSeekBackward(SEEK_SECONDS)
-                                                seekAccumulator += 1.0
+                                                onSeekForward(SEEK_SECONDS)
+                                                seekAccumulator -= 1.0
                                             }
 
                                             while (seekAccumulator <= -1.0) {
-                                                onSeekForward(SEEK_SECONDS)
-                                                seekAccumulator -= 1.0
+                                                onSeekBackward(SEEK_SECONDS)
+                                                seekAccumulator += 1.0
                                             }
                                         }
 
