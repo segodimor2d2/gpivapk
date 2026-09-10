@@ -12,6 +12,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.rec.gpiv.player.MpvNative
 import com.rec.gpiv.player.ZOOM_DOUBLE_TAP_DRAG
+import com.rec.gpiv.player.BRIGHTNESS_PROP
+import com.rec.gpiv.player.CONTRAST_PROP
+import com.rec.gpiv.player.GAMMA_PROP
+import com.rec.gpiv.player.SATURATION_PROP
 
 @Composable
 fun PlayerGestures(
@@ -95,29 +99,28 @@ fun PlayerGestures(
                                     moved = true
                                     doubleTapMoved = true
 
-                                    val zoomAmount =
-                                        -delta.y / size.height.toFloat() *
-                                        ZOOM_DOUBLE_TAP_DRAG
+                                    val propAmount =
+                                        -delta.y / size.height.toDouble()
 
                                     when (gestureTool) {
                                         GestureTool.ZOOM -> {
-                                            mpvNative.changeZoom(zoomAmount)
+                                            mpvNative.changeZoom(propAmount * ZOOM_DOUBLE_TAP_DRAG)
                                         }
 
                                         GestureTool.BRIGHTNESS -> {
-                                            mpvNative.changeBrightness(zoomAmount)
+                                            mpvNative.changeBrightness(propAmount * BRIGHTNESS_PROP)
                                         }
 
                                         GestureTool.CONTRAST -> {
-                                            mpvNative.changeContrast(zoomAmount)
+                                            mpvNative.changeContrast(propAmount * CONTRAST_PROP)
                                         }
 
                                         GestureTool.GAMMA -> {
-                                            mpvNative.changeGamma(zoomAmount)
+                                            mpvNative.changeGamma(propAmount * GAMMA_PROP)
                                         }
 
                                         GestureTool.SATURATION -> {
-                                            mpvNative.changeSaturation(zoomAmount)
+                                            mpvNative.changeSaturation(propAmount * SATURATION_PROP)
                                         }
 
                                         GestureTool.VOLUME -> {

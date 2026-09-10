@@ -153,7 +153,7 @@ fun PlayerScreen(
             mpvNative = mpvNative,
             gestureTool = gestureTool,
             onDoubleTap = {
-                nextControlRow()
+                // nextControlRow()
             },
             onTwoFingerTap = {
                 controlsVisible = !controlsVisible
@@ -194,11 +194,6 @@ fun PlayerScreen(
                         verticalArrangement =
                             Arrangement.spacedBy(10.dp)
                     ) {
-                        /*
-                         * --------------------------------------------
-                         * VOLUME
-                         * --------------------------------------------
-                         */
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -226,130 +221,6 @@ fun PlayerScreen(
                             )
                         }
 
-                        /*
-                         * --------------------------------------------
-                         * CONTRAST
-                         * --------------------------------------------
-                         */
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-
-                            CompactButton(
-                                text = "contrast ${uiState.contrast}",
-                                onClick = {}
-                            )
-
-                            CompactButton(
-                                text = "-",
-                                onClick = onContrastDown
-                            )
-
-                            CompactButton(
-                                text = "+",
-                                onClick = onContrastUp
-                            )
-                        }
-
-                        /*
-                         * --------------------------------------------
-                         * GAMMA
-                         * --------------------------------------------
-                         */
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-                            CompactButton(
-                                text = "gamma ${uiState.gamma}",
-                                onClick = {}
-                            )
-
-                            CompactButton(
-                                text = "-",
-                                onClick = onGammaDown
-                            )
-
-                            CompactButton(
-                                text = "+",
-                                onClick = onGammaUp
-                            )
-                        }
-
-                        /*
-                         * --------------------------------------------
-                         * SATURATION
-                         * --------------------------------------------
-                         */
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-                            CompactButton(
-                                text = "saturation ${uiState.saturation}",
-                                onClick = {}
-                            )
-
-                            CompactButton(
-                                text = "-",
-                                onClick = onSaturationDown
-                            )
-
-                            CompactButton(
-                                text = "+",
-                                onClick = onSaturationUp
-                            )
-                        }
-
-                        /*
-                         * --------------------------------------------
-                         * BRIGHTNESS
-                         * --------------------------------------------
-                         */
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-                            CompactButton(
-                                text = "brightness ${uiState.brightness}",
-                                onClick = {}
-                            )
-
-                            CompactButton(
-                                text = "-",
-                                onClick = onBrightnessDown
-                            )
-
-                            CompactButton(
-                                text = "+",
-                                onClick = onBrightnessUp
-                            )
-                        }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement =
@@ -365,6 +236,12 @@ fun PlayerScreen(
 
                             StatusText(
                                 text = "Z",
+                                backgroundColor =
+                                    if (gestureTool == GestureTool.ZOOM) {
+                                        Color(0x9900994C)
+                                    } else {
+                                        Color.Transparent
+                                    },
                                 modifier = Modifier
                                     .clickable {
                                         gestureTool =
@@ -378,6 +255,12 @@ fun PlayerScreen(
 
                             StatusText(
                                 text = "B",
+                                backgroundColor =
+                                    if (gestureTool == GestureTool.BRIGHTNESS) {
+                                        Color(0x9900994C)
+                                    } else {
+                                        Color.Transparent
+                                    },
                                 modifier = Modifier
                                     .clickable {
                                         gestureTool =
@@ -389,8 +272,15 @@ fun PlayerScreen(
                                     }
                             )
 
+
                             StatusText(
                                 text = "C",
+                                backgroundColor =
+                                    if (gestureTool == GestureTool.CONTRAST) {
+                                        Color(0x9900994C)
+                                    } else {
+                                        Color.Transparent
+                                    },
                                 modifier = Modifier
                                     .clickable {
                                         gestureTool =
@@ -404,6 +294,12 @@ fun PlayerScreen(
 
                             StatusText(
                                 text = "G",
+                                backgroundColor =
+                                    if (gestureTool == GestureTool.GAMMA) {
+                                        Color(0x9900994C)
+                                    } else {
+                                        Color.Transparent
+                                    },
                                 modifier = Modifier
                                     .clickable {
                                         gestureTool =
@@ -412,6 +308,33 @@ fun PlayerScreen(
                                             } else {
                                                 GestureTool.GAMMA
                                             }
+                                    }
+                            )
+
+                            StatusText(
+                                text = "S",
+                                backgroundColor =
+                                    if (gestureTool == GestureTool.SATURATION) {
+                                        Color(0x9900994C)
+                                    } else {
+                                        Color.Transparent
+                                    },
+                                modifier = Modifier
+                                    .clickable {
+                                        gestureTool =
+                                            if (gestureTool == GestureTool.SATURATION) {
+                                                GestureTool.NONE
+                                            } else {
+                                                GestureTool.SATURATION
+                                            }
+                                    }
+                            )
+
+                            StatusText(
+                                text = "0",
+                                modifier = Modifier
+                                    .clickable {
+                                        gestureTool = GestureTool.NONE
                                     }
                             )
                         }
@@ -568,19 +491,11 @@ fun PlayerScreen(
 
 
                     StatusText(
-                        text = "R",
-                        modifier = Modifier
-                            .clickable {
-                                onResetVideoAdjustments()
-                            }
-                    )
-
-
-                    StatusText(
                         text =
                             "%.2f".format(
                                 uiState.position
-                            )
+                            ),
+                        modifier = Modifier.clickable { onResetVideoAdjustments() }
                     )
 
                     StatusText(
@@ -595,7 +510,8 @@ fun PlayerScreen(
                         text =
                             "%.2f".format(
                                 uiState.duration
-                            )
+                            ),
+                        modifier = Modifier.clickable { nextControlRow() }
                     )
 
                     StatusText(
@@ -618,7 +534,8 @@ fun PlayerScreen(
                                         uiState.duration) * 100.0
                                 )
 
-                            } else { "0.0%" }
+                            } else { "0.0%" },
+                        modifier = Modifier.clickable { nextControlRow() }
                     )
 
                     StatusText(
@@ -644,14 +561,6 @@ fun PlayerScreen(
                     verticalAlignment =
                         Alignment.CenterVertically
                 ) {
-
-                    StatusText(
-                        text = "#",
-                        modifier =
-                            Modifier.clickable {
-                                nextControlRow()
-                            }
-                    )
 
                     StatusText(
                         text = "S",
@@ -681,6 +590,12 @@ fun PlayerScreen(
 
                     StatusText(
                         text = "Z",
+                        backgroundColor =
+                            if (gestureTool == GestureTool.ZOOM) {
+                                Color(0x9900994C)
+                            } else {
+                                Color.Transparent
+                            },
                         modifier = Modifier
                             .clickable {
                                 gestureTool =
@@ -762,7 +677,8 @@ private fun CompactButton(
 @Composable
 private fun StatusText(
     text: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = Color.Black.copy(alpha = 0.0f)
 ) {
 
     Text(
@@ -780,9 +696,7 @@ private fun StatusText(
         ),
 
         modifier = modifier
-            .background(
-                Color.Black.copy(alpha = 0.0f),
-            )
+            .background(backgroundColor)
             .padding(
                 horizontal = 8.dp,
                 vertical = 5.dp
