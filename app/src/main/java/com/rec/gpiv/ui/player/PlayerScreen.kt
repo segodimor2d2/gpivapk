@@ -155,9 +155,13 @@ fun PlayerScreen(
             onDoubleTap = {
                 // nextControlRow()
             },
+
             onTwoFingerTap = {
                 controlsVisible = !controlsVisible
-            }
+            },
+
+            onSeekBackward = onSeekBackward,
+            onSeekForward = onSeekForward,
         )
 
         /*
@@ -326,6 +330,25 @@ fun PlayerScreen(
                                                 GestureTool.NONE
                                             } else {
                                                 GestureTool.SATURATION
+                                            }
+                                    }
+                            )
+
+                            StatusText(
+                                text = "pp",
+                                backgroundColor =
+                                    if (gestureTool == GestureTool.SEEK) {
+                                        Color(0x9900994C)
+                                    } else {
+                                        Color.Transparent
+                                    },
+                                modifier = Modifier
+                                    .clickable {
+                                        gestureTool =
+                                            if (gestureTool == GestureTool.SEEK) {
+                                                GestureTool.NONE
+                                            } else {
+                                                GestureTool.SEEK
                                             }
                                     }
                             )

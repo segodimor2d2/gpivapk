@@ -16,6 +16,8 @@ import com.rec.gpiv.player.BRIGHTNESS_PROP
 import com.rec.gpiv.player.CONTRAST_PROP
 import com.rec.gpiv.player.GAMMA_PROP
 import com.rec.gpiv.player.SATURATION_PROP
+import com.rec.gpiv.player.SEEK_GESTURE_SENSITIVITY
+import com.rec.gpiv.player.SEEK_SECONDS
 
 @Composable
 fun PlayerGestures(
@@ -23,6 +25,8 @@ fun PlayerGestures(
     gestureTool: GestureTool,
     onDoubleTap: () -> Unit,
     onTwoFingerTap: () -> Unit,
+    onSeekBackward: (Double) -> Unit,
+    onSeekForward: (Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -63,6 +67,8 @@ fun PlayerGestures(
                         if (isDoubleTap) {
 
                             var doubleTapMoved = false
+
+                            var seekAccumulator = 0.0
 
                             while (true) {
 
@@ -121,6 +127,21 @@ fun PlayerGestures(
 
                                         GestureTool.SATURATION -> {
                                             mpvNative.changeSaturation(propAmount * SATURATION_PROP)
+                                        }
+
+                                        GestureTool.SEEK -> {
+                                            seekAccumulator +=
+                                                propAmount * SEEK_GESTURE_SENSITIVITY
+
+                                            while (seekAccumulator >= 1.0) {
+                                                onSeekBackward(SEEK_SECONDS)
+                                                seekAccumulator += 1.0
+                                            }
+
+                                            while (seekAccumulator <= -1.0) {
+                                                onSeekForward(SEEK_SECONDS)
+                                                seekAccumulator -= 1.0
+                                            }
                                         }
 
                                         GestureTool.VOLUME -> {
