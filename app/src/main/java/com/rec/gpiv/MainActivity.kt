@@ -1,5 +1,10 @@
 package com.rec.gpiv
 
+import android.provider.DocumentsContract
+
+import android.net.Uri
+import android.content.Context
+
 import android.content.Intent
 import android.os.Bundle
 
@@ -29,6 +34,56 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: PlayerViewModel by viewModels()
 
+    private val folderPreferences by lazy {
+        getSharedPreferences(
+            "gpiv_preferences",
+            Context.MODE_PRIVATE
+        )
+    }
+
+    private fun hasPersistedPermission(uri: Uri): Boolean {
+        return contentResolver.persistedUriPermissions.any {
+            it.uri == uri &&
+            it.isReadPermission
+        }
+    }
+
+    private fun getValidSavedFolderUris(): List<Uri> {
+
+        return getSavedFolderUris()
+            .filter { uri ->
+                hasPersistedPermission(uri)
+            }
+    }
+
+    private fun getSavedFolderUris(): MutableList<Uri> {
+
+        val saved =
+            folderPreferences.getStringSet(
+                "folder_uris",
+                emptySet()
+            ) ?: emptySet()
+
+        return saved
+            .map(Uri::parse)
+            .toMutableList()
+    }
+
+    private fun loadSavedFolder(uri: Uri): Boolean {
+
+        if (!hasPersistedPermission(uri)) {
+            return false
+        }
+
+        println(
+            "MainActivity: reutilizando pasta autorizada = $uri"
+        )
+
+        viewModel.loadFolder(uri)
+
+        return true
+    }
+
 
     /*
      * ========================================================
@@ -52,7 +107,59 @@ class MainActivity : ComponentActivity() {
                     "MainActivity: arquivo selecionado = $uri"
                 )
 
+                val documentId =
+                    DocumentsContract.getDocumentId(uri)
+
+                println(
+                    "MainActivity: VIDEO URI = $uri"
+                )
+
+                println(
+                    "MainActivity: VIDEO DOCUMENT ID = $documentId"
+                )
+
+                val savedFolders =
+                    getValidSavedFolderUris()
+
+                val matchingTreeUri =
+                    savedFolders.firstOrNull { treeUri ->
+
+                        val treeDocumentId =
+                            DocumentsContract.getTreeDocumentId(treeUri)
+
+                        documentId == treeDocumentId ||
+                            documentId.startsWith("$treeDocumentId/")
+                    }
+
+                println(
+                    "MainActivity: pasta correspondente = $matchingTreeUri"
+                )
+
+
+                savedFolders.forEach { treeUri ->
+
+                    val treeDocumentId =
+                        DocumentsContract.getTreeDocumentId(treeUri)
+
+                    println(
+                        "MainActivity: TREE URI = $treeUri"
+                    )
+
+                    println(
+                        "MainActivity: TREE DOCUMENT ID = $treeDocumentId"
+                    )
+                }
+
                 viewModel.load(uri)
+
+                if (matchingTreeUri != null) {
+
+                    println(
+                        "MainActivity: carregando FileList da pasta = $matchingTreeUri"
+                    )
+
+                    viewModel.loadFolder(matchingTreeUri)
+                }
             }
         }
 
@@ -104,7 +211,23 @@ class MainActivity : ComponentActivity() {
                         "MainActivity: permissão da pasta persistida"
                     )
 
+                    val folderUris =
+                        getSavedFolderUris()
+
+                    folderUris.add(uri)
+
+                    folderPreferences
+                        .edit()
+                        .putStringSet(
+                            "folder_uris",
+                            folderUris
+                                .map(Uri::toString)
+                                .toSet()
+                        )
+                        .apply()
+
                     viewModel.loadFolder(uri)
+                    viewModel.firstFile()
 
                 } catch (e: Exception) {
 
@@ -183,6 +306,20 @@ class MainActivity : ComponentActivity() {
                         },
 
                         onOpenFolder = {
+
+                            val savedFolders =
+                                getValidSavedFolderUris()
+
+                            println(
+                                "MainActivity: pastas autorizadas = ${savedFolders.size}"
+                            )
+
+                            savedFolders.forEach { uri ->
+                                println(
+                                    "MainActivity: pasta autorizada: $uri"
+                                )
+                            }
+
                             openFolderLauncher.launch(null)
                         },
 

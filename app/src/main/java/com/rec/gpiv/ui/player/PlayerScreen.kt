@@ -286,10 +286,6 @@ fun PlayerScreen(
                         ) {
 
                             StatusText(
-                                text = "${uiState.fileIndex + 1}/${uiState.fileCount}"
-                            )
-
-                            StatusText(
                                 text = "Z",
                                 backgroundColor =
                                     if (gestureTool == GestureTool.ZOOM) {
@@ -496,8 +492,7 @@ fun PlayerScreen(
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
+                                Arrangement.spacedBy( 10.dp,
                                     Alignment.CenterHorizontally
                                 )
                         ) {
@@ -596,11 +591,6 @@ fun PlayerScreen(
                 ) {
 
                     StatusText(
-                        text = "${uiState.fileIndex + 1}/${uiState.fileCount}"
-                    )
-
-
-                    StatusText(
                         text = "[SS]",
 
                         modifier = Modifier
@@ -609,6 +599,7 @@ fun PlayerScreen(
                                 onScreenshot()
                             }
                     )
+
 
                     StatusText(
                         text = "Z",
@@ -674,6 +665,20 @@ fun PlayerScreen(
                                     }
                             }
                     )
+
+                }
+                Row(
+                    modifier = Modifier .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${uiState.fileIndex + 1}/${uiState.fileCount} ${uiState.filename ?: "+ + + +"}",
+                        fontSize = 16.sp,
+                        color = Color.White,
+                        maxLines = 1
+                    )
+
 
                 }
 
