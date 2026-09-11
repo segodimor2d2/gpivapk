@@ -115,7 +115,7 @@ fun PlayerScreen(
     fun nextControlRow() {
 
         controlRow =
-            (controlRow + 1) % 2
+            (controlRow + 1) % 3
     }
 
     /*
@@ -192,6 +192,44 @@ fun PlayerScreen(
                     Arrangement.spacedBy(6.dp)
             ) {
 
+                if (controlRow == 2) {
+
+                    Column(
+                        verticalArrangement =
+                            Arrangement.spacedBy(10.dp)
+                    ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 10.dp),
+
+                        horizontalArrangement = Arrangement.Center,
+
+                        verticalAlignment =
+                            Alignment.CenterVertically
+                    ) {
+
+                          StatusText(
+                              text = "${uiState.filename ?: "+ + + +"}",
+                              modifier = Modifier
+                                  .clickable {
+                                      onOpenVideo()
+                                  }
+                          )
+
+                          StatusText(
+                              text = "&",
+                              modifier =
+                                  Modifier.clickable {
+                                      onOpenFolder()
+                                  }
+                          )
+
+
+                        }
+                    }
+                }
+
                 if (controlRow == 1) {
 
                     Column(
@@ -244,7 +282,7 @@ fun PlayerScreen(
                         ) {
 
                             StatusText(
-                                text = "${uiState.fileIndex + 1} / ${uiState.fileCount}"
+                                text = "${uiState.fileIndex + 1}/${uiState.fileCount}"
                             )
 
                             StatusText(
@@ -356,13 +394,6 @@ fun PlayerScreen(
                     }
                 }
 
-
-                /*
-                 * --------------------------------------------
-                 * REPRODUÇÃO
-                 * --------------------------------------------
-                 */
-
                 if (controlRow == 0) {
 
                     Column(
@@ -430,8 +461,6 @@ fun PlayerScreen(
                                 )
                         ) {
 
-
-
                             CompactButton(
                                 text = "<=",
                                 onClick = {
@@ -486,14 +515,17 @@ fun PlayerScreen(
 
 
                     }
+
                 }
 
 
                 /*
                  * --------------------------------------------
-                 * STATUS
+                 * STATUS / INFO
                  * --------------------------------------------
+                        // modifier = Modifier.clickable { controlsVisible = false }
                  */
+
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -511,16 +543,9 @@ fun PlayerScreen(
                             "%.2f".format(
                                 uiState.position
                             ),
-                        modifier = Modifier.clickable { controlsVisible = false }
+                        modifier = Modifier.clickable { onResetVideoAdjustments() }
                     )
 
-                    StatusText(
-                        text = "PP",
-                        modifier =
-                            Modifier.clickable {
-                                onOpenFolder()
-                            }
-                    )
 
                     StatusText(
                         text =
@@ -541,7 +566,6 @@ fun PlayerScreen(
                             }
                     )
 
-
                     StatusText(
                         text =
                             if (uiState.duration > 0.0) {
@@ -550,19 +574,8 @@ fun PlayerScreen(
                                         uiState.duration) * 100.0
                                 )
 
-                            } else { "0.0%" },
-                        modifier = Modifier.clickable { onResetVideoAdjustments() }
+                            } else { "0.0%" }
                     )
-
-                    StatusText(
-                        text = "↻",
-                        modifier =
-                            Modifier.clickable {
-                                onRotate()
-                            }
-                    )
-
-
 
 
                 }
@@ -579,21 +592,17 @@ fun PlayerScreen(
                 ) {
 
                     StatusText(
+                        text = "${uiState.fileIndex + 1}/${uiState.fileCount}"
+                    )
+
+
+                    StatusText(
                         text = "[SS]",
 
                         modifier = Modifier
                             .clickable {
                                 onSetScreenshotMethod("FRAMEBUFFER")
                                 onScreenshot()
-                            }
-                    )
-
-
-                    StatusText(
-                        text = "(${uiState.fileIndex + 1}) ${uiState.filename ?: "++++++"}",
-                        modifier = Modifier
-                            .clickable {
-                                onOpenVideo()
                             }
                     )
 
@@ -613,6 +622,14 @@ fun PlayerScreen(
                                     } else {
                                         GestureTool.ZOOM
                                     }
+                            }
+                    )
+
+                    StatusText(
+                        text = "↻",
+                        modifier =
+                            Modifier.clickable {
+                                onRotate()
                             }
                     )
 
@@ -647,10 +664,6 @@ fun PlayerScreen(
  * ============================================================
  * BOTÃO COMPACTO
  * ============================================================
- *
- * - altura
- * - padding horizontal
- * - padding vertical
  */
 
 @Composable
