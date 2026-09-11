@@ -155,6 +155,36 @@ static int mpv_stream_open(
 
     cookie->fd = fd;
 
+    off_t current =
+        ::lseek(
+            fd,
+            0,
+            SEEK_CUR
+        );
+
+    LOGI(
+        "STREAM: fd=%d lseek(SEEK_CUR)=%lld errno=%d",
+        fd,
+        static_cast<long long>(current),
+        errno
+    );
+
+    struct stat st {};
+
+    int statResult =
+        ::fstat(
+            fd,
+            &st
+        );
+
+    LOGI(
+        "STREAM: fd=%d fstat=%d mode=%o size=%lld",
+        fd,
+        statResult,
+        st.st_mode,
+        static_cast<long long>(st.st_size)
+    );
+
     info->cookie = cookie;
 
     info->read_fn =
@@ -207,6 +237,13 @@ static int64_t mpv_stream_read(
                 buffer,
                 static_cast<size_t>(nbytes)
             );
+
+        LOGI(
+            "STREAM: read(fd=%d, requested=%llu) -> %lld",
+            stream->fd,
+            static_cast<unsigned long long>(nbytes),
+            static_cast<long long>(result)
+        );
 
         if (result >= 0) {
             return result;

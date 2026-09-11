@@ -65,6 +65,10 @@ private var screenshotMethod =
 
     private var selectedUri: Uri? = null
 
+    private var surfaceReady = false
+
+    private var pendingUri: Uri? = null
+
     private val _uiState =
         MutableStateFlow(PlayerUiState())
 
@@ -85,6 +89,22 @@ private var screenshotMethod =
         println(
             "PlayerViewModel: Surface pronta"
         )
+
+        surfaceReady = true
+
+        val uri =
+            pendingUri
+
+        if (uri != null) {
+
+            println(
+                "PlayerViewModel: carregando URI pendente = $uri"
+            )
+
+            pendingUri = null
+
+            player.load(uri)
+        }
     }
 
     private fun observePlayerEvents() {
@@ -228,7 +248,19 @@ private var screenshotMethod =
                 duration = 0.0
             )
 
-        player.load(uri)
+        if (surfaceReady) {
+
+            player.load(uri)
+
+        } else {
+
+            println(
+                "PlayerViewModel: Surface ainda não pronta, " +
+                    "adiando load()"
+            )
+
+            pendingUri = uri
+        }
     }
 
     fun loadFolder(

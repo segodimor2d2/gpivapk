@@ -84,6 +84,25 @@ class MainActivity : ComponentActivity() {
         return true
     }
 
+    private fun handleIncomingIntent(intent: Intent) {
+
+        if (intent.action != Intent.ACTION_VIEW) {
+            return
+        }
+
+        val uri = intent.data ?: return
+
+        println(
+            "MainActivity: arquivo recebido externamente = $uri"
+        )
+
+        println(
+            "MainActivity: MIME type = ${intent.type}"
+        )
+
+        viewModel.load(uri)
+    }
+
 
     /*
      * ========================================================
@@ -256,6 +275,7 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
+        handleIncomingIntent(intent)
 
         /*
          * ====================================================

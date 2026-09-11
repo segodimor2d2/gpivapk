@@ -14,11 +14,23 @@ class VideoSource(
 
         close()
 
+        println(
+            "VideoSource: abrindo URI = $uri"
+        )
+
         parcelFileDescriptor =
             contentResolver.openFileDescriptor(
                 uri,
                 "r"
             )
+
+        println(
+            "VideoSource: PFD = $parcelFileDescriptor"
+        )
+
+        println(
+            "VideoSource: FD = ${parcelFileDescriptor?.fd}"
+        )
 
         return parcelFileDescriptor != null
     }
