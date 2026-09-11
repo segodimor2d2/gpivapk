@@ -145,6 +145,7 @@ fun PlayerScreen(
             modifier = Modifier.fillMaxSize()
         )
 
+
         /*
          * ----------------------------------------------------
          * ZOOM/PAN
@@ -167,6 +168,23 @@ fun PlayerScreen(
             duration = uiState.duration,
             onSeekTo = onSeekTo,
         )
+
+
+        /*
+         * ----------------------------------------------------
+         */
+
+        if (controlsVisible) {
+            Text(
+                text = "${uiState.fileIndex + 1}/${uiState.fileCount} ${uiState.filename ?: "+ + + +"}",
+                fontSize = 16.sp,
+                color = Color.White,
+                maxLines = 1,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 8.dp)
+            )
+        }
 
         /*
          * ----------------------------------------------------
@@ -202,6 +220,35 @@ fun PlayerScreen(
                         verticalArrangement =
                             Arrangement.spacedBy(10.dp)
                     ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
+
+                            CompactButton(
+                                text = "+10",
+                                onClick = onJumpFilesForward
+                            )
+
+                            CompactButton(
+                                text = "-10",
+                                onClick = onJumpFilesBackward
+                            )
+
+                            CompactButton(
+                                text = "A",
+                                onClick = onFirstFile
+                            )
+
+                            CompactButton(
+                                text = "Z",
+                                onClick = onLastFile
+                            )
+                        }
 
                         Row(
                             modifier = Modifier
@@ -422,35 +469,6 @@ fun PlayerScreen(
 
                         }
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-                            CompactButton(
-                                text = "+10",
-                                onClick = onJumpFilesForward
-                            )
-
-                            CompactButton(
-                                text = "-10",
-                                onClick = onJumpFilesBackward
-                            )
-
-                            CompactButton(
-                                text = "A",
-                                onClick = onFirstFile
-                            )
-
-                            CompactButton(
-                                text = "Z",
-                                onClick = onLastFile
-                            )
-                        }
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -667,20 +685,7 @@ fun PlayerScreen(
                     )
 
                 }
-                Row(
-                    modifier = Modifier .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "${uiState.fileIndex + 1}/${uiState.fileCount} ${uiState.filename ?: "+ + + +"}",
-                        fontSize = 16.sp,
-                        color = Color.White,
-                        maxLines = 1
-                    )
 
-
-                }
 
             }
         }
