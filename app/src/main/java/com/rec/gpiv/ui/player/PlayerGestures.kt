@@ -27,6 +27,9 @@ fun PlayerGestures(
     onTwoFingerTap: () -> Unit,
     onSeekBackward: (Double) -> Unit,
     onSeekForward: (Double) -> Unit,
+    position: Double,
+    duration: Double,
+    onSeekTo: (Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -40,6 +43,7 @@ fun PlayerGestures(
                     var lastTapTime = 0L
 
                     while (true) {
+
 
                         val down = awaitFirstDown(
                             requireUnconsumed = false
@@ -69,6 +73,16 @@ fun PlayerGestures(
                             var doubleTapMoved = false
 
                             var seekAccumulator = 0.0
+                            var seekPercentAccumulator = 0.0
+                            var seekPercent = 0.0
+
+                            seekPercent =
+                                if (duration > 0.0) {
+                                    (position / duration * 100.0)
+                                        .coerceIn(0.0, 100.0)
+                                } else {
+                                    0.0
+                                }
 
                             while (true) {
 
@@ -86,20 +100,12 @@ fun PlayerGestures(
                                     break
                                 }
 
-                                val position =
+                                val pointerPosition =
                                     pressed[0].position
 
                                 val delta =
-                                    position -
+                                    pointerPosition -
                                         previousPosition
-
-                                /*
-                                 * Arrastar para cima:
-                                 * aumenta zoom.
-                                 *
-                                 * Arrastar para baixo:
-                                 * diminui zoom.
-                                 */
 
                                 if (delta.y != 0f) {
                                     moved = true
@@ -109,24 +115,35 @@ fun PlayerGestures(
                                         -delta.y / size.height.toDouble()
 
                                     when (gestureTool) {
+
                                         GestureTool.ZOOM -> {
-                                            mpvNative.changeZoom(propAmount * ZOOM_DOUBLE_TAP_DRAG)
+                                            mpvNative.changeZoom(
+                                                propAmount * ZOOM_DOUBLE_TAP_DRAG
+                                            )
                                         }
 
                                         GestureTool.BRIGHTNESS -> {
-                                            mpvNative.changeBrightness(propAmount * BRIGHTNESS_PROP)
+                                            mpvNative.changeBrightness(
+                                                propAmount * BRIGHTNESS_PROP
+                                            )
                                         }
 
                                         GestureTool.CONTRAST -> {
-                                            mpvNative.changeContrast(propAmount * CONTRAST_PROP)
+                                            mpvNative.changeContrast(
+                                                propAmount * CONTRAST_PROP
+                                            )
                                         }
 
                                         GestureTool.GAMMA -> {
-                                            mpvNative.changeGamma(propAmount * GAMMA_PROP)
+                                            mpvNative.changeGamma(
+                                                propAmount * GAMMA_PROP
+                                            )
                                         }
 
                                         GestureTool.SATURATION -> {
-                                            mpvNative.changeSaturation(propAmount * SATURATION_PROP)
+                                            mpvNative.changeSaturation(
+                                                propAmount * SATURATION_PROP
+                                            )
                                         }
 
                                         GestureTool.SEEK -> {
@@ -144,6 +161,57 @@ fun PlayerGestures(
                                             }
                                         }
 
+                                        GestureTool.SEEK_PERCENT -> {
+                                            if (duration > 0.0) {
+
+                                                seekPercentAccumulator +=
+                                                    propAmount *
+                                                        SEEK_GESTURE_SENSITIVITY
+
+                                                while (seekPercentAccumulator >= 1.0) {
+
+                                                    seekPercent =
+                                                        if (seekPercent % 10.0 == 0.0) {
+                                                            seekPercent + 10.0
+                                                        } else {
+                                                            kotlin.math.ceil(
+                                                                seekPercent / 10.0
+                                                            ) * 10.0
+                                                        }
+
+                                                    seekPercent =
+                                                        seekPercent.coerceAtMost(100.0)
+
+                                                    onSeekTo(
+                                                        duration * seekPercent / 100.0
+                                                    )
+
+                                                    seekPercentAccumulator -= 1.0
+                                                }
+
+                                                while (seekPercentAccumulator <= -1.0) {
+
+                                                    seekPercent =
+                                                        if (seekPercent % 10.0 == 0.0) {
+                                                            seekPercent - 10.0
+                                                        } else {
+                                                            kotlin.math.floor(
+                                                                seekPercent / 10.0
+                                                            ) * 10.0
+                                                        }
+
+                                                    seekPercent =
+                                                        seekPercent.coerceAtLeast(0.0)
+
+                                                    onSeekTo(
+                                                        duration * seekPercent / 100.0
+                                                    )
+
+                                                    seekPercentAccumulator += 1.0
+                                                }
+                                            }
+                                        }
+
                                         GestureTool.VOLUME -> {
                                             // Volume ainda não implementado.
                                         }
@@ -151,12 +219,10 @@ fun PlayerGestures(
                                         GestureTool.NONE -> {
                                         }
                                     }
-
-
                                 }
 
                                 previousPosition =
-                                    position
+                                    pointerPosition
                             }
 
                             if (!doubleTapMoved) {

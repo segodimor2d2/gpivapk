@@ -8,5 +8,6 @@ enum class GestureTool {
     GAMMA,
     SATURATION,
     VOLUME,
-    SEEK
+    SEEK,
+    SEEK_PERCENT
 }

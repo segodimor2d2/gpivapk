@@ -163,6 +163,9 @@ fun PlayerScreen(
 
             onSeekBackward = onSeekBackward,
             onSeekForward = onSeekForward,
+            position = uiState.position,
+            duration = uiState.duration,
+            onSeekTo = onSeekTo,
         )
 
         /*
@@ -199,63 +202,7 @@ fun PlayerScreen(
                         verticalArrangement =
                             Arrangement.spacedBy(10.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 10.dp),
 
-                            horizontalArrangement = Arrangement.Center,
-
-                            verticalAlignment =
-                                Alignment.CenterVertically
-                        ) {
-
-                              StatusText(
-                                  text = "10",
-                                  modifier = Modifier.clickable {
-                                      if (uiState.duration > 0.0) {
-                                          onSeekTo(uiState.duration * 0.10)
-                                      }
-                                  }
-                              )
-
-                              StatusText(
-                                  text = "30",
-                                  modifier = Modifier.clickable {
-                                      if (uiState.duration > 0.0) {
-                                          onSeekTo(uiState.duration * 0.30)
-                                      }
-                                  }
-                              )
-
-                              StatusText(
-                                  text = "50",
-                                  modifier = Modifier.clickable {
-                                      if (uiState.duration > 0.0) {
-                                          onSeekTo(uiState.duration * 0.50)
-                                      }
-                                  }
-                              )
-
-                              StatusText(
-                                  text = "70",
-                                  modifier = Modifier.clickable {
-                                      if (uiState.duration > 0.0) {
-                                          onSeekTo(uiState.duration * 0.70)
-                                      }
-                                  }
-                              )
-
-                              StatusText(
-                                  text = "90",
-                                  modifier = Modifier.clickable {
-                                      if (uiState.duration > 0.0) {
-                                          onSeekTo(uiState.duration * 0.90)
-                                      }
-                                  }
-                              )
-
-                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -282,7 +229,6 @@ fun PlayerScreen(
                                           onOpenFolder()
                                       }
                               )
-
 
                         }
                     }
@@ -688,6 +634,25 @@ fun PlayerScreen(
                         modifier =
                             Modifier.clickable {
                                 onRotate()
+                            }
+                    )
+
+                    StatusText(
+                        text = "%",
+                        backgroundColor =
+                            if (gestureTool == GestureTool.SEEK_PERCENT) {
+                                Color(0x9900994C)
+                            } else {
+                                Color.Transparent
+                            },
+                        modifier = Modifier
+                            .clickable {
+                                gestureTool =
+                                    if (gestureTool == GestureTool.SEEK_PERCENT) {
+                                        GestureTool.NONE
+                                    } else {
+                                        GestureTool.SEEK_PERCENT
+                                    }
                             }
                     )
 
