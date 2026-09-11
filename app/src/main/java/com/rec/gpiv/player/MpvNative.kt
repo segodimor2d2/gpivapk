@@ -294,6 +294,17 @@ class MpvNative {
         )
     }
 
+    fun seekTo(position: Double) {
+        checkInitialized()
+
+        println("MpvNative: seekTo($position)")
+
+        nativeSeekTo(
+            nativeHandle,
+            position
+        )
+    }
+
     fun setVolume(value: Double) {
         checkInitialized()
 
@@ -593,6 +604,11 @@ class MpvNative {
     private external fun nativeSeekBackward(
         handle: Long,
         seconds: Double
+    )
+
+    private external fun nativeSeekTo(
+        handle: Long,
+        position: Double
     )
 
     private external fun nativeFrameForward(

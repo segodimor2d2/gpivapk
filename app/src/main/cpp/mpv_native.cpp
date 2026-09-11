@@ -427,6 +427,56 @@ Java_com_rec_gpiv_player_MpvNative_nativeSeekBackward(
 
 extern "C"
 JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeSeekTo(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jdouble position
+)
+{
+    MpvContext* context =
+        reinterpret_cast<MpvContext*>(handle);
+
+    if (!context || !context->mpv) {
+
+        LOGI(
+            "JNI: nativeSeekTo() -> contexto inválido"
+        );
+
+        return;
+    }
+
+    LOGI(
+        "JNI: seekTo(%p, %f)",
+        static_cast<void*>(context),
+        position
+    );
+
+    std::string amount =
+        std::to_string(position);
+
+    const char* command[] = {
+        "seek",
+        amount.c_str(),
+        "absolute",
+        nullptr
+    };
+
+    int status =
+        mpv_command(
+            context->mpv,
+            command
+        );
+
+    LOGI(
+        "JNI: mpv_command(seek %f absolute) -> %d",
+        position,
+        status
+    );
+}
+
+extern "C"
+JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeFrameForward(
     JNIEnv* env,
     jobject thiz,

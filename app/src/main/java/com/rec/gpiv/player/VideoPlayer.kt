@@ -18,8 +18,8 @@ interface VideoPlayer {
     fun pause()
 
     fun seekForward(seconds: Double)
-
     fun seekBackward(seconds: Double)
+    fun seekTo(position: Double)
 
     fun setVolume(volume: Double)
 

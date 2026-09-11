@@ -574,6 +574,14 @@ private var screenshotMethod =
         )
     }
 
+    fun seekTo(
+        position: Double
+    ) {
+        player.seekTo(
+            position
+        )
+    }
+
     fun frameForward(frames: Int) {
 
         println(

@@ -35,6 +35,10 @@ class FakeVideoPlayer : VideoPlayer {
         println("FakeVideoPlayer: seekBackward($seconds)")
     }
 
+    override fun seekTo(position: Double) {
+        println("FakeVideoPlayer: seekTo($position)")
+    }
+
     override fun setVolume(volume: Double) {
         println("FakeVideoPlayer: setVolume($volume)")
     }

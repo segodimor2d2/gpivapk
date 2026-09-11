@@ -165,6 +165,11 @@ class MpvPlayer(
         native.seekBackward(seconds)
     }
 
+    override fun seekTo(position: Double) {
+        println("MpvPlayer: seekTo($position)")
+        native.seekTo(position)
+    }
+
     override fun setVolume(volume: Double) {
 
         println(

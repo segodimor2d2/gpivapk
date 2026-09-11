@@ -61,6 +61,7 @@ fun PlayerScreen(
     onFrameForward: (Int) -> Unit,
     onSeekBackward: (Double) -> Unit,
     onSeekForward: (Double) -> Unit,
+    onSeekTo: (Double) -> Unit,
 
     onScreenshot: () -> Unit,
     onSetScreenshotMethod: (String) -> Unit,
@@ -208,21 +209,52 @@ fun PlayerScreen(
                             verticalAlignment =
                                 Alignment.CenterVertically
                         ) {
+
                               StatusText(
                                   text = "10",
+                                  modifier = Modifier.clickable {
+                                      if (uiState.duration > 0.0) {
+                                          onSeekTo(uiState.duration * 0.10)
+                                      }
+                                  }
                               )
+
                               StatusText(
                                   text = "30",
+                                  modifier = Modifier.clickable {
+                                      if (uiState.duration > 0.0) {
+                                          onSeekTo(uiState.duration * 0.30)
+                                      }
+                                  }
                               )
+
                               StatusText(
                                   text = "50",
+                                  modifier = Modifier.clickable {
+                                      if (uiState.duration > 0.0) {
+                                          onSeekTo(uiState.duration * 0.50)
+                                      }
+                                  }
                               )
+
                               StatusText(
                                   text = "70",
+                                  modifier = Modifier.clickable {
+                                      if (uiState.duration > 0.0) {
+                                          onSeekTo(uiState.duration * 0.70)
+                                      }
+                                  }
                               )
+
                               StatusText(
                                   text = "90",
+                                  modifier = Modifier.clickable {
+                                      if (uiState.duration > 0.0) {
+                                          onSeekTo(uiState.duration * 0.90)
+                                      }
+                                  }
                               )
+
                         }
                         Row(
                             modifier = Modifier

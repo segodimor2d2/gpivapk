@@ -225,6 +225,8 @@ class MainActivity : ComponentActivity() {
                         onSeekForward =
                             viewModel::seekForward,
 
+                        onSeekTo = viewModel::seekTo,
+
                         onVolumeDown =
                             viewModel::volumeDown,
 
