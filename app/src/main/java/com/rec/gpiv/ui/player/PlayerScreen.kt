@@ -198,32 +198,58 @@ fun PlayerScreen(
                         verticalArrangement =
                             Arrangement.spacedBy(10.dp)
                     ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 10.dp),
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp),
 
-                        horizontalArrangement = Arrangement.Center,
+                            horizontalArrangement = Arrangement.Center,
 
-                        verticalAlignment =
-                            Alignment.CenterVertically
-                    ) {
+                            verticalAlignment =
+                                Alignment.CenterVertically
+                        ) {
+                              StatusText(
+                                  text = "10",
+                              )
+                              StatusText(
+                                  text = "30",
+                              )
+                              StatusText(
+                                  text = "50",
+                              )
+                              StatusText(
+                                  text = "70",
+                              )
+                              StatusText(
+                                  text = "90",
+                              )
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp),
 
-                          StatusText(
-                              text = "${uiState.filename ?: "+ + + +"}",
-                              modifier = Modifier
-                                  .clickable {
-                                      onOpenVideo()
-                                  }
-                          )
+                            horizontalArrangement = Arrangement.Center,
 
-                          StatusText(
-                              text = "&",
-                              modifier =
-                                  Modifier.clickable {
-                                      onOpenFolder()
-                                  }
-                          )
+                            verticalAlignment =
+                                Alignment.CenterVertically
+                        ) {
+
+                              StatusText(
+                                  text = "${uiState.filename ?: "+ + + +"}",
+                                  modifier = Modifier
+                                      .clickable {
+                                          onOpenVideo()
+                                      }
+                              )
+
+                              StatusText(
+                                  text = "&",
+                                  modifier =
+                                      Modifier.clickable {
+                                          onOpenFolder()
+                                      }
+                              )
 
 
                         }
