@@ -810,6 +810,11 @@ private var screenshotMethod =
         val usedNumbers =
             mutableSetOf<Int>()
 
+        println(
+            "PlayerViewModel: consultando filhos = " +
+                childrenUri
+        )
+
         resolver.query(
             childrenUri,
             arrayOf(
@@ -819,6 +824,12 @@ private var screenshotMethod =
             null,
             null
         )?.use { cursor ->
+
+
+            println(
+                "PlayerViewModel: quantidade de linhas = " +
+                    cursor.count
+            )
 
             val nameColumn =
                 cursor.getColumnIndex(
@@ -833,6 +844,19 @@ private var screenshotMethod =
                 val name =
                     cursor.getString(nameColumn)
 
+                if (name.contains("nvsdMv1789174496_1014")) {
+                    println(
+                        "PlayerViewModel: MATCH TEST = [" +
+                            name +
+                            "]"
+                    )
+                }
+
+                println(
+                    "PlayerViewModel: arquivo existente = " +
+                        name
+                )
+
                 val prefix =
                     baseName
 
@@ -842,10 +866,12 @@ private var screenshotMethod =
                 if (!name.endsWith(screenshotExtension))
                     continue
 
+
                 val numberText =
                     name
                         .removePrefix(prefix)
                         .removeSuffix(screenshotExtension)
+                        .removePrefix("_")
 
                 val number =
                     numberText.toIntOrNull()
@@ -916,18 +942,22 @@ private var screenshotMethod =
                     _uiState.value.filename
                         ?: "screenshot"
 
-                val lastDot = originalName.lastIndexOf(".")
-
-                val baseName =
-                    if (lastDot > 0) {
-                        originalName.substring(0, lastDot)
-                    } else {
-                        originalName
-                    }
+                val lastDot =
+                    originalName.lastIndexOf(".")
 
                 val hasExtension =
                     lastDot > 0 &&
                         lastDot < originalName.length - 1
+
+                val baseName =
+                    if (hasExtension) {
+                        originalName.substring(
+                            0,
+                            lastDot
+                        )
+                    } else {
+                        originalName
+                    }
 
                 val screenshotExtension =
                     if (hasExtension) {
@@ -956,28 +986,67 @@ private var screenshotMethod =
                  * ------------------------------------------------
                  */
 
+
+                val mimeType =
+                    if (hasExtension) {
+                        "image/jpeg"
+                    } else {
+                        "application/octet-stream"
+                    }
+
+                val hiddenWithoutExtension =
+                    !hasExtension &&
+                        destinationName.startsWith(".")
+
+                val createName =
+                    if (hiddenWithoutExtension) {
+                        destinationName.removePrefix(".")
+                    } else {
+                        destinationName
+                    }
+
                 val destinationUri =
                     DocumentsContract.createDocument(
                         resolver,
                         parentDocumentUri,
-                        "image/jpeg",
-                        destinationName
+                        mimeType,
+                        createName
                     )
 
                 if (destinationUri == null) {
 
                     println(
-                        "PlayerViewModel: não foi possível criar " +
-                            "arquivo SAF"
-                    )
+                      "PlayerViewModel: não foi possível criar " +
+                          "arquivo SAF"
+                  )
 
-                    return@withContext
+                  return@withContext
                 }
 
+                val finalDestinationUri =
+                    if (hiddenWithoutExtension) {
+
+                        DocumentsContract.renameDocument(
+                            resolver,
+                            destinationUri,
+                            destinationName
+                        )
+
+                    } else {
+                        destinationUri
+                    } ?: run {
+
+                        println(
+                            "PlayerViewModel: não foi possível " +
+                                "renomear arquivo SAF"
+                        )
+
+                        return@withContext
+                    }
 
                 println(
                     "PlayerViewModel: destino = " +
-                        destinationUri
+                        finalDestinationUri
                 )
 
 
@@ -989,7 +1058,7 @@ private var screenshotMethod =
 
                 resolver
                     .openOutputStream(
-                        destinationUri
+                        finalDestinationUri
                     )
                     ?.use { output ->
 
@@ -1025,8 +1094,8 @@ private var screenshotMethod =
                 )
 
                 println(
-                    "PlayerViewModel: arquivo = " +
-                        destinationName
+                    "PlayerViewModel: destino = " +
+                        finalDestinationUri
                 )
 
                 println(
