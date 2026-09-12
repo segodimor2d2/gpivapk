@@ -113,10 +113,6 @@ private var screenshotMethod =
 
             player.events.collect { event ->
 
-                println(
-                    "PlayerViewModel: event = $event"
-                )
-
                 when (event) {
 
                     is PlayerEvent.TimePositionChanged -> {
@@ -142,10 +138,6 @@ private var screenshotMethod =
                                 playing = !event.paused
                             )
 
-                        println(
-                            "PlayerViewModel: UI STATE após PauseChanged = " +
-                                "playing=${_uiState.value.playing}"
-                        )
                     }
 
                     is PlayerEvent.FilenameChanged -> {
@@ -185,10 +177,6 @@ private var screenshotMethod =
 
     fun load(uri: Uri) {
 
-        println(
-            "PlayerViewModel: load(uri) = $uri"
-        )
-
         /*
          * Primeiro tentamos encontrar o arquivo na FileList.
          *
@@ -211,10 +199,6 @@ private var screenshotMethod =
             fileFromList?.name
                 ?: getFileName(uri)
 
-        println(
-            "PlayerViewModel: filename = $filename"
-        )
-
         selectedUri =
             uri
 
@@ -227,15 +211,6 @@ private var screenshotMethod =
          */
         val found =
             fileList.setCurrent(uri)
-
-        println(
-            "PlayerViewModel: arquivo encontrado na FileList = $found"
-        )
-
-        println(
-            "PlayerViewModel: currentIndex = " +
-                fileList.currentIndex()
-        )
 
         _uiState.value =
             _uiState.value.copy(
@@ -254,11 +229,6 @@ private var screenshotMethod =
 
         } else {
 
-            println(
-                "PlayerViewModel: Surface ainda não pronta, " +
-                    "adiando load()"
-            )
-
             pendingUri = uri
         }
     }
@@ -276,20 +246,6 @@ private var screenshotMethod =
                 uri
             )
 
-        println(
-            "PlayerViewModel: FileList da pasta carregada = $loaded"
-        )
-
-        println(
-            "PlayerViewModel: quantidade de arquivos = " +
-                fileList.size()
-        )
-
-        println(
-            "PlayerViewModel: posição atual antes = " +
-                fileList.currentIndex()
-        )
-
         val currentUri =
             selectedUri
 
@@ -303,27 +259,12 @@ private var screenshotMethod =
                     currentUri
                 )
 
-            println(
-                "PlayerViewModel: arquivo selecionado " +
-                    "encontrado na pasta = $found"
-            )
-
-            println(
-                "PlayerViewModel: posição atual depois = " +
-                    fileList.currentIndex()
-            )
-
             if (found) {
 
                 val currentFile =
                     fileList.current()
 
                 if (currentFile != null) {
-
-                    println(
-                        "PlayerViewModel: nome real recuperado da FileList = " +
-                            currentFile.name
-                    )
 
                     _uiState.value =
                         _uiState.value.copy(
@@ -379,16 +320,6 @@ private var screenshotMethod =
             return
         }
 
-        println(
-            "PlayerViewModel: próximo arquivo = " +
-                file.name
-        )
-
-        println(
-            "PlayerViewModel: currentIndex = " +
-                fileList.currentIndex()
-        )
-
         selectedUri = file.uri
 
         _uiState.value =
@@ -418,16 +349,6 @@ private var screenshotMethod =
             return
         }
 
-        println(
-            "PlayerViewModel: arquivo anterior = " +
-                file.name
-        )
-
-        println(
-            "PlayerViewModel: currentIndex = " +
-                fileList.currentIndex()
-        )
-
         selectedUri = file.uri
 
         _uiState.value =
@@ -454,16 +375,6 @@ private var screenshotMethod =
             )
             return
         }
-
-        println(
-            "PlayerViewModel: primeiro arquivo = " +
-                file.name
-        )
-
-        println(
-            "PlayerViewModel: currentIndex = " +
-                fileList.currentIndex()
-        )
 
         selectedUri = file.uri
 
@@ -492,16 +403,6 @@ private var screenshotMethod =
             return
         }
 
-        println(
-            "PlayerViewModel: último arquivo = " +
-                file.name
-        )
-
-        println(
-            "PlayerViewModel: currentIndex = " +
-                fileList.currentIndex()
-        )
-
         selectedUri = file.uri
 
         _uiState.value =
@@ -529,18 +430,6 @@ private var screenshotMethod =
             return
         }
 
-        println(
-            "PlayerViewModel: salto de " +
-                offset +
-                " arquivos -> " +
-                file.name
-        )
-
-        println(
-            "PlayerViewModel: currentIndex = " +
-                fileList.currentIndex()
-        )
-
         selectedUri = file.uri
 
         _uiState.value =
@@ -565,11 +454,6 @@ private var screenshotMethod =
     }
 
     fun togglePlayPause() {
-
-        println(
-            "PlayerViewModel: togglePlayPause() " +
-                "playing=${_uiState.value.playing}"
-        )
 
         if (_uiState.value.playing) {
             pause()
@@ -616,18 +500,10 @@ private var screenshotMethod =
 
     fun frameForward(frames: Int) {
 
-        println(
-            "PlayerViewModel: frameForward($frames)"
-        )
-
         player.frameForward(frames)
     }
 
     fun frameBackward(frames: Int) {
-
-        println(
-            "PlayerViewModel: frameBackward($frames)"
-        )
 
         player.frameBackward(frames)
     }
@@ -810,11 +686,6 @@ private var screenshotMethod =
         val usedNumbers =
             mutableSetOf<Int>()
 
-        println(
-            "PlayerViewModel: consultando filhos = " +
-                childrenUri
-        )
-
         resolver.query(
             childrenUri,
             arrayOf(
@@ -824,12 +695,6 @@ private var screenshotMethod =
             null,
             null
         )?.use { cursor ->
-
-
-            println(
-                "PlayerViewModel: quantidade de linhas = " +
-                    cursor.count
-            )
 
             val nameColumn =
                 cursor.getColumnIndex(
@@ -843,19 +708,6 @@ private var screenshotMethod =
 
                 val name =
                     cursor.getString(nameColumn)
-
-                if (name.contains("nvsdMv1789174496_1014")) {
-                    println(
-                        "PlayerViewModel: MATCH TEST = [" +
-                            name +
-                            "]"
-                    )
-                }
-
-                println(
-                    "PlayerViewModel: arquivo existente = " +
-                        name
-                )
 
                 val prefix =
                     baseName
@@ -926,12 +778,6 @@ private var screenshotMethod =
                         treeDocumentId
                     )
 
-                println(
-                    "PlayerViewModel: pasta destino = " +
-                        parentDocumentUri
-                )
-
-
                 /*
                  * ------------------------------------------------
                  * NOME DO SCREENSHOT
@@ -973,12 +819,6 @@ private var screenshotMethod =
                         baseName,
                         screenshotExtension
                     )
-
-                println(
-                    "PlayerViewModel: criando arquivo SAF = " +
-                        destinationName
-                )
-
 
                 /*
                  * ------------------------------------------------
@@ -1044,11 +884,6 @@ private var screenshotMethod =
                         return@withContext
                     }
 
-                println(
-                    "PlayerViewModel: destino = " +
-                        finalDestinationUri
-                )
-
 
                 /*
                  * ------------------------------------------------
@@ -1093,16 +928,6 @@ private var screenshotMethod =
                         "com sucesso para a pasta SAF"
                 )
 
-                println(
-                    "PlayerViewModel: destino = " +
-                        finalDestinationUri
-                )
-
-                println(
-                    "PlayerViewModel: tamanho = " +
-                        screenshotFile.length() +
-                        " bytes"
-                )
 
             } catch (e: Exception) {
 
