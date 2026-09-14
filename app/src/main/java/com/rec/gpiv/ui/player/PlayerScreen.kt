@@ -270,7 +270,7 @@ fun PlayerScreen(
                               )
 
                               StatusText(
-                                  text = "&",
+                                  text = "&&&",
                                   modifier =
                                       Modifier.clickable {
                                           onOpenFolder()

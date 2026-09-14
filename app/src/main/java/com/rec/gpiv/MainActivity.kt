@@ -50,10 +50,33 @@ class MainActivity : ComponentActivity() {
 
     private fun getValidSavedFolderUris(): List<Uri> {
 
-        return getSavedFolderUris()
-            .filter { uri ->
-                hasPersistedPermission(uri)
+        val savedFolders = getSavedFolderUris()
+
+        val validFolders = savedFolders.filter { uri ->
+
+            val valid = hasPersistedPermission(uri)
+
+            if (valid) {
+
+                println(
+                    "MainActivity: pasta válida = $uri"
+                )
+
+            } else {
+
+                println(
+                    "MainActivity: pasta salva sem permissão = $uri"
+                )
             }
+
+            valid
+        }
+
+        println(
+            "MainActivity: ${validFolders.size}/${savedFolders.size} pastas válidas"
+        )
+
+        return validFolders
     }
 
     private fun getSavedFolderUris(): MutableList<Uri> {
@@ -72,6 +95,9 @@ class MainActivity : ComponentActivity() {
     private fun loadSavedFolder(uri: Uri): Boolean {
 
         if (!hasPersistedPermission(uri)) {
+            println(
+                "MainActivity: permissão inválida para pasta = $uri"
+            )
             return false
         }
 
@@ -82,6 +108,151 @@ class MainActivity : ComponentActivity() {
         viewModel.loadFolder(uri)
 
         return true
+    }
+
+
+    private fun findMatchingSavedFolder(uri: Uri): Uri? {
+
+        val savedFolders = getValidSavedFolderUris()
+
+        println(
+            "MainActivity: procurando pasta correspondente para URI = $uri"
+        )
+
+        /*
+         * Caso 1:
+         * URI padrão SAF / DocumentsProvider.
+         *
+         * Exemplo:
+         * content://com.android.externalstorage.documents/document/primary%3Aig_repit%2Fvideo.mp4
+         */
+
+        try {
+
+            val documentId = DocumentsContract.getDocumentId(uri)
+
+            println(
+                "MainActivity: Document ID SAF = $documentId"
+            )
+
+            savedFolders.forEach { treeUri ->
+
+                try {
+
+                    val treeDocumentId =
+                        DocumentsContract.getTreeDocumentId(treeUri)
+
+                    println(
+                        "MainActivity: comparando SAF " +
+                            "$documentId com $treeDocumentId"
+                    )
+
+                    if (
+                        documentId == treeDocumentId ||
+                        documentId.startsWith("$treeDocumentId/")
+                    ) {
+                        return treeUri
+                    }
+
+                } catch (e: Exception) {
+
+                    println(
+                        "MainActivity: erro na pasta SAF $treeUri: ${e.message}"
+                    )
+                }
+            }
+
+            return null
+
+        } catch (e: Exception) {
+
+            println(
+                "MainActivity: URI não é DocumentsProvider padrão"
+            )
+        }
+
+
+        /*
+         * Caso 2:
+         * URI externa do RS Explorer.
+         *
+         * Exemplo:
+         * content://com.rs.explorer.filemanager.files/storage/emulated/0/ig_repit/video.mp4
+         */
+
+        val uriPath = uri.path ?: return null
+
+        println(
+            "MainActivity: caminho externo = $uriPath"
+        )
+
+        val externalStoragePrefix = "/storage/emulated/0/"
+
+        if (!uriPath.startsWith(externalStoragePrefix)) {
+
+            println(
+                "MainActivity: caminho externo não reconhecido"
+            )
+
+            return null
+        }
+
+        val relativePath = uriPath.removePrefix(externalStoragePrefix)
+
+        println(
+            "MainActivity: caminho relativo = $relativePath"
+        )
+
+
+        savedFolders.forEach { treeUri ->
+
+            try {
+
+                val treeDocumentId =
+                    DocumentsContract.getTreeDocumentId(treeUri)
+
+                /*
+                 * Exemplo:
+                 * treeDocumentId = primary:ig_repit
+                 *
+                 * Remove "primary:" para comparar com o caminho físico.
+                 */
+
+                val folderPath = treeDocumentId
+                    .removePrefix("primary:")
+
+                    .trimEnd('/')
+
+                println(
+                    "MainActivity: comparando caminho externo " +
+                        "$relativePath com pasta $folderPath"
+                )
+
+                if (
+                    relativePath == folderPath ||
+                    relativePath.startsWith("$folderPath/")
+                ) {
+
+                    println(
+                        "MainActivity: pasta correspondente encontrada = $treeUri"
+                    )
+
+                    return treeUri
+                }
+
+            } catch (e: Exception) {
+
+                println(
+                    "MainActivity: erro ao validar pasta $treeUri: ${e.message}"
+                )
+            }
+        }
+
+        println(
+            "MainActivity: nenhuma pasta correspondente encontrada"
+        )
+
+        return null
     }
 
     private fun handleIncomingIntent(intent: Intent) {
@@ -99,6 +270,26 @@ class MainActivity : ComponentActivity() {
         println(
             "MainActivity: MIME type = ${intent.type}"
         )
+
+        val matchingTreeUri = findMatchingSavedFolder(uri)
+
+        println(
+            "MainActivity: pasta correspondente ao arquivo = $matchingTreeUri"
+        )
+
+        if (matchingTreeUri != null) {
+
+            println(
+                "MainActivity: carregando FileList da pasta autorizada"
+            )
+
+            loadSavedFolder(matchingTreeUri)
+        } else {
+
+            println(
+                "MainActivity: nenhuma pasta salva corresponde ao arquivo"
+            )
+        }
 
         viewModel.load(uri)
     }
@@ -433,6 +624,22 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent?) {
+
+        super.onNewIntent(intent)
+
+        if (intent == null) {
+            return
+        }
+
+        setIntent(intent)
+
+        println(
+            "MainActivity: novo Intent recebido"
+        )
+
+        handleIncomingIntent(intent)
+    }
 
     override fun onDestroy() {
         super.onDestroy()

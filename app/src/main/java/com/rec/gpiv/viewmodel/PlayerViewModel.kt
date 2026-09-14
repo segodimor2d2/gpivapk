@@ -178,12 +178,13 @@ private var screenshotMethod =
     fun load(uri: Uri) {
 
         /*
-         * Primeiro tentamos encontrar o arquivo na FileList.
+         * Primeiro tentamos encontrar o arquivo na FileList
+         * através do Document ID.
          *
-         * Quando a pasta já foi carregada, o FileList possui
-         * o nome real obtido de COLUMN_DISPLAY_NAME.
+         * Isso funciona quando a URI recebida também é uma
+         * URI SAF/DocumentsContract.
          */
-        val fileFromList =
+        var fileFromList =
             fileList
                 .all()
                 .firstOrNull { file ->
@@ -195,22 +196,72 @@ private var screenshotMethod =
                     }
                 }
 
+        /*
+         * Se a URI veio de um aplicativo externo, como o
+         * RS Explorer, ela pode não ser uma URI DocumentsContract.
+         *
+         * Nesse caso usamos o nome do arquivo.
+         */
+        if (fileFromList == null) {
+
+            val externalFileName =
+                uri.path
+                    ?.substringAfterLast('/')
+                    ?.takeIf { it.isNotBlank() }
+
+            if (externalFileName != null) {
+
+                println(
+                    "PlayerViewModel: procurando arquivo externo = " +
+                        externalFileName
+                )
+
+                fileFromList =
+                    fileList
+                        .all()
+                        .firstOrNull { file ->
+                            file.name == externalFileName
+                        }
+            }
+        }
+
+        /*
+         * Se encontramos o arquivo na FileList, usamos a URI SAF
+         * oficial criada a partir da pasta autorizada.
+         *
+         * Caso contrário, mantemos a URI original.
+         */
+        val loadUri =
+            fileFromList?.uri ?: uri
+
         val filename =
             fileFromList?.name
                 ?: getFileName(uri)
 
+        println(
+            "PlayerViewModel: URI recebida = $uri"
+        )
+
+        println(
+            "PlayerViewModel: URI usada para carregar = $loadUri"
+        )
+
+        println(
+            "PlayerViewModel: arquivo = $filename"
+        )
+
         selectedUri =
-            uri
+            loadUri
 
         pickerVideoLoaded =
             true
 
         /*
-         * Se a FileList já estiver carregada, sincroniza
-         * o currentIndex com o vídeo selecionado.
+         * Sincroniza o currentIndex com o arquivo encontrado
+         * na FileList.
          */
         val found =
-            fileList.setCurrent(uri)
+            fileList.setCurrent(loadUri)
 
         _uiState.value =
             _uiState.value.copy(
@@ -225,11 +276,11 @@ private var screenshotMethod =
 
         if (surfaceReady) {
 
-            player.load(uri)
+            player.load(loadUri)
 
         } else {
 
-            pendingUri = uri
+            pendingUri = loadUri
         }
     }
 
