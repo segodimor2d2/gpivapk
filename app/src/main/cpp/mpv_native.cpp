@@ -1380,6 +1380,29 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         "MediaCodec: start() OK"
     );
 
+    const char* outputPath =
+        "/data/data/com.rec.gpiv/cache/frameA.h264";
+
+    FILE* outputFile =
+        fopen(outputPath, "wb");
+
+    if (outputFile) {
+
+        fclose(outputFile);
+
+        LOGI(
+            "MediaCodec: arquivo H264 anterior removido: %s",
+            outputPath
+        );
+
+    } else {
+
+        LOGI(
+            "MediaCodec: não foi possível limpar %s",
+            outputPath
+        );
+    }
+
     ssize_t inputIndex =
         AMediaCodec_dequeueInputBuffer(
             encoder,
@@ -2006,6 +2029,8 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
     std::vector<uint8_t> uPlane;
     std::vector<uint8_t> vPlane;
 
+    std::vector<uint8_t> codecConfig;
+
     bool foundA = false;
     bool foundB = false;
 
@@ -2152,20 +2177,44 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                 );
             }
 
-            if (decodedFrame == frameA) {
+            if (
+                decodedFrame == frameA ||
+                decodedFrame == frameA + 1
+            ) {
 
-                foundA = true;
-                ptsA = frame->pts;
+                const bool isFrameA =
+                    decodedFrame == frameA;
 
-                LOGI(
-                    "FFmpeg: FRAME A encontrado: %lld pts=%lld",
-                    static_cast<long long>(
-                        decodedFrame
-                    ),
-                    static_cast<long long>(
-                        frame->pts
-                    )
-                );
+                const char* frameLabel =
+                    isFrameA ? "A" : "A+1";
+
+                if (isFrameA) {
+
+                    foundA = true;
+                    ptsA = frame->pts;
+
+                    LOGI(
+                        "FFmpeg: FRAME A encontrado: %lld pts=%lld",
+                        static_cast<long long>(
+                            decodedFrame
+                        ),
+                        static_cast<long long>(
+                            frame->pts
+                        )
+                    );
+
+                } else {
+
+                    LOGI(
+                        "FFmpeg: FRAME A+1 encontrado: %lld pts=%lld",
+                        static_cast<long long>(
+                            decodedFrame
+                        ),
+                        static_cast<long long>(
+                            frame->pts
+                        )
+                    );
+                }
 
                 const int width = frame->width;
                 const int height = frame->height;
@@ -2294,7 +2343,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                                 frameSize,
                                 static_cast<int64_t>(
                                     av_rescale_q(
-                                        ptsA,
+                                        frame->pts,
                                         videoStream->time_base,
                                         AVRational{1, 1000000}
                                     )
@@ -2312,7 +2361,6 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
 
                         AMediaCodecBufferInfo outputInfo{};
 
-                        std::vector<uint8_t> codecConfig;
 
                         ssize_t outputIndex =
                             AMediaCodec_dequeueOutputBuffer(
@@ -2450,21 +2498,23 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                                 outputBuffer + outputInfo.size
                             );
 
-                            const char* outputPath =
-                                "/data/data/com.rec.gpiv/cache/frameA.h264";
-
                             FILE* outputFile =
-                                fopen(outputPath, "wb");
+                                fopen(outputPath, "ab");
 
                             if (outputFile) {
 
-                                size_t writtenConfig =
-                                    fwrite(
-                                        codecConfig.data(),
-                                        1,
-                                        codecConfig.size(),
-                                        outputFile
-                                    );
+                                size_t writtenConfig = 0;
+
+                                if (isFrameA) {
+
+                                    writtenConfig =
+                                        fwrite(
+                                            codecConfig.data(),
+                                            1,
+                                            codecConfig.size(),
+                                            outputFile
+                                        );
+                                }
 
                                 size_t writtenFrame =
                                     fwrite(
