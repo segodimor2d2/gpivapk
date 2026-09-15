@@ -2178,8 +2178,8 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
             }
 
             if (
-                decodedFrame == frameA ||
-                decodedFrame == frameA + 1
+                decodedFrame >= frameA &&
+                decodedFrame <= frameB
             ) {
 
                 const bool isFrameA =
@@ -2355,7 +2355,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                             "MediaCodec: FRAME A queueInputBuffer "
                             "result=%d pts=%lld size=%zu",
                             queueResult,
-                            static_cast<long long>(ptsA),
+                            static_cast<long long>(frame->pts),
                             frameSize
                         );
 
