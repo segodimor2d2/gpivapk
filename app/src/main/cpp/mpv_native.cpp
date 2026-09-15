@@ -6,6 +6,7 @@
 #include "mpv_context_stream.h"
 
 extern "C" {
+#include <libavcodec/avcodec.h>
 #include <libavcodec/jni.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
@@ -1214,6 +1215,743 @@ Java_com_rec_gpiv_player_MpvNative_nativeLoad(
             uriString
         );
     }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
+    JNIEnv* env,
+    jobject thiz,
+    jint fd,
+    jlong frameA,
+    jlong frameB
+)
+{
+    if (fd < 0) {
+        LOGI(
+            "FFmpeg: testCutFrames() -> fd inválido: %d",
+            fd
+        );
+        return;
+    }
+
+    if (frameA < 0 || frameB < frameA) {
+        LOGI(
+            "FFmpeg: testCutFrames() -> intervalo inválido A=%lld B=%lld",
+            static_cast<long long>(frameA),
+            static_cast<long long>(frameB)
+        );
+        return;
+    }
+
+    int sourceFd =
+        dup(fd);
+
+    if (sourceFd < 0) {
+        LOGI(
+            "FFmpeg: testCutFrames() -> dup() falhou"
+        );
+        return;
+    }
+
+    if (
+        lseek(
+            sourceFd,
+            0,
+            SEEK_SET
+        ) < 0
+    ) {
+        LOGI(
+            "FFmpeg: testCutFrames() -> lseek(0) falhou: %s",
+            strerror(errno)
+        );
+        close(sourceFd);
+        return;
+    }
+
+    LOGI(
+        "FFmpeg: testCutFrames() -> fd=%d A=%lld B=%lld",
+        sourceFd,
+        static_cast<long long>(frameA),
+        static_cast<long long>(frameB)
+    );
+
+    unsigned char* ioBuffer =
+        static_cast<unsigned char*>(
+            av_malloc(32768)
+        );
+
+    if (!ioBuffer) {
+        LOGI(
+            "FFmpeg: testCutFrames() -> av_malloc() falhou"
+        );
+        close(sourceFd);
+        return;
+    }
+
+    AVIOContext* ioContext =
+        avio_alloc_context(
+            ioBuffer,
+            32768,
+            0,
+            &sourceFd,
+
+            [](void* opaque, uint8_t* buffer, int bufferSize) -> int {
+
+                int* fdPtr =
+                    static_cast<int*>(opaque);
+
+                if (!fdPtr || *fdPtr < 0) {
+                    return AVERROR(EINVAL);
+                }
+
+                ssize_t bytesRead =
+                    read(
+                        *fdPtr,
+                        buffer,
+                        static_cast<size_t>(bufferSize)
+                    );
+
+                if (bytesRead < 0) {
+                    return AVERROR(errno);
+                }
+
+                if (bytesRead == 0) {
+                    return AVERROR_EOF;
+                }
+
+                return static_cast<int>(
+                    bytesRead
+                );
+            },
+
+            nullptr,
+
+            [](void* opaque, int64_t offset, int whence) -> int64_t {
+
+                int* fdPtr =
+                    static_cast<int*>(opaque);
+
+                if (!fdPtr || *fdPtr < 0) {
+                    return AVERROR(EINVAL);
+                }
+
+                if (whence == AVSEEK_SIZE) {
+
+                    off_t current =
+                        lseek(
+                            *fdPtr,
+                            0,
+                            SEEK_CUR
+                        );
+
+                    off_t end =
+                        lseek(
+                            *fdPtr,
+                            0,
+                            SEEK_END
+                        );
+
+                    if (end < 0) {
+                        return AVERROR(errno);
+                    }
+
+                    if (
+                        lseek(
+                            *fdPtr,
+                            current,
+                            SEEK_SET
+                        ) < 0
+                    ) {
+                        return AVERROR(errno);
+                    }
+
+                    return static_cast<int64_t>(
+                        end
+                    );
+                }
+
+                off_t result =
+                    lseek(
+                        *fdPtr,
+                        static_cast<off_t>(offset),
+                        whence
+                    );
+
+                if (result < 0) {
+                    return AVERROR(errno);
+                }
+
+                return static_cast<int64_t>(
+                    result
+                );
+            }
+        );
+
+    if (!ioContext) {
+        LOGI(
+            "FFmpeg: testCutFrames() -> avio_alloc_context() falhou"
+        );
+        av_free(ioBuffer);
+        close(sourceFd);
+        return;
+    }
+
+    AVFormatContext* formatContext =
+        avformat_alloc_context();
+
+    if (!formatContext) {
+        LOGI(
+            "FFmpeg: testCutFrames() -> avformat_alloc_context() falhou"
+        );
+
+        av_freep(
+            &ioContext->buffer
+        );
+
+        avio_context_free(
+            &ioContext
+        );
+
+        close(sourceFd);
+        return;
+    }
+
+    formatContext->pb =
+        ioContext;
+
+    formatContext->flags |=
+        AVFMT_FLAG_CUSTOM_IO;
+
+    int result =
+        avformat_open_input(
+            &formatContext,
+            nullptr,
+            nullptr,
+            nullptr
+        );
+
+    if (result < 0) {
+
+        char errorBuffer[
+            AV_ERROR_MAX_STRING_SIZE
+        ];
+
+        av_strerror(
+            result,
+            errorBuffer,
+            sizeof(errorBuffer)
+        );
+
+        LOGI(
+            "FFmpeg: testCutFrames() -> avformat_open_input(): %s",
+            errorBuffer
+        );
+
+        avformat_close_input(
+            &formatContext
+        );
+
+        if (ioContext) {
+            av_freep(
+                &ioContext->buffer
+            );
+            avio_context_free(
+                &ioContext
+            );
+        }
+
+        close(sourceFd);
+        return;
+    }
+
+    result =
+        avformat_find_stream_info(
+            formatContext,
+            nullptr
+        );
+
+    if (result < 0) {
+
+        char errorBuffer[
+            AV_ERROR_MAX_STRING_SIZE
+        ];
+
+        av_strerror(
+            result,
+            errorBuffer,
+            sizeof(errorBuffer)
+        );
+
+        LOGI(
+            "FFmpeg: testCutFrames() -> find_stream_info(): %s",
+            errorBuffer
+        );
+
+        avformat_close_input(
+            &formatContext
+        );
+
+        if (ioContext) {
+            av_freep(
+                &ioContext->buffer
+            );
+            avio_context_free(
+                &ioContext
+            );
+        }
+
+        close(sourceFd);
+        return;
+    }
+
+    int videoStreamIndex = -1;
+
+    for (
+        unsigned int i = 0;
+        i < formatContext->nb_streams;
+        ++i
+    ) {
+        if (
+            formatContext->streams[i]
+                ->codecpar
+                ->codec_type
+            == AVMEDIA_TYPE_VIDEO
+        ) {
+            videoStreamIndex =
+                static_cast<int>(i);
+            break;
+        }
+    }
+
+    if (videoStreamIndex < 0) {
+
+        LOGI(
+            "FFmpeg: testCutFrames() -> stream de vídeo não encontrado"
+        );
+
+        avformat_close_input(
+            &formatContext
+        );
+
+        if (ioContext) {
+            av_freep(
+                &ioContext->buffer
+            );
+            avio_context_free(
+                &ioContext
+            );
+        }
+
+        close(sourceFd);
+        return;
+    }
+
+    AVStream* videoStream =
+        formatContext->streams[
+            videoStreamIndex
+        ];
+
+    const AVCodec* decoder =
+        avcodec_find_decoder(
+            videoStream->codecpar->codec_id
+        );
+
+    if (!decoder) {
+
+        LOGI(
+            "FFmpeg: testCutFrames() -> decoder não encontrado"
+        );
+
+        avformat_close_input(
+            &formatContext
+        );
+
+        if (ioContext) {
+            av_freep(
+                &ioContext->buffer
+            );
+            avio_context_free(
+                &ioContext
+            );
+        }
+
+        close(sourceFd);
+        return;
+    }
+
+    AVCodecContext* codecContext =
+        avcodec_alloc_context3(
+            decoder
+        );
+
+    if (!codecContext) {
+
+        LOGI(
+            "FFmpeg: testCutFrames() -> avcodec_alloc_context3() falhou"
+        );
+
+        avformat_close_input(
+            &formatContext
+        );
+
+        if (ioContext) {
+            av_freep(
+                &ioContext->buffer
+            );
+            avio_context_free(
+                &ioContext
+            );
+        }
+
+        close(sourceFd);
+        return;
+    }
+
+    result =
+        avcodec_parameters_to_context(
+            codecContext,
+            videoStream->codecpar
+        );
+
+    LOGI(
+        "FFmpeg: decoder config: codec_id=%d width=%d height=%d "
+        "extradata_size=%d format=%d",
+        codecContext->codec_id,
+        codecContext->width,
+        codecContext->height,
+        codecContext->extradata_size,
+        codecContext->pix_fmt
+    );
+
+    if (result < 0) {
+
+        LOGI(
+            "FFmpeg: testCutFrames() -> avcodec_parameters_to_context() falhou"
+        );
+
+        avcodec_free_context(
+            &codecContext
+        );
+
+        avformat_close_input(
+            &formatContext
+        );
+
+        if (ioContext) {
+            av_freep(
+                &ioContext->buffer
+            );
+            avio_context_free(
+                &ioContext
+            );
+        }
+
+        close(sourceFd);
+        return;
+    }
+
+    result =
+        avcodec_open2(
+            codecContext,
+            decoder,
+            nullptr
+        );
+
+    LOGI(
+        "FFmpeg: decoder aberto: %s",
+        codecContext->codec->name
+    );
+
+    if (result < 0) {
+
+        char errorBuffer[
+            AV_ERROR_MAX_STRING_SIZE
+        ];
+
+        av_strerror(
+            result,
+            errorBuffer,
+            sizeof(errorBuffer)
+        );
+
+        LOGI(
+            "FFmpeg: testCutFrames() -> avcodec_open2(): %s",
+            errorBuffer
+        );
+
+        avcodec_free_context(
+            &codecContext
+        );
+
+        avformat_close_input(
+            &formatContext
+        );
+
+        if (ioContext) {
+            av_freep(
+                &ioContext->buffer
+            );
+            avio_context_free(
+                &ioContext
+            );
+        }
+
+        close(sourceFd);
+        return;
+    }
+
+    LOGI(
+        "FFmpeg: testCutFrames() -> decodificando stream=%d",
+        videoStreamIndex
+    );
+
+    AVPacket* packet =
+        av_packet_alloc();
+
+    AVFrame* frame =
+        av_frame_alloc();
+
+    if (!packet || !frame) {
+
+        LOGI(
+            "FFmpeg: testCutFrames() -> falha ao alocar packet/frame"
+        );
+
+        av_packet_free(
+            &packet
+        );
+
+        av_frame_free(
+            &frame
+        );
+
+        avcodec_free_context(
+            &codecContext
+        );
+
+        avformat_close_input(
+            &formatContext
+        );
+
+        if (ioContext) {
+            av_freep(
+                &ioContext->buffer
+            );
+            avio_context_free(
+                &ioContext
+            );
+        }
+
+        close(sourceFd);
+        return;
+    }
+
+    int64_t decodedFrame = 0;
+
+    bool foundA = false;
+    bool foundB = false;
+
+    int videoPacketCount = 0;
+
+    while (!foundB) {
+
+        result =
+            av_read_frame(
+                formatContext,
+                packet
+            );
+
+        if (result < 0) {
+
+            char errorBuffer[
+                AV_ERROR_MAX_STRING_SIZE
+            ];
+
+            av_strerror(
+                result,
+                errorBuffer,
+                sizeof(errorBuffer)
+            );
+
+            LOGI(
+                "FFmpeg: testCutFrames() -> av_read_frame(): %s (%d)",
+                errorBuffer,
+                result
+            );
+
+            break;
+        }
+
+        if (
+            packet->stream_index
+            != videoStreamIndex
+        ) {
+            av_packet_unref(packet);
+            continue;
+        }
+
+        static int videoPacketCount = 0;
+
+        if (packet->stream_index == videoStreamIndex &&
+            videoPacketCount < 6) {
+
+            LOGI(
+                "FFmpeg: VIDEO PACKET #%d size=%d pts=%lld dts=%lld flags=0x%x",
+                videoPacketCount,
+                packet->size,
+                static_cast<long long>(packet->pts),
+                static_cast<long long>(packet->dts),
+                packet->flags
+            );
+
+            videoPacketCount++;
+        }
+
+        result =
+            avcodec_send_packet(
+                codecContext,
+                packet
+            );
+
+        if (result < 0) {
+
+            char errorBuffer[
+                AV_ERROR_MAX_STRING_SIZE
+            ];
+
+            av_strerror(
+                result,
+                errorBuffer,
+                sizeof(errorBuffer)
+            );
+
+            LOGI(
+                "FFmpeg: PRIMEIRO ERRO send_packet: %s (%d) "
+                "stream=%d size=%d pts=%lld dts=%lld",
+                errorBuffer,
+                result,
+                packet->stream_index,
+                packet->size,
+                static_cast<long long>(packet->pts),
+                static_cast<long long>(packet->dts)
+            );
+
+            av_packet_unref(packet);
+            break;
+        }
+
+        av_packet_unref(packet);
+
+        while (true) {
+
+            result =
+                avcodec_receive_frame(
+                    codecContext,
+                    frame
+                );
+
+            if (
+                result == AVERROR(EAGAIN) ||
+                result == AVERROR_EOF
+            ) {
+                break;
+            }
+
+            if (result < 0) {
+
+                char errorBuffer[
+                    AV_ERROR_MAX_STRING_SIZE
+                ];
+
+                av_strerror(
+                    result,
+                    errorBuffer,
+                    sizeof(errorBuffer)
+                );
+
+                LOGI(
+                    "FFmpeg: avcodec_receive_frame(): %s (%d)",
+                    errorBuffer,
+                    result
+                );
+
+                break;
+            }
+
+            if (decodedFrame == frameA) {
+
+                foundA = true;
+
+                LOGI(
+                    "FFmpeg: FRAME A encontrado: %lld pts=%lld",
+                    static_cast<long long>(
+                        decodedFrame
+                    ),
+                    static_cast<long long>(
+                        frame->pts
+                    )
+                );
+            }
+
+            if (decodedFrame == frameB) {
+
+                foundB = true;
+
+                LOGI(
+                    "FFmpeg: FRAME B encontrado: %lld pts=%lld",
+                    static_cast<long long>(
+                        decodedFrame
+                    ),
+                    static_cast<long long>(
+                        frame->pts
+                    )
+                );
+
+                break;
+            }
+
+            ++decodedFrame;
+        }
+    }
+
+    LOGI(
+        "FFmpeg: testCutFrames() -> resultado A=%s B=%s frames_decodificados=%lld",
+        foundA ? "OK" : "NÃO",
+        foundB ? "OK" : "NÃO",
+        static_cast<long long>(decodedFrame)
+    );
+
+    av_packet_free(
+        &packet
+    );
+
+    av_frame_free(
+        &frame
+    );
+
+    avcodec_free_context(
+        &codecContext
+    );
+
+    avformat_close_input(
+        &formatContext
+    );
+
+    if (ioContext) {
+        av_freep(
+            &ioContext->buffer
+        );
+        avio_context_free(
+            &ioContext
+        );
+    }
+
+    close(sourceFd);
+
+    LOGI(
+        "FFmpeg: testCutFrames() -> concluído"
+    );
 }
 
 extern "C"

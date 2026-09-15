@@ -253,6 +253,19 @@ class MpvNative {
         nativeProbeFd(fd)
     }
 
+    fun testCutFrames(
+        fd: Int,
+        frameA: Long,
+        frameB: Long
+    ) {
+        checkInitialized()
+        nativeTestCutFrames(
+            fd,
+            frameA,
+            frameB
+        )
+    }
+
     fun play() {
         checkInitialized()
 
@@ -590,6 +603,12 @@ class MpvNative {
 
     private external fun nativeLoad(
         uri: String
+    )
+
+    private external fun nativeTestCutFrames(
+        fd: Int,
+        frameA: Long,
+        frameB: Long
     )
 
     private external fun nativeProbeFd(

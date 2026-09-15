@@ -125,8 +125,13 @@ class MpvPlayer(
         if (fd != null) {
 
             native.loadFd(fd)
-
             native.probeFd(fd)
+
+            native.testCutFrames(
+                fd = fd,
+                frameA = 293L,
+                frameB = 475L
+            )
         }
 
         native.load(uri.toString())
