@@ -13,6 +13,7 @@ extern "C" {
 #include <libavutil/error.h>
 }
 
+#include <stdio.h>
 #include <string>
 #include <unistd.h>
 #include <errno.h>
@@ -2311,6 +2312,8 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
 
                         AMediaCodecBufferInfo outputInfo{};
 
+                        std::vector<uint8_t> codecConfig;
+
                         ssize_t outputIndex =
                             AMediaCodec_dequeueOutputBuffer(
                                 encoder,
@@ -2329,32 +2332,109 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                             outputInfo.flags
                         );
 
-                        if (outputIndex == AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED) {
+
+                        if (
+                            outputIndex == AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED
+                        ) {
 
                             LOGI(
                                 "MediaCodec: FRAME A output format changed"
                             );
 
-                            outputIndex =
-                                AMediaCodec_dequeueOutputBuffer(
-                                    encoder,
-                                    &outputInfo,
-                                    100000
+                            for (int attempt = 0; attempt < 10; ++attempt) {
+
+                                outputIndex =
+                                    AMediaCodec_dequeueOutputBuffer(
+                                        encoder,
+                                        &outputInfo,
+                                        100000
+                                    );
+
+                                LOGI(
+                                    "MediaCodec: FRAME A output tentativa=%d "
+                                    "index=%zd size=%d pts=%lld flags=%u",
+                                    attempt + 1,
+                                    outputIndex,
+                                    outputInfo.size,
+                                    static_cast<long long>(
+                                        outputInfo.presentationTimeUs
+                                    ),
+                                    outputInfo.flags
                                 );
 
-                            LOGI(
-                                "MediaCodec: FRAME A segundo output buffer index = %zd "
-                                "size=%d pts=%lld flags=%u",
-                                outputIndex,
-                                outputInfo.size,
-                                static_cast<long long>(
-                                    outputInfo.presentationTimeUs
-                                ),
-                                outputInfo.flags
-                            );
+
+                                if (outputIndex >= 0) {
+
+                                    if (
+                                        outputInfo.flags &
+                                        AMEDIACODEC_BUFFER_FLAG_CODEC_CONFIG
+                                    ) {
+
+                                        size_t codecConfigSize = 0;
+
+                                        uint8_t* codecConfigBuffer =
+                                            AMediaCodec_getOutputBuffer(
+                                                encoder,
+                                                static_cast<size_t>(outputIndex),
+                                                &codecConfigSize
+                                            );
+
+                                        if (
+                                            codecConfigBuffer != nullptr &&
+                                            outputInfo.size > 0
+                                        ) {
+
+                                            codecConfig.assign(
+                                                codecConfigBuffer,
+                                                codecConfigBuffer + outputInfo.size
+                                            );
+
+                                            LOGI(
+                                                "MediaCodec: FRAME A CODEC_CONFIG "
+                                                "copiado: %zu bytes",
+                                                codecConfig.size()
+                                            );
+
+                                        } else {
+
+                                            LOGI(
+                                                "MediaCodec: FRAME A CODEC_CONFIG "
+                                                "buffer NULL ou size=0"
+                                            );
+                                        }
+
+                                        AMediaCodec_releaseOutputBuffer(
+                                            encoder,
+                                            static_cast<size_t>(outputIndex),
+                                            false
+                                        );
+
+                                        outputIndex = -1;
+
+                                        continue;
+                                    }
+
+                                    break;
+                                }
+
+                                if (
+                                    outputIndex ==
+                                    AMEDIACODEC_INFO_TRY_AGAIN_LATER
+                                ) {
+
+                                    continue;
+                                }
+
+                                break;
+                            }
                         }
 
                         if (outputIndex >= 0) {
+
+                            LOGI(
+                                "MediaCodec: ENTROU no bloco de gravação, outputIndex=%zd",
+                                outputIndex
+                            );
 
                             size_t outputBufferSize = 0;
 
@@ -2365,12 +2445,89 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                                     &outputBufferSize
                                 );
 
+                            std::vector<uint8_t> encodedFrame(
+                                outputBuffer,
+                                outputBuffer + outputInfo.size
+                            );
+
+                            const char* outputPath =
+                                "/data/data/com.rec.gpiv/cache/frameA.h264";
+
+                            FILE* outputFile =
+                                fopen(outputPath, "wb");
+
+                            if (outputFile) {
+
+                                size_t writtenConfig =
+                                    fwrite(
+                                        codecConfig.data(),
+                                        1,
+                                        codecConfig.size(),
+                                        outputFile
+                                    );
+
+                                size_t writtenFrame =
+                                    fwrite(
+                                        encodedFrame.data(),
+                                        1,
+                                        encodedFrame.size(),
+                                        outputFile
+                                    );
+
+                                size_t written =
+                                    writtenConfig + writtenFrame;
+
+                                fclose(outputFile);
+
+                                LOGI(
+                                    "MediaCodec: FRAME A H264 salvo: "
+                                    "%zu bytes (config=%zu frame=%zu) em %s",
+                                    written,
+                                    writtenConfig,
+                                    writtenFrame,
+                                    outputPath
+                                );
+
+                            } else {
+
+                                LOGI(
+                                    "MediaCodec: erro ao abrir %s para escrita",
+                                    outputPath
+                                );
+                            }
+
                             LOGI(
-                                "MediaCodec: FRAME A H264 output "
-                                "bufferSize=%zu ptr=%p encodedSize=%d",
+                                "MediaCodec: FRAME A H264 copiado para memória: %zu bytes",
+                                encodedFrame.size()
+                            );
+
+                            if (encodedFrame.size() >= 8) {
+
+                                LOGI(
+                                    "MediaCodec: FRAME A primeiros bytes: "
+                                    "%02X %02X %02X %02X %02X %02X %02X %02X",
+                                    encodedFrame[0],
+                                    encodedFrame[1],
+                                    encodedFrame[2],
+                                    encodedFrame[3],
+                                    encodedFrame[4],
+                                    encodedFrame[5],
+                                    encodedFrame[6],
+                                    encodedFrame[7]
+                                );
+                            }
+
+                            LOGI(
+                                "MediaCodec: FRAME A H264 VIDEO "
+                                "bufferSize=%zu ptr=%p encodedSize=%d "
+                                "pts=%lld flags=%u",
                                 outputBufferSize,
                                 outputBuffer,
-                                outputInfo.size
+                                outputInfo.size,
+                                static_cast<long long>(
+                                    outputInfo.presentationTimeUs
+                                ),
+                                outputInfo.flags
                             );
 
                             AMediaCodec_releaseOutputBuffer(
