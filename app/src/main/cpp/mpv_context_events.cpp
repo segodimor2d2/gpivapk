@@ -145,6 +145,11 @@ static void mpv_event_loop(
                             property->data
                         );
 
+                    LOGI(
+                        "PROPERTY DOUBLE: %s = %f",
+                        property->name,
+                        value
+                    );
 
                     jstring name =
                         env->NewStringUTF(

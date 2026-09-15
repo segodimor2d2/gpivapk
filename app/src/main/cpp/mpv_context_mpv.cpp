@@ -29,7 +29,8 @@
 #define PROPERTY_DURATION   2
 #define PROPERTY_PAUSE      3
 #define PROPERTY_FILENAME   4
-
+#define PROPERTY_FRAME_NUMBER 5
+#define PROPERTY_VIDEO_FPS 6
 
 bool mpv_context_mpv_configure(
     MpvContext* context
@@ -225,15 +226,33 @@ int mpv_context_mpv_observe_properties(
     status =
         mpv_observe_property(
             context->mpv,
-            PROPERTY_FILENAME,
-            "filename",
-            MPV_FORMAT_STRING
+            PROPERTY_FRAME_NUMBER,
+            "estimated-frame-number",
+            MPV_FORMAT_DOUBLE
         );
 
     if (status < 0) {
         LOGI(
-            "mpv_observe_property(filename) "
+            "mpv_observe_property(estimated-frame-number) "
             "falhou: %s",
+            mpv_error_string(status)
+        );
+
+        return status;
+    }
+
+    status =
+        mpv_observe_property(
+            context->mpv,
+            PROPERTY_VIDEO_FPS,
+            "video-params/fps",
+            MPV_FORMAT_DOUBLE
+        );
+
+    if (status < 0) {
+
+        LOGI(
+            "mpv_observe_property(video-params/fps) falhou: %s",
             mpv_error_string(status)
         );
 

@@ -5,6 +5,7 @@ import android.net.Uri
 import android.view.Surface
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import android.util.Log
 
 class MpvPlayer(
     contentResolver: ContentResolver,
@@ -270,7 +271,6 @@ class MpvPlayer(
             when (name) {
 
                 "time-pos" -> {
-
                     _events.tryEmit(
                         PlayerEvent.TimePositionChanged(
                             position = value
@@ -278,11 +278,36 @@ class MpvPlayer(
                     )
                 }
 
-                "duration" -> {
+                "video-params/fps" -> {
+                    Log.d(
+                        "GPIV_FRAME",
+                        "video FPS = $value"
+                    )
 
+                    _events.tryEmit(
+                        PlayerEvent.VideoFpsChanged(
+                            fps = value
+                        )
+                    )
+                }
+
+                "duration" -> {
                     _events.tryEmit(
                         PlayerEvent.DurationChanged(
                             duration = value
+                        )
+                    )
+                }
+
+                "estimated-frame-number" -> {
+                    Log.d(
+                        "GPIV_FRAME",
+                        "estimated-frame-number = $value"
+                    )
+
+                    _events.tryEmit(
+                        PlayerEvent.FrameNumberChanged(
+                            frame = value.toLong()
                         )
                     )
                 }

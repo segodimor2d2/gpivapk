@@ -558,6 +558,14 @@ class MainActivity : ComponentActivity() {
                         onFrameForward =
                             viewModel::frameForward,
 
+                        onSetMarkerA =
+                            viewModel::setMarkerA,
+
+                        onSetMarkerB =
+                            viewModel::setMarkerB,
+
+                        onDisableABLoop = viewModel::disableABLoop,
+
                         onScreenshot = viewModel::screenshot,
 
                         onSetScreenshotMethod = viewModel::setScreenshotMethod,

@@ -1,5 +1,4 @@
 package com.rec.gpiv.viewmodel
-
 import android.app.Application
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -27,8 +26,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.max
+import kotlin.math.roundToLong
 
 import android.content.ContentResolver
 import android.util.Log
@@ -38,17 +40,29 @@ private enum class ScreenshotMethod {
     MPV
 }
 
+data class FrameMarker(
+    val frame: Long,
+    val position: Double
+)
+
 class PlayerViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
-private var screenshotMethod =
-        ScreenshotMethod.FRAMEBUFFER
+    private var screenshotMethod =
+            ScreenshotMethod.FRAMEBUFFER
+
+    private var markerA: FrameMarker? = null
+    private var markerB: FrameMarker? = null
+    private var abLoopEnabled = false
+          private var abLoopSeekingToA = false
 
     val mpvNative =
         MpvNative()
 
     private var volumeBeforeMute = 100.0
+    private var videoFps = 30.0
+    private var frameSyncPending = false
 
     private val player: VideoPlayer =
         MpvPlayer(
@@ -115,12 +129,48 @@ private var screenshotMethod =
 
                 when (event) {
 
-                    is PlayerEvent.TimePositionChanged -> {
+                  is PlayerEvent.TimePositionChanged -> {
 
-                        _uiState.value =
-                            _uiState.value.copy(
-                                position = event.position
-                            )
+                      val frame =
+                          (event.position * videoFps)
+                              .roundToLong()
+
+                      frameSyncPending = false
+
+                      _uiState.value =
+                          _uiState.value.copy(
+                              position = event.position,
+                              currentFrame = frame
+                          )
+
+                      if (
+                          abLoopSeekingToA &&
+                          markerA != null &&
+                          event.position <= markerA!!.position
+                      ) {
+                          abLoopSeekingToA = false
+                      }
+
+                      if (
+                          abLoopEnabled &&
+                          !abLoopSeekingToA &&
+                          markerA != null &&
+                          markerB != null &&
+                          event.position >= markerB!!.position
+                      ) {
+                          println(
+                              "PlayerViewModel: B atingido, voltando para A"
+                          )
+
+                          abLoopSeekingToA = true
+                          frameSyncPending = true
+
+                          player.seekTo(markerA!!.position)
+                      }
+                    }
+
+                    is PlayerEvent.FrameNumberChanged -> {
+                      // Ignorado.
                     }
 
                     is PlayerEvent.DurationChanged -> {
@@ -129,6 +179,14 @@ private var screenshotMethod =
                             _uiState.value.copy(
                                 duration = event.duration
                             )
+                    }
+
+                    is PlayerEvent.VideoFpsChanged -> {
+                        videoFps = event.fps
+
+                        println(
+                            "PlayerViewModel: video FPS = $videoFps"
+                        )
                     }
 
                     is PlayerEvent.PauseChanged -> {
@@ -515,6 +573,20 @@ private var screenshotMethod =
 
     private fun play() {
 
+        if (
+            markerA != null &&
+            markerB != null &&
+            markerA!!.position < markerB!!.position
+        ) {
+            abLoopEnabled = true
+
+            println(
+                "PlayerViewModel: A/B loop ON " +
+                "A=${markerA!!.position} " +
+                "B=${markerB!!.position}"
+            )
+        }
+
         player.play()
     }
 
@@ -523,40 +595,81 @@ private var screenshotMethod =
         player.pause()
     }
 
-    fun seekForward(
-        seconds: Double
-    ) {
+    fun seekBackward(seconds: Double) {
+        frameSyncPending = true
+        player.seekBackward(seconds)
+    }
 
-        player.seekForward(
-            seconds
+    fun seekForward(seconds: Double) {
+        frameSyncPending = true
+        player.seekForward(seconds)
+    }
+
+    fun seekTo(position: Double) {
+        frameSyncPending = true
+        player.seekTo(position)
+    }
+
+    fun setMarkerA() {
+        markerA = FrameMarker(
+            frame = _uiState.value.currentFrame,
+            position = _uiState.value.position
+        )
+
+        println(
+            "PlayerViewModel: A = frame=${markerA?.frame}, position=${markerA?.position}"
         )
     }
 
-    fun seekBackward(
-        seconds: Double
-    ) {
+    fun setMarkerB() {
+        markerB = FrameMarker(
+            frame = _uiState.value.currentFrame,
+            position = _uiState.value.position
+        )
 
-        player.seekBackward(
-            seconds
+        println(
+            "PlayerViewModel: B = frame=${markerB?.frame}, position=${markerB?.position}"
         )
     }
 
-    fun seekTo(
-        position: Double
-    ) {
-        player.seekTo(
-            position
-        )
+    fun toggleABLoop() {
+        if (markerA != null && markerB != null) {
+            abLoopEnabled = true
+            println("PlayerViewModel: A/B loop ON")
+        }
+    }
+
+    fun disableABLoop() {
+        abLoopEnabled = false
+        abLoopSeekingToA = false
+        println("PlayerViewModel: A/B loop OFF")
     }
 
     fun frameForward(frames: Int) {
 
         player.frameForward(frames)
+
+        _uiState.update {
+            it.copy(
+                currentFrame =
+                    it.currentFrame + frames
+            )
+        }
     }
 
     fun frameBackward(frames: Int) {
 
         player.frameBackward(frames)
+
+        _uiState.update {
+            it.copy(
+                currentFrame =
+                    maxOf(
+                        0L,
+                        it.currentFrame - frames
+                    )
+            )
+        }
     }
 
     fun screenshot() {

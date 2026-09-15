@@ -7,6 +7,8 @@ data class PlayerUiState(
     val fileCount: Int = 0,
     val position: Double = 0.0,
     val duration: Double = 0.0,
+    val currentFrame: Long = 0L,
+
     val volume: Double = 100.0,
     val muted: Boolean = false,
     val loading: Boolean = false,

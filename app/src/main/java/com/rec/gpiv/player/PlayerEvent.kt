@@ -10,6 +10,14 @@ sealed interface PlayerEvent {
         val duration: Double
     ) : PlayerEvent
 
+    data class VideoFpsChanged(
+        val fps: Double
+    ) : PlayerEvent
+
+    data class FrameNumberChanged(
+        val frame: Long
+    ) : PlayerEvent
+
     data class PauseChanged(
         val paused: Boolean
     ) : PlayerEvent

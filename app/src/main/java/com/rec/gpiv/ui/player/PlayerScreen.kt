@@ -59,9 +59,12 @@ fun PlayerScreen(
 
     onFrameBackward: (Int) -> Unit,
     onFrameForward: (Int) -> Unit,
+    onSetMarkerA: () -> Unit,
+    onSetMarkerB: () -> Unit,
     onSeekBackward: (Double) -> Unit,
     onSeekForward: (Double) -> Unit,
     onSeekTo: (Double) -> Unit,
+    onDisableABLoop: () -> Unit,
 
     onScreenshot: () -> Unit,
     onSetScreenshotMethod: (String) -> Unit,
@@ -102,7 +105,7 @@ fun PlayerScreen(
      */
 
     var controlsVisible by remember {
-        mutableStateOf(false)
+        mutableStateOf(true)
     }
 
     var controlRow by remember {
@@ -116,7 +119,7 @@ fun PlayerScreen(
     fun nextControlRow() {
 
         controlRow =
-            (controlRow + 1) % 3
+            (controlRow + 1) % 4
     }
 
     /*
@@ -175,15 +178,56 @@ fun PlayerScreen(
          */
 
         if (controlsVisible) {
-            Text(
-                text = "${uiState.fileIndex + 1}/${uiState.fileCount} ${uiState.filename ?: "+ + + +"}",
-                fontSize = 16.sp,
-                color = Color.White,
-                maxLines = 1,
+
+
+            Column(
+
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 8.dp)
-            )
+                    .fillMaxWidth()
+                    .background(
+                        Color.Black.copy(
+                            alpha = 0.0f
+                        )
+                    )
+                    .navigationBarsPadding()
+                    .padding(1.dp),
+
+                horizontalAlignment =
+                    Alignment.CenterHorizontally,
+
+                verticalArrangement =
+                    Arrangement.spacedBy(6.dp)
+            ) {
+
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement =
+                        Arrangement.spacedBy(
+                            10.dp,
+                            Alignment.CenterHorizontally
+                        )
+                ) {
+
+                    StatusText(
+                        text = "${uiState.filename ?: "+ + + +"}",
+                        modifier = Modifier
+                            .clickable {
+                                onOpenVideo()
+                            }
+                    )
+
+                    StatusText(
+                        text = "&&&",
+                        modifier =
+                            Modifier.clickable {
+                                onOpenFolder()
+                            }
+                    )
+
+                }
+            }
         }
 
         /*
@@ -280,6 +324,7 @@ fun PlayerScreen(
                         }
                     }
                 }
+
 
                 if (controlRow == 1) {
 
@@ -533,6 +578,65 @@ fun PlayerScreen(
 
                     }
 
+                }
+
+
+                if (controlRow == 0) {
+
+                    Column(
+                        verticalArrangement =
+                            Arrangement.spacedBy(10.dp)
+                    ) {
+
+                          Row(
+                              modifier = Modifier.fillMaxWidth(),
+
+                              horizontalArrangement =
+                                  Arrangement.spacedBy(
+                                      10.dp,
+                                      Alignment.CenterHorizontally
+                                  ),
+
+                              verticalAlignment =
+                                  Alignment.CenterVertically
+                          ) {
+
+                              StatusText(
+                                  text = "F${uiState.currentFrame}"
+                              )
+
+                              CompactButton(
+                                  text = "<",
+                                  onClick = {
+                                      onFrameBackward(SEEK_FRAMES)
+                                  }
+                              )
+
+                              CompactButton(
+                                  text = ">",
+                                  onClick = {
+                                  onFrameForward(SEEK_FRAMES)
+                                  }
+                              )
+
+                              CompactButton(
+                                  text = "A",
+                                  onClick = onSetMarkerA
+                              )
+
+                              CompactButton(
+                                  text = "B",
+                                  onClick = onSetMarkerB
+                              )
+
+                              CompactButton(
+                                  text = "0",
+                                  onClick = onDisableABLoop
+                              )
+
+                          }
+
+                    }
                 }
 
 
