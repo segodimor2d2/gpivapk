@@ -65,6 +65,9 @@ data class CutFrameInfo(
             ptsB.toDouble() *
                 timeBaseNum /
                 timeBaseDen
+
+    val duration: Double
+        get() = timeB - timeA
 }
 
 class PlayerViewModel(
@@ -704,7 +707,8 @@ class PlayerViewModel(
                     "A=${cutInfo.frameA} " +
                     "timeA=$timeA " +
                     "B=${cutInfo.frameB} " +
-                    "timeB=$timeB"
+                    "timeB=$timeB " +
+                    "duration=${cutInfo.duration}"
             )
 
         } else {

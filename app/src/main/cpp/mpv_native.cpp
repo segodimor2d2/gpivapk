@@ -1555,6 +1555,52 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
             videoStreamIndex
         ];
 
+    AVCodecParameters* codecParameters =
+        videoStream->codecpar;
+
+    LOGI(
+        "FFmpeg: video codec=%s width=%d height=%d pix_fmt=%d",
+        avcodec_get_name(codecParameters->codec_id),
+        codecParameters->width,
+        codecParameters->height,
+        codecParameters->format
+    );
+
+    const AVCodec* h264Encoder =
+        avcodec_find_encoder(
+            AV_CODEC_ID_H264
+        );
+
+    if (h264Encoder) {
+
+        LOGI(
+            "FFmpeg: encoder H264 encontrado: %s",
+            h264Encoder->name
+        );
+
+    } else {
+
+        LOGI(
+            "FFmpeg: encoder H264 NAO encontrado"
+        );
+    }
+
+    void* codecIterator = nullptr;
+
+    const AVCodec* codec = nullptr;
+
+    while (
+        (codec = av_codec_iterate(&codecIterator)) != nullptr
+    ) {
+        if (av_codec_is_encoder(codec)) {
+
+            LOGI(
+                "FFmpeg: encoder disponível: %s",
+                codec->name
+            );
+        }
+    }
+
     LOGI(
         "FFmpeg: video time_base = %d/%d",
         videoStream->time_base.num,
@@ -1757,6 +1803,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
     }
 
     int64_t decodedFrame = 0;
+    int64_t framesInCut = 0;
 
     bool foundA = false;
     bool foundB = false;
@@ -1889,6 +1936,21 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                 break;
             }
 
+            if (decodedFrame == 0) {
+
+                LOGI(
+                    "FFmpeg: PRIMEIRO AVFrame: "
+                    "format=%d width=%d height=%d "
+                    "linesize=[%d,%d,%d]",
+                    frame->format,
+                    frame->width,
+                    frame->height,
+                    frame->linesize[0],
+                    frame->linesize[1],
+                    frame->linesize[2]
+                );
+            }
+
             if (decodedFrame == frameA) {
 
                 foundA = true;
@@ -1905,10 +1967,24 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                 );
             }
 
+            if (
+                decodedFrame >= frameA &&
+                decodedFrame <= frameB
+            ) {
+                framesInCut++;
+            }
+
             if (decodedFrame == frameB) {
 
                 foundB = true;
                 ptsB = frame->pts;
+
+                LOGI(
+                    "FFmpeg: frames no corte = %lld",
+                    static_cast<long long>(
+                        framesInCut
+                    )
+                );
 
                 LOGI(
                     "FFmpeg: FRAME B encontrado: %lld pts=%lld",
@@ -1922,6 +1998,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
 
                 break;
             }
+
 
             ++decodedFrame;
         }
