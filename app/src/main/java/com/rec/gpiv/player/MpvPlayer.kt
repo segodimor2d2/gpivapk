@@ -125,6 +125,8 @@ class MpvPlayer(
         if (fd != null) {
 
             native.loadFd(fd)
+
+            native.probeFd(fd)
         }
 
         native.load(uri.toString())

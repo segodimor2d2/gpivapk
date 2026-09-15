@@ -88,6 +88,7 @@ target_include_directories(
     gpiv_native
     PRIVATE
     "${GPIV_FFMPEG_ROOT}"
+    "${GPIV_FFMPEG_ROOT}/_build_arm64"
 )
 
 
@@ -112,6 +113,17 @@ add_library(
     IMPORTED
 )
 
+add_library(
+    avformat
+    SHARED
+    IMPORTED
+)
+
+add_library(
+    avutil
+    SHARED
+    IMPORTED
+)
 
 set_target_properties(
     avcodec
@@ -120,6 +132,19 @@ set_target_properties(
         "${CMAKE_CURRENT_LIST_DIR}/../jniLibs/arm64-v8a/libavcodec.so"
 )
 
+set_target_properties(
+    avformat
+    PROPERTIES
+    IMPORTED_LOCATION
+        "${CMAKE_CURRENT_LIST_DIR}/../jniLibs/arm64-v8a/libavformat.so"
+)
+
+set_target_properties(
+    avutil
+    PROPERTIES
+    IMPORTED_LOCATION
+        "${CMAKE_CURRENT_LIST_DIR}/../jniLibs/arm64-v8a/libavutil.so"
+)
 
 set_target_properties(
     mpv
@@ -165,6 +190,8 @@ target_link_libraries(
     gpiv_native
     mpv
     avcodec
+    avformat
+    avutil
     ${log-lib}
     ${android-lib}
     ${egl-lib}

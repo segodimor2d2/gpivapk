@@ -247,6 +247,12 @@ class MpvNative {
         )
     }
 
+    fun probeFd(fd: Int) {
+        checkInitialized()
+
+        nativeProbeFd(fd)
+    }
+
     fun play() {
         checkInitialized()
 
@@ -584,6 +590,10 @@ class MpvNative {
 
     private external fun nativeLoad(
         uri: String
+    )
+
+    private external fun nativeProbeFd(
+        fd: Int
     )
 
     private external fun nativeLoadFd(
