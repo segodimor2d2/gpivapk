@@ -17,6 +17,9 @@ extern "C" {
 #include <unistd.h>
 #include <errno.h>
 
+#include <media/NdkMediaCodec.h>
+#include <media/NdkMediaFormat.h>
+
 #define LOG_TAG "GPIV_NATIVE"
 
 #define LOGI(...) \
@@ -1244,6 +1247,199 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         return nullptr;
     }
 
+    AMediaCodec* encoder =
+        AMediaCodec_createEncoderByType(
+            "video/avc"
+        );
+
+    if (!encoder) {
+
+        LOGI(
+            "MediaCodec: encoder H264 NÃO encontrado"
+        );
+
+        return nullptr;
+    }
+
+    LOGI(
+        "MediaCodec: encoder H264 criado"
+    );
+
+    AMediaFormat* format =
+        AMediaFormat_new();
+
+    if (!format) {
+
+        LOGI(
+            "MediaCodec: AMediaFormat_new() falhou"
+        );
+
+        AMediaCodec_delete(
+            encoder
+        );
+
+        return nullptr;
+    }
+
+    AMediaFormat_setString(
+        format,
+        AMEDIAFORMAT_KEY_MIME,
+        "video/avc"
+    );
+
+    AMediaFormat_setInt32(
+        format,
+        AMEDIAFORMAT_KEY_WIDTH,
+        640
+    );
+
+    AMediaFormat_setInt32(
+        format,
+        AMEDIAFORMAT_KEY_HEIGHT,
+        1138
+    );
+
+    AMediaFormat_setInt32(
+        format,
+        AMEDIAFORMAT_KEY_BIT_RATE,
+        2 * 1000 * 1000
+    );
+
+    AMediaFormat_setInt32(
+        format,
+        AMEDIAFORMAT_KEY_FRAME_RATE,
+        30
+    );
+
+    AMediaFormat_setInt32(
+        format,
+        AMEDIAFORMAT_KEY_I_FRAME_INTERVAL,
+        1
+    );
+
+    LOGI(
+        "MediaCodec: configurando H264 640x1138"
+    );
+
+    media_status_t configureResult =
+        AMediaCodec_configure(
+            encoder,
+            format,
+            nullptr,
+            nullptr,
+            AMEDIACODEC_CONFIGURE_FLAG_ENCODE
+        );
+
+    if (configureResult != AMEDIA_OK) {
+
+        LOGI(
+            "MediaCodec: configure() falhou: %d",
+            configureResult
+        );
+
+        AMediaFormat_delete(
+            format
+        );
+
+        AMediaCodec_delete(
+            encoder
+        );
+
+        return nullptr;
+    }
+
+    LOGI(
+        "MediaCodec: configure() OK"
+    );
+
+    AMediaFormat_delete(
+        format
+    );
+
+    media_status_t startResult =
+        AMediaCodec_start(
+            encoder
+        );
+
+    if (startResult != AMEDIA_OK) {
+
+        LOGI(
+            "MediaCodec: start() falhou: %d",
+            startResult
+        );
+
+        AMediaCodec_delete(
+            encoder
+        );
+
+        return nullptr;
+    }
+
+    LOGI(
+        "MediaCodec: start() OK"
+    );
+
+    ssize_t inputIndex =
+        AMediaCodec_dequeueInputBuffer(
+            encoder,
+            0
+        );
+
+    LOGI(
+        "MediaCodec: input buffer index = %zd",
+        inputIndex
+    );
+
+    if (inputIndex >= 0) {
+
+        size_t inputBufferSize = 0;
+
+        uint8_t* inputBuffer =
+            AMediaCodec_getInputBuffer(
+                encoder,
+                static_cast<size_t>(inputIndex),
+                &inputBufferSize
+            );
+
+        LOGI(
+            "MediaCodec: input buffer size = %zu ptr=%p",
+            inputBufferSize,
+            inputBuffer
+        );
+    }
+
+    AMediaFormat* outputFormat =
+        AMediaCodec_getOutputFormat(
+            encoder
+        );
+
+    if (outputFormat) {
+
+        const char* formatString =
+            AMediaFormat_toString(
+                outputFormat
+            );
+
+        if (formatString) {
+
+            LOGI(
+                "MediaCodec: output format = %s",
+                formatString
+            );
+
+        }
+
+        AMediaFormat_delete(
+            outputFormat
+        );
+
+    } else {
+
+        LOGI(
+            "MediaCodec: output format = NULL"
+        );
+    }
+
     int sourceFd =
         dup(fd);
 
@@ -1805,6 +2001,10 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
     int64_t decodedFrame = 0;
     int64_t framesInCut = 0;
 
+    std::vector<uint8_t> yPlane;
+    std::vector<uint8_t> uPlane;
+    std::vector<uint8_t> vPlane;
+
     bool foundA = false;
     bool foundB = false;
 
@@ -1965,7 +2165,236 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                         frame->pts
                     )
                 );
+
+                const int width = frame->width;
+                const int height = frame->height;
+
+                const int chromaWidth = width / 2;
+                const int chromaHeight = height / 2;
+
+                yPlane.resize(
+                    width * height
+                );
+
+                uPlane.resize(
+                    chromaWidth * chromaHeight
+                );
+
+                vPlane.resize(
+                    chromaWidth * chromaHeight
+                );
+
+                for (int y = 0; y < height; ++y) {
+
+                    memcpy(
+                        yPlane.data() + y * width,
+                        frame->data[0] + y * frame->linesize[0],
+                        width
+                    );
+                }
+
+                for (int y = 0; y < chromaHeight; ++y) {
+
+                    memcpy(
+                        uPlane.data() + y * chromaWidth,
+                        frame->data[1] + y * frame->linesize[1],
+                        chromaWidth
+                    );
+
+                    memcpy(
+                        vPlane.data() + y * chromaWidth,
+                        frame->data[2] + y * frame->linesize[2],
+                        chromaWidth
+                    );
+                }
+
+                LOGI(
+                    "FFmpeg: FRAME A copiado YUV420P: "
+                    "Y=%zu U=%zu V=%zu",
+                    yPlane.size(),
+                    uPlane.size(),
+                    vPlane.size()
+                );
+
+
+                ssize_t inputIndex =
+                    AMediaCodec_dequeueInputBuffer(
+                        encoder,
+                        100000
+                    );
+
+                LOGI(
+                    "MediaCodec: FRAME A input buffer index = %zd",
+                    inputIndex
+                );
+
+                if (inputIndex >= 0) {
+
+                    size_t inputBufferSize = 0;
+
+                    uint8_t* inputBuffer =
+                        AMediaCodec_getInputBuffer(
+                            encoder,
+                            static_cast<size_t>(inputIndex),
+                            &inputBufferSize
+                        );
+
+                    const size_t frameSize =
+                        yPlane.size() +
+                        uPlane.size() +
+                        vPlane.size();
+
+                    LOGI(
+                        "MediaCodec: FRAME A buffer size=%zu "
+                        "frameSize=%zu ptr=%p",
+                        inputBufferSize,
+                        frameSize,
+                        inputBuffer
+                    );
+
+                    if (
+                        inputBuffer != nullptr &&
+                        inputBufferSize >= frameSize
+                    ) {
+
+                        size_t offset = 0;
+
+                        memcpy(
+                            inputBuffer + offset,
+                            yPlane.data(),
+                            yPlane.size()
+                        );
+
+                        offset += yPlane.size();
+
+                        memcpy(
+                            inputBuffer + offset,
+                            uPlane.data(),
+                            uPlane.size()
+                        );
+
+                        offset += uPlane.size();
+
+                        memcpy(
+                            inputBuffer + offset,
+                            vPlane.data(),
+                            vPlane.size()
+                        );
+
+                        LOGI(
+                            "MediaCodec: FRAME A copiado para input buffer"
+                        );
+
+                        media_status_t queueResult =
+                            AMediaCodec_queueInputBuffer(
+                                encoder,
+                                static_cast<size_t>(inputIndex),
+                                0,
+                                frameSize,
+                                static_cast<int64_t>(
+                                    av_rescale_q(
+                                        ptsA,
+                                        videoStream->time_base,
+                                        AVRational{1, 1000000}
+                                    )
+                                ),
+                                0
+                            );
+
+                        LOGI(
+                            "MediaCodec: FRAME A queueInputBuffer "
+                            "result=%d pts=%lld size=%zu",
+                            queueResult,
+                            static_cast<long long>(ptsA),
+                            frameSize
+                        );
+
+                        AMediaCodecBufferInfo outputInfo{};
+
+                        ssize_t outputIndex =
+                            AMediaCodec_dequeueOutputBuffer(
+                                encoder,
+                                &outputInfo,
+                                100000
+                            );
+
+                        LOGI(
+                            "MediaCodec: FRAME A output buffer index = %zd "
+                            "size=%d pts=%lld flags=%u",
+                            outputIndex,
+                            outputInfo.size,
+                            static_cast<long long>(
+                                outputInfo.presentationTimeUs
+                            ),
+                            outputInfo.flags
+                        );
+
+                        if (outputIndex == AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED) {
+
+                            LOGI(
+                                "MediaCodec: FRAME A output format changed"
+                            );
+
+                            outputIndex =
+                                AMediaCodec_dequeueOutputBuffer(
+                                    encoder,
+                                    &outputInfo,
+                                    100000
+                                );
+
+                            LOGI(
+                                "MediaCodec: FRAME A segundo output buffer index = %zd "
+                                "size=%d pts=%lld flags=%u",
+                                outputIndex,
+                                outputInfo.size,
+                                static_cast<long long>(
+                                    outputInfo.presentationTimeUs
+                                ),
+                                outputInfo.flags
+                            );
+                        }
+
+                        if (outputIndex >= 0) {
+
+                            size_t outputBufferSize = 0;
+
+                            uint8_t* outputBuffer =
+                                AMediaCodec_getOutputBuffer(
+                                    encoder,
+                                    static_cast<size_t>(outputIndex),
+                                    &outputBufferSize
+                                );
+
+                            LOGI(
+                                "MediaCodec: FRAME A H264 output "
+                                "bufferSize=%zu ptr=%p encodedSize=%d",
+                                outputBufferSize,
+                                outputBuffer,
+                                outputInfo.size
+                            );
+
+                            AMediaCodec_releaseOutputBuffer(
+                                encoder,
+                                static_cast<size_t>(outputIndex),
+                                false
+                            );
+
+                            LOGI(
+                                "MediaCodec: FRAME A output buffer liberado"
+                            );
+                        }
+
+                    } else {
+
+                        LOGI(
+                            "MediaCodec: FRAME A buffer insuficiente "
+                            "ou ponteiro NULL"
+                        );
+                    }
+                }
+
             }
+
 
             if (
                 decodedFrame >= frameA &&
@@ -2063,6 +2492,25 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
     LOGI(
         "FFmpeg: testCutFrames() -> concluído"
     );
+
+    if (encoder) {
+
+        AMediaCodec_stop(
+            encoder
+        );
+
+        LOGI(
+            "MediaCodec: stop() OK"
+        );
+
+        AMediaCodec_delete(
+            encoder
+        );
+
+        LOGI(
+            "MediaCodec: delete() OK"
+        );
+    }
 
     return resultArray;
 }

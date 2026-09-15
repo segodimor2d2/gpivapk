@@ -167,6 +167,11 @@ find_library(
 )
 
 find_library(
+    media-lib
+    mediandk
+)
+
+find_library(
     android-lib
     android
 )
@@ -196,4 +201,5 @@ target_link_libraries(
     ${android-lib}
     ${egl-lib}
     ${gles-lib}
+    ${media-lib}
 )
