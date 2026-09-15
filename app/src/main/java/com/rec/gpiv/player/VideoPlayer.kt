@@ -31,7 +31,7 @@ interface VideoPlayer {
     fun testCutFrames(
         frameA: Long,
         frameB: Long
-    )
+    ): LongArray?
 
     fun screenshot()
 

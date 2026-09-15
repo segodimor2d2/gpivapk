@@ -1555,6 +1555,12 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
             videoStreamIndex
         ];
 
+    LOGI(
+        "FFmpeg: video time_base = %d/%d",
+        videoStream->time_base.num,
+        videoStream->time_base.den
+    );
+
     const AVCodec* decoder =
         avcodec_find_decoder(
             videoStream->codecpar->codec_id
@@ -1929,21 +1935,23 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
     );
 
     jlongArray resultArray =
-        env->NewLongArray(4);
+        env->NewLongArray(6);
 
     if (resultArray) {
 
-        jlong values[4] = {
+        jlong values[6] = {
             frameA,
             ptsA,
             frameB,
-            ptsB
+            ptsB,
+            videoStream->time_base.num,
+            videoStream->time_base.den
         };
 
         env->SetLongArrayRegion(
             resultArray,
             0,
-            4,
+            6,
             values
         );
     }

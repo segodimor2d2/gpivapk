@@ -70,9 +70,11 @@ class FakeVideoPlayer : VideoPlayer {
     override fun testCutFrames(
         frameA: Long,
         frameB: Long
-    ) {
+    ): LongArray? {
         println(
             "FakeVideoPlayer: testCutFrames frameA=$frameA frameB=$frameB"
         )
+
+        return null
     }
 }

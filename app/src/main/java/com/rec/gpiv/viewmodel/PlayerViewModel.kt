@@ -45,6 +45,28 @@ data class FrameMarker(
     val position: Double
 )
 
+data class CutFrameInfo(
+    val frameA: Long,
+    val ptsA: Long,
+    val frameB: Long,
+    val ptsB: Long,
+    val timeBaseNum: Long,
+    val timeBaseDen: Long
+) {
+
+    val timeA: Double
+        get() =
+            ptsA.toDouble() *
+                timeBaseNum /
+                timeBaseDen
+
+    val timeB: Double
+        get() =
+            ptsB.toDouble() *
+                timeBaseNum /
+                timeBaseDen
+}
+
 class PlayerViewModel(
     application: Application
 ) : AndroidViewModel(application) {
@@ -56,6 +78,8 @@ class PlayerViewModel(
     private var markerB: FrameMarker? = null
     private var abLoopEnabled = false
           private var abLoopSeekingToA = false
+
+    private var lastCutFrameInfo: CutFrameInfo? = null
 
     val mpvNative =
         MpvNative()
@@ -633,26 +657,62 @@ class PlayerViewModel(
     }
 
     fun testCurrentCut() {
-
         val a = markerA
         val b = markerB
 
         if (a == null || b == null) {
-            println(
-                "PlayerViewModel: A/B não definidos"
-            )
+            println("PlayerViewModel: A/B não definidos")
             return
         }
+
+        val start = if (a.frame <= b.frame) a else b
+        val end = if (a.frame <= b.frame) b else a
+
+        println(
+            "PlayerViewModel: ordem do corte " +
+                "start=${start.frame} end=${end.frame}"
+        )
 
         println(
             "PlayerViewModel: testCutFrames " +
                 "A=${a.frame} B=${b.frame}"
         )
 
-        player.testCutFrames(
-            frameA = a.frame,
-            frameB = b.frame
+        val result = player.testCutFrames(
+            frameA = start.frame,
+            frameB = end.frame
         )
+
+        if (result != null && result.size >= 6) {
+
+            val cutInfo = CutFrameInfo(
+                frameA = result[0],
+                ptsA = result[1],
+                frameB = result[2],
+                ptsB = result[3],
+                timeBaseNum = result[4],
+                timeBaseDen = result[5]
+            )
+
+            lastCutFrameInfo = cutInfo
+
+            val timeA = cutInfo.timeA
+            val timeB = cutInfo.timeB
+
+            println(
+                "PlayerViewModel: corte " +
+                    "A=${cutInfo.frameA} " +
+                    "timeA=$timeA " +
+                    "B=${cutInfo.frameB} " +
+                    "timeB=$timeB"
+            )
+
+        } else {
+
+            println(
+                "PlayerViewModel: testCutFrames sem resultado"
+            )
+        }
     }
 
     fun toggleABLoop() {

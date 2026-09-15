@@ -131,7 +131,7 @@ class MpvPlayer(
     override fun testCutFrames(
         frameA: Long,
         frameB: Long
-    ) {
+    ): LongArray? {
 
         val uri = currentUri
 
@@ -139,7 +139,7 @@ class MpvPlayer(
             println(
                 "MpvPlayer: nenhum URI atual para testCutFrames"
             )
-            return
+            return null
         }
 
         val cutPfd =
@@ -147,28 +147,39 @@ class MpvPlayer(
 
         if (cutPfd != null) {
 
-        val result = native.testCutFrames(
-            fd = cutPfd.fd,
-            frameA = frameA,
-            frameB = frameB
-        )
-
-        if (result != null && result.size >= 4) {
-            println(
-                "MpvPlayer: resultado " +
-                    "A=${result[0]} ptsA=${result[1]} " +
-                    "B=${result[2]} ptsB=${result[3]}"
+            val result = native.testCutFrames(
+                fd = cutPfd.fd,
+                frameA = frameA,
+                frameB = frameB
             )
-        } else {
-            println("MpvPlayer: testCutFrames sem resultado")
-        }
+
+            if (result != null && result.size >= 6) {
+
+                println(
+                    "MpvPlayer: resultado " +
+                        "A=${result[0]} ptsA=${result[1]} " +
+                        "B=${result[2]} ptsB=${result[3]} " +
+                        "time_base=${result[4]}/${result[5]}"
+                )
+
+            } else {
+
+                println(
+                    "MpvPlayer: testCutFrames sem resultado"
+                )
+            }
+
             cutPfd.close()
+
+            return result
 
         } else {
 
             println(
                 "MpvPlayer: não foi possível abrir segundo PFD"
             )
+
+            return null
         }
     }
 

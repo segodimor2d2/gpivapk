@@ -18,3 +18,8 @@ data class PlayerUiState(
     val gamma: Double = 0.0,
     val saturation: Double = 0.0,
 )
+
+data class FrameMarker(
+    val frame: Long,
+    val position: Double
+)
