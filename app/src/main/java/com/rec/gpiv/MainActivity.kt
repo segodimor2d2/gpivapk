@@ -564,6 +564,9 @@ class MainActivity : ComponentActivity() {
                         onSetMarkerB =
                             viewModel::setMarkerB,
 
+                        onTestCut =
+                            viewModel::testCurrentCut,
+
                         onDisableABLoop = viewModel::disableABLoop,
 
                         onScreenshot = viewModel::screenshot,

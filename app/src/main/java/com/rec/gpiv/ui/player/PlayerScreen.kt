@@ -61,6 +61,7 @@ fun PlayerScreen(
     onFrameForward: (Int) -> Unit,
     onSetMarkerA: () -> Unit,
     onSetMarkerB: () -> Unit,
+    onTestCut: () -> Unit,
     onSeekBackward: (Double) -> Unit,
     onSeekForward: (Double) -> Unit,
     onSeekTo: (Double) -> Unit,
@@ -632,6 +633,11 @@ fun PlayerScreen(
                               CompactButton(
                                   text = "0",
                                   onClick = onDisableABLoop
+                              )
+
+                              CompactButton(
+                                  text = "C",
+                                  onClick = onTestCut
                               )
 
                           }

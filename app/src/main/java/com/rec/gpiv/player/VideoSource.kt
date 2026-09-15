@@ -39,6 +39,29 @@ class VideoSource(
         return parcelFileDescriptor?.fd
     }
 
+    fun openIndependentFileDescriptor(uri: Uri): ParcelFileDescriptor? {
+
+        println(
+            "VideoSource: abrindo segundo PFD = $uri"
+        )
+
+        val pfd =
+            contentResolver.openFileDescriptor(
+                uri,
+                "r"
+            )
+
+        println(
+            "VideoSource: segundo PFD = $pfd"
+        )
+
+        println(
+            "VideoSource: segundo FD = ${pfd?.fd}"
+        )
+
+        return pfd
+    }
+
     fun close() {
 
         val fd = parcelFileDescriptor?.fd

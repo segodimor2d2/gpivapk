@@ -257,9 +257,10 @@ class MpvNative {
         fd: Int,
         frameA: Long,
         frameB: Long
-    ) {
+    ): LongArray? {
         checkInitialized()
-        nativeTestCutFrames(
+
+        return nativeTestCutFrames(
             fd,
             frameA,
             frameB
@@ -609,7 +610,7 @@ class MpvNative {
         fd: Int,
         frameA: Long,
         frameB: Long
-    )
+    ): LongArray?
 
     private external fun nativeProbeFd(
         fd: Int

@@ -632,6 +632,29 @@ class PlayerViewModel(
         )
     }
 
+    fun testCurrentCut() {
+
+        val a = markerA
+        val b = markerB
+
+        if (a == null || b == null) {
+            println(
+                "PlayerViewModel: A/B não definidos"
+            )
+            return
+        }
+
+        println(
+            "PlayerViewModel: testCutFrames " +
+                "A=${a.frame} B=${b.frame}"
+        )
+
+        player.testCutFrames(
+            frameA = a.frame,
+            frameB = b.frame
+        )
+    }
+
     fun toggleABLoop() {
         if (markerA != null && markerB != null) {
             abLoopEnabled = true

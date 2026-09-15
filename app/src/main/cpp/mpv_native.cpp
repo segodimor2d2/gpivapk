@@ -1218,7 +1218,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeLoad(
 }
 
 extern "C"
-JNIEXPORT void JNICALL
+JNIEXPORT jlongArray JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
     JNIEnv* env,
     jobject thiz,
@@ -1232,7 +1232,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
             "FFmpeg: testCutFrames() -> fd inválido: %d",
             fd
         );
-        return;
+        return nullptr;
     }
 
     if (frameA < 0 || frameB < frameA) {
@@ -1241,7 +1241,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
             static_cast<long long>(frameA),
             static_cast<long long>(frameB)
         );
-        return;
+        return nullptr;
     }
 
     int sourceFd =
@@ -1251,7 +1251,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         LOGI(
             "FFmpeg: testCutFrames() -> dup() falhou"
         );
-        return;
+        return nullptr;
     }
 
     if (
@@ -1266,7 +1266,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
             strerror(errno)
         );
         close(sourceFd);
-        return;
+        return nullptr;
     }
 
     LOGI(
@@ -1286,7 +1286,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
             "FFmpeg: testCutFrames() -> av_malloc() falhou"
         );
         close(sourceFd);
-        return;
+        return nullptr;
     }
 
     AVIOContext* ioContext =
@@ -1371,11 +1371,14 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                     );
                 }
 
+                int seekWhence =
+                    whence & 0xFFFF;
+
                 off_t result =
                     lseek(
                         *fdPtr,
                         static_cast<off_t>(offset),
-                        whence
+                        seekWhence
                     );
 
                 if (result < 0) {
@@ -1394,7 +1397,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         );
         av_free(ioBuffer);
         close(sourceFd);
-        return;
+        return nullptr;
     }
 
     AVFormatContext* formatContext =
@@ -1414,7 +1417,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         );
 
         close(sourceFd);
-        return;
+        return nullptr;
     }
 
     formatContext->pb =
@@ -1462,7 +1465,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         }
 
         close(sourceFd);
-        return;
+        return nullptr;
     }
 
     result =
@@ -1502,7 +1505,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         }
 
         close(sourceFd);
-        return;
+        return nullptr;
     }
 
     int videoStreamIndex = -1;
@@ -1544,7 +1547,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         }
 
         close(sourceFd);
-        return;
+        return nullptr;
     }
 
     AVStream* videoStream =
@@ -1577,7 +1580,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         }
 
         close(sourceFd);
-        return;
+        return nullptr;
     }
 
     AVCodecContext* codecContext =
@@ -1605,7 +1608,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         }
 
         close(sourceFd);
-        return;
+        return nullptr;
     }
 
     result =
@@ -1648,7 +1651,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         }
 
         close(sourceFd);
-        return;
+        return nullptr;
     }
 
     result =
@@ -1698,7 +1701,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         }
 
         close(sourceFd);
-        return;
+        return nullptr;
     }
 
     LOGI(
@@ -1744,13 +1747,16 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         }
 
         close(sourceFd);
-        return;
+        return nullptr;
     }
 
     int64_t decodedFrame = 0;
 
     bool foundA = false;
     bool foundB = false;
+
+    int64_t ptsA = AV_NOPTS_VALUE;
+    int64_t ptsB = AV_NOPTS_VALUE;
 
     int videoPacketCount = 0;
 
@@ -1790,8 +1796,6 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
             av_packet_unref(packet);
             continue;
         }
-
-        static int videoPacketCount = 0;
 
         if (packet->stream_index == videoStreamIndex &&
             videoPacketCount < 6) {
@@ -1882,6 +1886,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
             if (decodedFrame == frameA) {
 
                 foundA = true;
+                ptsA = frame->pts;
 
                 LOGI(
                     "FFmpeg: FRAME A encontrado: %lld pts=%lld",
@@ -1897,6 +1902,7 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
             if (decodedFrame == frameB) {
 
                 foundB = true;
+                ptsB = frame->pts;
 
                 LOGI(
                     "FFmpeg: FRAME B encontrado: %lld pts=%lld",
@@ -1921,6 +1927,26 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         foundB ? "OK" : "NÃO",
         static_cast<long long>(decodedFrame)
     );
+
+    jlongArray resultArray =
+        env->NewLongArray(4);
+
+    if (resultArray) {
+
+        jlong values[4] = {
+            frameA,
+            ptsA,
+            frameB,
+            ptsB
+        };
+
+        env->SetLongArrayRegion(
+            resultArray,
+            0,
+            4,
+            values
+        );
+    }
 
     av_packet_free(
         &packet
@@ -1952,6 +1978,8 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
     LOGI(
         "FFmpeg: testCutFrames() -> concluído"
     );
+
+    return resultArray;
 }
 
 extern "C"
@@ -2020,85 +2048,75 @@ Java_com_rec_gpiv_player_MpvNative_nativeProbeFd(
                 }
 
                 ssize_t bytesRead =
-                    read(
-                        *fdPtr,
-                        buffer,
-                        static_cast<size_t>(bufferSize)
-                    );
+                    read(*fdPtr, buffer, static_cast<size_t>(bufferSize));
 
                 if (bytesRead < 0) {
+                    LOGI(
+                        "FFmpeg: AVIO READ ERRO fd=%d errno=%d",
+                        *fdPtr,
+                        errno
+                    );
                     return AVERROR(errno);
                 }
 
                 if (bytesRead == 0) {
+                    LOGI(
+                        "FFmpeg: AVIO READ EOF fd=%d",
+                        *fdPtr
+                    );
                     return AVERROR_EOF;
                 }
 
-                return static_cast<int>(
-                    bytesRead
-                );
+                return static_cast<int>(bytesRead);
+
+
             },
 
             nullptr,
 
             [](void* opaque, int64_t offset, int whence) -> int64_t {
-
-                int* fdPtr =
-                    static_cast<int*>(opaque);
+                int* fdPtr = static_cast<int*>(opaque);
 
                 if (!fdPtr || *fdPtr < 0) {
                     return AVERROR(EINVAL);
                 }
 
                 if (whence == AVSEEK_SIZE) {
-
-                    off_t current =
-                        lseek(
-                            *fdPtr,
-                            0,
-                            SEEK_CUR
-                        );
-
-                    off_t end =
-                        lseek(
-                            *fdPtr,
-                            0,
-                            SEEK_END
-                        );
+                    off_t current = lseek(*fdPtr, 0, SEEK_CUR);
+                    off_t end = lseek(*fdPtr, 0, SEEK_END);
 
                     if (end < 0) {
                         return AVERROR(errno);
                     }
 
-                    if (
-                        lseek(
-                            *fdPtr,
-                            current,
-                            SEEK_SET
-                        ) < 0
-                    ) {
+                    if (lseek(*fdPtr, current, SEEK_SET) < 0) {
                         return AVERROR(errno);
                     }
 
-                    return static_cast<int64_t>(
-                        end
-                    );
+                    return static_cast<int64_t>(end);
                 }
+
+                int seekWhence = whence & 0xFFFF;
 
                 off_t result =
                     lseek(
                         *fdPtr,
                         static_cast<off_t>(offset),
-                        whence
+                        seekWhence
                     );
 
                 if (result < 0) {
+                    LOGI(
+                        "FFmpeg: AVIO SEEK ERRO offset=%lld whence=0x%x errno=%d",
+                        static_cast<long long>(offset),
+                        whence,
+                        errno
+                    );
+
                     return AVERROR(errno);
                 }
 
-                return static_cast<int64_t>(
-                    result
-                );
+                return static_cast<int64_t>(result);
             }
         );
 

@@ -32,6 +32,7 @@ class MpvPlayer(
     private var lastKnownPlaying = false
 
     private var hasLoadedVideo = false
+    private var currentUri: Uri? = null
 
 
     /*
@@ -76,6 +77,8 @@ class MpvPlayer(
             "MpvPlayer: load($uri)"
         )
 
+        currentUri = uri
+
         /*
          * Preserva o estado de reprodução atual.
          *
@@ -115,26 +118,58 @@ class MpvPlayer(
             return
         }
 
-        val fd =
-            videoSource.getFileDescriptor()
-
-        println(
-            "MpvPlayer: file descriptor = $fd"
-        )
+        val fd = videoSource.getFileDescriptor()
+        println("MpvPlayer: file descriptor = $fd")
 
         if (fd != null) {
-
             native.loadFd(fd)
-            native.probeFd(fd)
-
-            native.testCutFrames(
-                fd = fd,
-                frameA = 293L,
-                frameB = 475L
-            )
         }
 
         native.load(uri.toString())
+    }
+
+    override fun testCutFrames(
+        frameA: Long,
+        frameB: Long
+    ) {
+
+        val uri = currentUri
+
+        if (uri == null) {
+            println(
+                "MpvPlayer: nenhum URI atual para testCutFrames"
+            )
+            return
+        }
+
+        val cutPfd =
+            videoSource.openIndependentFileDescriptor(uri)
+
+        if (cutPfd != null) {
+
+        val result = native.testCutFrames(
+            fd = cutPfd.fd,
+            frameA = frameA,
+            frameB = frameB
+        )
+
+        if (result != null && result.size >= 4) {
+            println(
+                "MpvPlayer: resultado " +
+                    "A=${result[0]} ptsA=${result[1]} " +
+                    "B=${result[2]} ptsB=${result[3]}"
+            )
+        } else {
+            println("MpvPlayer: testCutFrames sem resultado")
+        }
+            cutPfd.close()
+
+        } else {
+
+            println(
+                "MpvPlayer: não foi possível abrir segundo PFD"
+            )
+        }
     }
 
     override fun play() {

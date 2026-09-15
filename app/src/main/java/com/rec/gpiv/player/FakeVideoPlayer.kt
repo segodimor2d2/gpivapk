@@ -66,4 +66,13 @@ class FakeVideoPlayer : VideoPlayer {
     override fun release() {
         println("FakeVideoPlayer: release()")
     }
+
+    override fun testCutFrames(
+        frameA: Long,
+        frameB: Long
+    ) {
+        println(
+            "FakeVideoPlayer: testCutFrames frameA=$frameA frameB=$frameB"
+        )
+    }
 }

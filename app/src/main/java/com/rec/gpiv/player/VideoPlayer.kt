@@ -28,6 +28,11 @@ interface VideoPlayer {
     fun frameForward(frames: Int)
     fun frameBackward(frames: Int)
 
+    fun testCutFrames(
+        frameA: Long,
+        frameB: Long
+    )
+
     fun screenshot()
 
     fun screenshotMpv()
