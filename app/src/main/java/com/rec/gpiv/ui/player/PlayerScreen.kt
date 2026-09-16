@@ -212,6 +212,10 @@ fun PlayerScreen(
                 ) {
 
                     StatusText(
+                        text = "${uiState.fileIndex + 1} / ${uiState.fileCount}",
+                    )
+
+                    StatusText(
                         text = "${uiState.filename ?: "+ + + +"}",
                         modifier = Modifier
                             .clickable {
@@ -259,12 +263,187 @@ fun PlayerScreen(
                     Arrangement.spacedBy(6.dp)
             ) {
 
+                if (controlRow == 3) {
+
+                    Column(
+                        verticalArrangement =
+                            Arrangement.spacedBy(10.dp)
+                    ) {
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy( 10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
+
+                            StatusText(
+                                text = "f${uiState.currentFrame}"
+                            )
+
+                            CompactButton(
+                                text = "SS MPV",
+                                onClick = {
+                                  onSetScreenshotMethod("MPV")
+                                  onScreenshot()
+                                }
+                            )
+
+                            CompactButton(
+                                text = "[CUT]",
+                                onClick = onTestCut
+                            )
+
+
+                            // StatusText(
+                            //     text = "SS MPV",
+                            //     modifier = Modifier
+                            //         .clickable {
+                            //             onSetScreenshotMethod("MPV")
+                            //             onScreenshot()
+                            //         }
+                            // )
+
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                ),
+
+                            verticalAlignment =
+                                Alignment.CenterVertically
+                        ) {
+
+                            CompactButton(
+                                text = "A",
+                                onClick = onSetMarkerA
+                            )
+
+                            CompactButton(
+                                text = "B",
+                                onClick = onSetMarkerB
+                            )
+
+                            CompactButton(
+                                text = "0",
+                                onClick = onDisableABLoop
+                            )
+
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
+
+
+                            CompactButton(
+                                text = "<<",
+                                onClick = {
+                                    onSeekBackward(SEEK_SECONDS)
+                                }
+                            )
+
+                            CompactButton(
+                                text = ">>",
+                                onClick = {
+                                    onSeekForward(SEEK_SECONDS)
+                                }
+                            )
+
+                            CompactButton(
+                                text = "<=",
+                                onClick = {
+                                    onFrameBackward(SEEK_FRAMES_PLUS)
+                                }
+                            )
+
+                            CompactButton(
+                                text = "=>",
+                                onClick = {
+                                    onFrameForward(SEEK_FRAMES_PLUS)
+                                }
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy( 10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
+
+                            CompactButton(
+                                text = "<",
+                                onClick = {
+                                    onFrameBackward(SEEK_FRAMES)
+                                }
+                            )
+
+                            CompactButton(
+                                text = ">",
+                                onClick = {
+                                    onFrameForward(SEEK_FRAMES)
+                                }
+                            )
+
+                        }
+
+                    }
+                }
+
                 if (controlRow == 2) {
 
                     Column(
                         verticalArrangement =
                             Arrangement.spacedBy(10.dp)
                     ) {
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp),
+
+                            horizontalArrangement = Arrangement.Center,
+
+                            verticalAlignment =
+                                Alignment.CenterVertically
+                        ) {
+
+                              StatusText(
+                                  text = "${uiState.fileIndex + 1} / ${uiState.fileCount}",
+                              )
+
+                              StatusText(
+                                  text = "${uiState.filename ?: "+ + + +"}",
+                                  modifier = Modifier
+                                      .clickable {
+                                          onOpenVideo()
+                                      }
+                              )
+
+                              StatusText(
+                                  text = "&&&",
+                                  modifier =
+                                      Modifier.clickable {
+                                          onOpenFolder()
+                                      }
+                              )
+
+                        }
+
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement =
@@ -296,36 +475,28 @@ fun PlayerScreen(
                         }
 
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 10.dp),
-
-                            horizontalArrangement = Arrangement.Center,
-
-                            verticalAlignment =
-                                Alignment.CenterVertically
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy(
+                                    10.dp,
+                                    Alignment.CenterHorizontally
+                                )
                         ) {
 
-                              StatusText(
-                                  text = "${uiState.filename ?: "+ + + +"}",
-                                  modifier = Modifier
-                                      .clickable {
-                                          onOpenVideo()
-                                      }
-                              )
+                            CompactButton(
+                                text = "+",
+                                onClick = onNextFile
+                            )
 
-                              StatusText(
-                                  text = "&&&",
-                                  modifier =
-                                      Modifier.clickable {
-                                          onOpenFolder()
-                                      }
-                              )
+                            CompactButton(
+                                text = "-",
+                                onClick = onPreviousFile
+                            )
 
                         }
+
                     }
                 }
-
 
                 if (controlRow == 1) {
 
@@ -333,6 +504,8 @@ fun PlayerScreen(
                         verticalArrangement =
                             Arrangement.spacedBy(10.dp)
                     ) {
+
+
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -343,17 +516,9 @@ fun PlayerScreen(
                                 )
                         ) {
 
-                            StatusText(
-                                text = "SS MPV",
-                                modifier = Modifier
-                                    .clickable {
-                                        onSetScreenshotMethod("MPV")
-                                        onScreenshot()
-                                    }
-                            )
 
                             CompactButton(
-                                text = "volume ${uiState.volume}",
+                                text = "vol ${uiState.volume}",
                                 onClick = onMute
                             )
 
@@ -553,6 +718,7 @@ fun PlayerScreen(
                                 }
                             )
                         }
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement =
@@ -574,6 +740,7 @@ fun PlayerScreen(
                                     onFrameForward(SEEK_FRAMES)
                                 }
                             )
+
                         }
 
 
@@ -582,68 +749,6 @@ fun PlayerScreen(
                 }
 
 
-                if (controlRow == 0) {
-
-                    Column(
-                        verticalArrangement =
-                            Arrangement.spacedBy(10.dp)
-                    ) {
-
-                          Row(
-                              modifier = Modifier.fillMaxWidth(),
-
-                              horizontalArrangement =
-                                  Arrangement.spacedBy(
-                                      10.dp,
-                                      Alignment.CenterHorizontally
-                                  ),
-
-                              verticalAlignment =
-                                  Alignment.CenterVertically
-                          ) {
-
-                              StatusText(
-                                  text = "F${uiState.currentFrame}"
-                              )
-
-                              CompactButton(
-                                  text = "<",
-                                  onClick = {
-                                      onFrameBackward(SEEK_FRAMES)
-                                  }
-                              )
-
-                              CompactButton(
-                                  text = ">",
-                                  onClick = {
-                                  onFrameForward(SEEK_FRAMES)
-                                  }
-                              )
-
-                              CompactButton(
-                                  text = "A",
-                                  onClick = onSetMarkerA
-                              )
-
-                              CompactButton(
-                                  text = "B",
-                                  onClick = onSetMarkerB
-                              )
-
-                              CompactButton(
-                                  text = "0",
-                                  onClick = onDisableABLoop
-                              )
-
-                              CompactButton(
-                                  text = "C",
-                                  onClick = onTestCut
-                              )
-
-                          }
-
-                    }
-                }
 
 
                 /*
@@ -682,16 +787,16 @@ fun PlayerScreen(
                         modifier = Modifier.clickable { nextControlRow() }
                     )
 
-                    StatusText(
-                        text =
-                            if (uiState.playing) { "▶" }
-                            else { "⏸" },
-                        modifier =
-                            Modifier.clickable {
-                                println( "PlayerScreen: CLIQUE PLAY/PAUSE")
-                                onTogglePlayPause()
-                            }
-                    )
+                    // StatusText(
+                    //     text =
+                    //         if (uiState.playing) { "▶" }
+                    //         else { "⏸" },
+                    //     modifier =
+                    //         Modifier.clickable {
+                    //             println( "PlayerScreen: CLIQUE PLAY/PAUSE")
+                    //             onTogglePlayPause()
+                    //         }
+                    // )
 
                     StatusText(
                         text =
@@ -701,7 +806,10 @@ fun PlayerScreen(
                                         uiState.duration) * 100.0
                                 )
 
-                            } else { "0.0%" }
+                            } else { "0.0%" },
+                        Modifier.clickable {
+                                onTogglePlayPause()
+                            }
                     )
 
 
@@ -802,6 +910,9 @@ fun PlayerScreen(
     }
 }
 
+
+
+// ${uiState.fileIndex + 1} / ${uiState.fileCount}
 
 /*
  * ============================================================
