@@ -668,8 +668,21 @@ class PlayerViewModel(
             return
         }
 
-        val start = if (a.frame <= b.frame) a else b
-        val end = if (a.frame <= b.frame) b else a
+        val treeUri =
+            fileList.getCurrentTreeUri()
+
+        if (treeUri == null) {
+            println(
+                "PlayerViewModel: nenhuma pasta SAF selecionada"
+            )
+            return
+        }
+
+        val start =
+            if (a.frame <= b.frame) a else b
+
+        val end =
+            if (a.frame <= b.frame) b else a
 
         println(
             "PlayerViewModel: ordem do corte " +
@@ -678,29 +691,35 @@ class PlayerViewModel(
 
         println(
             "PlayerViewModel: testCutFrames " +
-                "A=${a.frame} B=${b.frame}"
+                "A=${start.frame} B=${end.frame}"
         )
 
-        val result = player.testCutFrames(
-            frameA = start.frame,
-            frameB = end.frame
-        )
+        val result =
+            player.testCutFrames(
+                frameA = start.frame,
+                frameB = end.frame
+            )
 
         if (result != null && result.size >= 6) {
 
-            val cutInfo = CutFrameInfo(
-                frameA = result[0],
-                ptsA = result[1],
-                frameB = result[2],
-                ptsB = result[3],
-                timeBaseNum = result[4],
-                timeBaseDen = result[5]
-            )
+            val cutInfo =
+                CutFrameInfo(
+                    frameA = result[0],
+                    ptsA = result[1],
+                    frameB = result[2],
+                    ptsB = result[3],
+                    timeBaseNum = result[4],
+                    timeBaseDen = result[5]
+                )
 
-            lastCutFrameInfo = cutInfo
+            lastCutFrameInfo =
+                cutInfo
 
-            val timeA = cutInfo.timeA
-            val timeB = cutInfo.timeB
+            val timeA =
+                cutInfo.timeA
+
+            val timeB =
+                cutInfo.timeB
 
             println(
                 "PlayerViewModel: corte " +
@@ -711,6 +730,39 @@ class PlayerViewModel(
                     "duration=${cutInfo.duration}"
             )
 
+            val cutFile =
+                File(
+                    getApplication<Application>()
+                        .cacheDir,
+                    "frameA.mov"
+                )
+
+            if (!cutFile.isFile || cutFile.length() <= 0L) {
+
+                println(
+                    "PlayerViewModel: arquivo do corte " +
+                        "não encontrado ou vazio = " +
+                        cutFile.absolutePath
+                )
+
+                return
+            }
+
+            println(
+                "PlayerViewModel: vídeo cortado encontrado = " +
+                    cutFile.absolutePath +
+                    " size=" +
+                    cutFile.length()
+            )
+
+            viewModelScope.launch {
+
+                copyCutVideoToTree(
+                    cutFile,
+                    treeUri
+                )
+            }
+
         } else {
 
             println(
@@ -718,7 +770,6 @@ class PlayerViewModel(
             )
         }
     }
-
     fun toggleABLoop() {
         if (markerA != null && markerB != null) {
             abLoopEnabled = true
@@ -999,6 +1050,77 @@ class PlayerViewModel(
         )
     }
 
+    private fun findNextCutVideoName(
+        resolver: ContentResolver,
+        parentDocumentUri: Uri,
+        baseName: String
+    ): String {
+
+        val childrenUri =
+            DocumentsContract.buildChildDocumentsUriUsingTree(
+                parentDocumentUri,
+                DocumentsContract.getDocumentId(
+                    parentDocumentUri
+                )
+            )
+
+        val usedNumbers =
+            mutableSetOf<Int>()
+
+        resolver.query(
+            childrenUri,
+            arrayOf(
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+
+            val nameColumn =
+                cursor.getColumnIndex(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                )
+
+            while (cursor.moveToNext()) {
+
+                if (nameColumn < 0) {
+                    continue
+                }
+
+                val name =
+                    cursor.getString(nameColumn)
+
+                val match =
+                    Regex(
+                        "^${Regex.escape(baseName)}_(\\d+)\\.mov$",
+                        RegexOption.IGNORE_CASE
+                    ).matchEntire(name)
+
+                val number =
+                    match
+                        ?.groupValues
+                        ?.getOrNull(1)
+                        ?.toIntOrNull()
+
+                if (number != null) {
+                    usedNumbers.add(number)
+                }
+            }
+        }
+
+        var number = 1
+
+        while (number in usedNumbers) {
+            number++
+        }
+
+        return String.format(
+            "%s_%03d.mov",
+            baseName,
+            number
+        )
+    }
     private suspend fun copyScreenshotToTree(
         screenshotFile: File,
         treeUri: Uri
@@ -1184,6 +1306,147 @@ class PlayerViewModel(
 
                 println(
                     "PlayerViewModel: erro ao copiar screenshot: " +
+                        e.message
+                )
+            }
+        }
+    }
+
+    private suspend fun copyCutVideoToTree(
+        cutFile: File,
+        treeUri: Uri
+    ) {
+
+        withContext(Dispatchers.IO) {
+
+            try {
+
+                val resolver =
+                    getApplication<Application>()
+                        .contentResolver
+
+                /*
+                 * ------------------------------------------------
+                 * CONVERTER treeUri -> documentUri DA PASTA
+                 * ------------------------------------------------
+                 */
+                val treeDocumentId =
+                    DocumentsContract.getTreeDocumentId(
+                        treeUri
+                    )
+
+                val parentDocumentUri =
+                    DocumentsContract.buildDocumentUriUsingTree(
+                        treeUri,
+                        treeDocumentId
+                    )
+
+                /*
+                 * ------------------------------------------------
+                 * NOME DO VÍDEO ORIGINAL
+                 * ------------------------------------------------
+                 */
+                val originalName =
+                    _uiState.value.filename
+                        ?: "video"
+
+                val lastDot =
+                    originalName.lastIndexOf(".")
+
+                val baseName =
+                    if (
+                        lastDot > 0 &&
+                        lastDot < originalName.length - 1
+                    ) {
+                        originalName.substring(
+                            0,
+                            lastDot
+                        )
+                    } else {
+                        originalName
+                    }
+
+                /*
+                 * ------------------------------------------------
+                 * PRÓXIMO NOME
+                 * ------------------------------------------------
+                 *
+                 * exemplo:
+                 *
+                 * video_001.mov
+                 * video_002.mov
+                 * video_003.mov
+                 * ------------------------------------------------
+                 */
+                val destinationName =
+                    findNextCutVideoName(
+                        resolver,
+                        parentDocumentUri,
+                        baseName
+                    )
+
+                /*
+                 * ------------------------------------------------
+                 * CRIAR ARQUIVO NA PASTA SAF
+                 * ------------------------------------------------
+                 */
+                val destinationUri =
+                    DocumentsContract.createDocument(
+                        resolver,
+                        parentDocumentUri,
+                        "video/quicktime",
+                        destinationName
+                    )
+
+                if (destinationUri == null) {
+
+                    println(
+                        "PlayerViewModel: não foi possível criar " +
+                            "vídeo cortado na pasta SAF"
+                    )
+
+                    return@withContext
+                }
+
+                /*
+                 * ------------------------------------------------
+                 * COPIAR MOV
+                 * ------------------------------------------------
+                 */
+                resolver
+                    .openOutputStream(
+                        destinationUri
+                    )
+                    ?.use { output ->
+
+                        cutFile
+                            .inputStream()
+                            .use { input ->
+
+                                input.copyTo(
+                                    output
+                                )
+                            }
+                    }
+                    ?: run {
+
+                        println(
+                            "PlayerViewModel: não foi possível " +
+                                "abrir outputStream do vídeo"
+                        )
+
+                        return@withContext
+                    }
+
+                println(
+                    "PlayerViewModel: vídeo cortado copiado " +
+                        "com sucesso: $destinationName"
+                )
+
+            } catch (e: Exception) {
+
+                println(
+                    "PlayerViewModel: erro ao copiar vídeo cortado: " +
                         e.message
                 )
             }
