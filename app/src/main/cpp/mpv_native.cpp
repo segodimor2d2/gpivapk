@@ -1221,6 +1221,306 @@ Java_com_rec_gpiv_player_MpvNative_nativeLoad(
     }
 }
 
+static std::vector<uint8_t> h264AnnexBToAvcC(
+    const std::vector<uint8_t>& annexB
+)
+{
+    std::vector<uint8_t> sps;
+    std::vector<uint8_t> pps;
+
+    size_t i = 0;
+
+    while (i + 4 <= annexB.size()) {
+
+        size_t startCodeSize = 0;
+
+        if (
+            i + 4 <= annexB.size() &&
+            annexB[i] == 0x00 &&
+            annexB[i + 1] == 0x00 &&
+            annexB[i + 2] == 0x00 &&
+            annexB[i + 3] == 0x01
+        ) {
+            startCodeSize = 4;
+
+        } else if (
+            i + 3 <= annexB.size() &&
+            annexB[i] == 0x00 &&
+            annexB[i + 1] == 0x00 &&
+            annexB[i + 2] == 0x01
+        ) {
+            startCodeSize = 3;
+
+        } else {
+            ++i;
+            continue;
+        }
+
+        size_t nalStart =
+            i + startCodeSize;
+
+        size_t nextStart =
+            nalStart;
+
+        bool foundNextStart = false;
+
+        while (nextStart + 3 <= annexB.size()) {
+
+            if (
+                nextStart + 4 <= annexB.size() &&
+                annexB[nextStart] == 0x00 &&
+                annexB[nextStart + 1] == 0x00 &&
+                annexB[nextStart + 2] == 0x00 &&
+                annexB[nextStart + 3] == 0x01
+            ) {
+                foundNextStart = true;
+                break;
+            }
+
+            if (
+                annexB[nextStart] == 0x00 &&
+                annexB[nextStart + 1] == 0x00 &&
+                annexB[nextStart + 2] == 0x01
+            ) {
+                foundNextStart = true;
+                break;
+            }
+
+            ++nextStart;
+        }
+
+        if (!foundNextStart) {
+            nextStart = annexB.size();
+        }
+
+        size_t nalSize =
+            nextStart - nalStart;
+
+        if (nalSize > 0) {
+
+            uint8_t nalType =
+                annexB[nalStart] & 0x1F;
+
+            if (nalType == 7) {
+
+                sps.assign(
+                    annexB.begin() + nalStart,
+                    annexB.begin() + nalStart + nalSize
+                );
+
+            } else if (nalType == 8) {
+
+                pps.assign(
+                    annexB.begin() + nalStart,
+                    annexB.begin() + nalStart + nalSize
+                );
+            }
+        }
+
+        i = nextStart;
+    }
+
+    if (sps.empty() || pps.empty()) {
+
+        LOGI(
+            "H264: não encontrei SPS/PPS no codecConfig"
+        );
+
+        return {};
+    }
+
+    LOGI(
+        "H264: SPS=%zu bytes PPS=%zu bytes",
+        sps.size(),
+        pps.size()
+    );
+
+    std::vector<uint8_t> avcC;
+
+    avcC.reserve(
+        11 + sps.size() + pps.size()
+    );
+
+    avcC.push_back(1);
+
+    avcC.push_back(
+        sps.size() > 1 ? sps[1] : 0
+    );
+
+    avcC.push_back(
+        sps.size() > 2 ? sps[2] : 0
+    );
+
+    avcC.push_back(
+        sps.size() > 3 ? sps[3] : 0
+    );
+
+    avcC.push_back(0xFF);
+
+    avcC.push_back(0xE1);
+
+    avcC.push_back(
+        static_cast<uint8_t>(
+            (sps.size() >> 8) & 0xFF
+        )
+    );
+
+    avcC.push_back(
+        static_cast<uint8_t>(
+            sps.size() & 0xFF
+        )
+    );
+
+    avcC.insert(
+        avcC.end(),
+        sps.begin(),
+        sps.end()
+    );
+
+    avcC.push_back(1);
+
+    avcC.push_back(
+        static_cast<uint8_t>(
+            (pps.size() >> 8) & 0xFF
+        )
+    );
+
+    avcC.push_back(
+        static_cast<uint8_t>(
+            pps.size() & 0xFF
+        )
+    );
+
+    avcC.insert(
+        avcC.end(),
+        pps.begin(),
+        pps.end()
+    );
+
+    LOGI(
+        "H264: avcC gerado: %zu bytes",
+        avcC.size()
+    );
+
+    return avcC;
+}
+
+
+static std::vector<uint8_t> h264AnnexBToAvcc(
+    const std::vector<uint8_t>& annexB
+)
+{
+    std::vector<uint8_t> avcc;
+
+    size_t i = 0;
+
+    while (i + 3 <= annexB.size()) {
+
+        size_t startCodeSize = 0;
+
+        if (
+            i + 4 <= annexB.size() &&
+            annexB[i] == 0x00 &&
+            annexB[i + 1] == 0x00 &&
+            annexB[i + 2] == 0x00 &&
+            annexB[i + 3] == 0x01
+        ) {
+            startCodeSize = 4;
+
+        } else if (
+            annexB[i] == 0x00 &&
+            annexB[i + 1] == 0x00 &&
+            annexB[i + 2] == 0x01
+        ) {
+            startCodeSize = 3;
+
+        } else {
+            ++i;
+            continue;
+        }
+
+        size_t nalStart =
+            i + startCodeSize;
+
+        size_t nextStart =
+            annexB.size();
+
+        for (
+            size_t search = nalStart;
+            search + 3 <= annexB.size();
+            ++search
+        ) {
+
+            if (
+                search + 4 <= annexB.size() &&
+                annexB[search] == 0x00 &&
+                annexB[search + 1] == 0x00 &&
+                annexB[search + 2] == 0x00 &&
+                annexB[search + 3] == 0x01
+            ) {
+                nextStart = search;
+                break;
+            }
+
+            if (
+                annexB[search] == 0x00 &&
+                annexB[search + 1] == 0x00 &&
+                annexB[search + 2] == 0x01
+            ) {
+                nextStart = search;
+                break;
+            }
+        }
+
+        size_t nalSize =
+            nextStart - nalStart;
+
+        if (nalSize > 0) {
+
+            avcc.push_back(
+                static_cast<uint8_t>(
+                    (nalSize >> 24) & 0xFF
+                )
+            );
+
+            avcc.push_back(
+                static_cast<uint8_t>(
+                    (nalSize >> 16) & 0xFF
+                )
+            );
+
+            avcc.push_back(
+                static_cast<uint8_t>(
+                    (nalSize >> 8) & 0xFF
+                )
+            );
+
+            avcc.push_back(
+                static_cast<uint8_t>(
+                    nalSize & 0xFF
+                )
+            );
+
+            avcc.insert(
+                avcc.end(),
+                annexB.begin() + nalStart,
+                annexB.begin() + nalStart + nalSize
+            );
+        }
+
+        i = nextStart;
+    }
+
+    LOGI(
+        "H264: Annex-B %zu bytes -> AVCC %zu bytes",
+        annexB.size(),
+        avcc.size()
+    );
+
+    return avcc;
+}
+
+
 extern "C"
 JNIEXPORT jlongArray JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
@@ -1302,6 +1602,12 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
 
     AMediaFormat_setInt32(
         format,
+        AMEDIAFORMAT_KEY_COLOR_FORMAT,
+        19
+    );
+
+    AMediaFormat_setInt32(
+        format,
         AMEDIAFORMAT_KEY_BIT_RATE,
         2 * 1000 * 1000
     );
@@ -1352,6 +1658,19 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
     LOGI(
         "MediaCodec: configure() OK"
     );
+
+    const char* configuredFormat =
+        AMediaFormat_toString(
+            format
+        );
+
+    if (configuredFormat) {
+
+        LOGI(
+            "MediaCodec: configured input format = %s",
+            configuredFormat
+        );
+    }
 
     AMediaFormat_delete(
         format
@@ -1743,10 +2062,40 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
         ) {
             videoStreamIndex =
                 static_cast<int>(i);
+
             break;
         }
     }
 
+    int audioStreamIndex = -1;
+
+    for (
+        unsigned int i = 0;
+        i < formatContext->nb_streams;
+        ++i
+    ) {
+        if (
+            formatContext->streams[i]
+                ->codecpar
+                ->codec_type
+            == AVMEDIA_TYPE_AUDIO
+        ) {
+            audioStreamIndex =
+                static_cast<int>(i);
+
+            LOGI(
+                "FFmpeg: áudio encontrado stream=%d codec=%s",
+                audioStreamIndex,
+                avcodec_get_name(
+                    formatContext->streams[i]
+                        ->codecpar
+                        ->codec_id
+                )
+            );
+
+            break;
+        }
+    }
     if (videoStreamIndex < 0) {
 
         LOGI(
@@ -2031,6 +2380,16 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
 
     std::vector<uint8_t> codecConfig;
 
+    AVFormatContext* outputFormatContext = nullptr;
+    AVStream* outputVideoStream = nullptr;
+    AVStream* outputAudioStream = nullptr;
+    bool mp4Started = false;
+    int64_t encodedFrameIndex = 0;
+
+    std::vector<AVPacket*> audioPackets;
+
+    std::vector<uint8_t> avcC;
+
     bool foundA = false;
     bool foundB = false;
 
@@ -2038,6 +2397,10 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
     int64_t ptsB = AV_NOPTS_VALUE;
 
     int videoPacketCount = 0;
+
+    int64_t audioStartPts = AV_NOPTS_VALUE;
+    int64_t audioEndPts = AV_NOPTS_VALUE;
+    bool audioEndFound = false;
 
     while (!foundB) {
 
@@ -2066,6 +2429,40 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
             );
 
             break;
+        }
+
+        if (
+            packet->stream_index
+            == audioStreamIndex
+        ) {
+
+            AVPacket* audioPacket =
+                av_packet_alloc();
+
+            if (audioPacket) {
+
+                if (
+                    av_packet_ref(
+                        audioPacket,
+                        packet
+                    ) == 0
+                ) {
+
+                    audioPackets.push_back(
+                        audioPacket
+                    );
+
+                } else {
+
+                    av_packet_free(
+                        &audioPacket
+                    );
+                }
+            }
+
+            av_packet_unref(packet);
+
+            continue;
         }
 
         if (
@@ -2437,6 +2834,302 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                                                 codecConfigBuffer + outputInfo.size
                                             );
 
+                                            avcC =
+                                                h264AnnexBToAvcC(
+                                                    codecConfig
+                                                );
+
+                                            if (!avcC.empty()) {
+
+                                                LOGI(
+                                                    "H264: avcC primeiros bytes: "
+                                                    "%02X %02X %02X %02X %02X %02X %02X %02X",
+                                                    avcC[0],
+                                                    avcC[1],
+                                                    avcC[2],
+                                                    avcC[3],
+                                                    avcC[4],
+                                                    avcC[5],
+                                                    avcC[6],
+                                                    avcC[7]
+                                                );
+                                            }
+
+
+                                            if (!avcC.empty() && !mp4Started) {
+
+                                                const char* movPath =
+                                                    "/data/data/com.rec.gpiv/cache/frameA.mov";
+
+                                                const AVOutputFormat* testOutputFormat =
+                                                    av_guess_format(
+                                                        "mov",
+                                                        movPath,
+                                                        nullptr
+                                                    );
+
+                                                LOGI(
+                                                    "MOV: av_guess_format(mov) = %p",
+                                                    testOutputFormat
+                                                );
+
+                                                if (testOutputFormat) {
+                                                    LOGI(
+                                                        "MOV: muxer encontrado: name=%s long_name=%s",
+                                                        testOutputFormat->name,
+                                                        testOutputFormat->long_name
+                                                            ? testOutputFormat->long_name
+                                                            : "(null)"
+                                                    );
+                                                }
+
+                                                int muxResult =
+                                                    avformat_alloc_output_context2(
+                                                        &outputFormatContext,
+                                                        nullptr,
+                                                        "mov",
+                                                        movPath
+                                                    );
+
+                                                if (
+                                                    muxResult < 0 ||
+                                                    outputFormatContext == nullptr
+                                                ) {
+
+                                                    LOGI(
+                                                        "MOV: avformat_alloc_output_context2() falhou: %d",
+                                                        muxResult
+                                                    );
+
+                                                } else {
+
+                                                    outputVideoStream =
+                                                        avformat_new_stream(
+                                                            outputFormatContext,
+                                                            nullptr
+                                                        );
+
+                                                    if (!outputVideoStream) {
+
+                                                        LOGI(
+                                                            "MOV: avformat_new_stream() falhou"
+                                                        );
+
+                                                        avformat_free_context(
+                                                            outputFormatContext
+                                                        );
+
+                                                        outputFormatContext = nullptr;
+
+                                                    } else {
+
+                                                        outputVideoStream->time_base =
+                                                            AVRational{1, 30};
+
+                                                        AVCodecParameters* outputCodecParameters =
+                                                            outputVideoStream->codecpar;
+
+                                                        outputCodecParameters->codec_type =
+                                                            AVMEDIA_TYPE_VIDEO;
+
+                                                        outputCodecParameters->codec_id =
+                                                            AV_CODEC_ID_H264;
+
+                                                        outputCodecParameters->width =
+                                                            640;
+
+                                                        outputCodecParameters->height =
+                                                            1138;
+
+                                                        outputCodecParameters->format =
+                                                            AV_PIX_FMT_YUV420P;
+
+                                                        outputCodecParameters->color_range =
+                                                            AVCOL_RANGE_MPEG;
+
+                                                        outputCodecParameters->color_space =
+                                                            AVCOL_SPC_BT709;
+
+                                                        outputCodecParameters->color_primaries =
+                                                            AVCOL_PRI_BT709;
+
+                                                        outputCodecParameters->extradata =
+                                                            static_cast<uint8_t*>(
+                                                                av_malloc(
+                                                                    avcC.size() +
+                                                                    AV_INPUT_BUFFER_PADDING_SIZE
+                                                                )
+                                                            );
+
+                                                        outputCodecParameters->extradata_size =
+                                                            static_cast<int>(
+                                                                avcC.size()
+                                                            );
+
+                                                        memcpy(
+                                                            outputCodecParameters->extradata,
+                                                            avcC.data(),
+                                                            avcC.size()
+                                                        );
+
+                                                        memset(
+                                                            outputCodecParameters->extradata +
+                                                                avcC.size(),
+                                                            0,
+                                                            AV_INPUT_BUFFER_PADDING_SIZE
+                                                        );
+
+                                                        outputAudioStream =
+                                                            avformat_new_stream(
+                                                                outputFormatContext,
+                                                                nullptr
+                                                            );
+
+                                                        if (!outputAudioStream) {
+
+                                                            LOGI(
+                                                                "MOV: avformat_new_stream() áudio falhou"
+                                                            );
+
+                                                            avformat_free_context(
+                                                                outputFormatContext
+                                                            );
+
+                                                            outputFormatContext = nullptr;
+
+                                                        } else {
+
+                                                            AVStream* inputAudioStream =
+                                                                formatContext->streams[audioStreamIndex];
+
+                                                            muxResult =
+                                                                avcodec_parameters_copy(
+                                                                    outputAudioStream->codecpar,
+                                                                    inputAudioStream->codecpar
+                                                                );
+
+                                                            if (muxResult < 0) {
+
+                                                                LOGI(
+                                                                    "MOV: avcodec_parameters_copy() áudio falhou: %d",
+                                                                    muxResult
+                                                                );
+
+                                                                avformat_free_context(
+                                                                    outputFormatContext
+                                                                );
+
+                                                                outputFormatContext = nullptr;
+
+                                                            } else {
+
+                                                                outputAudioStream->time_base =
+                                                                    inputAudioStream->time_base;
+
+                                                                LOGI(
+                                                                    "MOV: áudio configurado stream=%d "
+                                                                    "codec=%s sample_rate=%d channels=%d "
+                                                                    "time_base=%d/%d",
+                                                                    outputAudioStream->index,
+                                                                    avcodec_get_name(
+                                                                        outputAudioStream
+                                                                            ->codecpar
+                                                                            ->codec_id
+                                                                    ),
+                                                                    outputAudioStream
+                                                                        ->codecpar
+                                                                        ->sample_rate,
+                                                                    outputAudioStream
+                                                                        ->codecpar
+                                                                        ->ch_layout
+                                                                        .nb_channels,
+                                                                    outputAudioStream
+                                                                        ->time_base
+                                                                        .num,
+                                                                    outputAudioStream
+                                                                        ->time_base
+                                                                        .den
+                                                                );
+                                                            }
+                                                        }
+
+                                                        if (
+                                                            !(outputFormatContext->oformat->flags &
+                                                              AVFMT_NOFILE)
+                                                        ) {
+
+                                                            muxResult =
+                                                                avio_open(
+                                                                    &outputFormatContext->pb,
+                                                                    movPath,
+                                                                    AVIO_FLAG_WRITE
+                                                                );
+
+                                                        }
+
+                                                        if (muxResult < 0) {
+
+                                                            LOGI(
+                                                                "MOV: avio_open() falhou: %d",
+                                                                muxResult
+                                                            );
+
+                                                        } else {
+
+                                                            muxResult =
+                                                                avformat_write_header(
+                                                                    outputFormatContext,
+                                                                    nullptr
+                                                                );
+
+                                                            if (muxResult < 0) {
+
+                                                                char errorBuffer[
+                                                                    AV_ERROR_MAX_STRING_SIZE
+                                                                ];
+
+                                                                av_strerror(
+                                                                    muxResult,
+                                                                    errorBuffer,
+                                                                    sizeof(errorBuffer)
+                                                                );
+
+                                                                LOGI(
+                                                                    "MOV: write_header() falhou: %s",
+                                                                    errorBuffer
+                                                                );
+
+                                                            } else {
+
+                                                                mp4Started = true;
+
+                                                                LOGI(
+                                                                    "MOV: muxer iniciado: %s",
+                                                                    movPath
+                                                                );
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+
+                                            if (codecConfig.size() >= 8) {
+
+                                                LOGI(
+                                                    "MediaCodec: CODEC_CONFIG primeiros bytes: "
+                                                    "%02X %02X %02X %02X %02X %02X %02X %02X",
+                                                    codecConfig[0],
+                                                    codecConfig[1],
+                                                    codecConfig[2],
+                                                    codecConfig[3],
+                                                    codecConfig[4],
+                                                    codecConfig[5],
+                                                    codecConfig[6],
+                                                    codecConfig[7]
+                                                );
+                                            }
+
                                             LOGI(
                                                 "MediaCodec: FRAME A CODEC_CONFIG "
                                                 "copiado: %zu bytes",
@@ -2497,6 +3190,105 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                                 outputBuffer,
                                 outputBuffer + outputInfo.size
                             );
+
+                            std::vector<uint8_t> avccFrame;
+
+                            if (!encodedFrame.empty()) {
+                                avccFrame =
+                                    h264AnnexBToAvcc(encodedFrame);
+                            }
+
+                            if (
+                                mp4Started &&
+                                !avccFrame.empty()
+                            ) {
+
+                                AVPacket* outputPacket =
+                                    av_packet_alloc();
+
+                                if (outputPacket) {
+
+                                    outputPacket->data =
+                                        avccFrame.data();
+
+                                    outputPacket->size =
+                                        static_cast<int>(
+                                            avccFrame.size()
+                                        );
+
+                                    outputPacket->stream_index =
+                                        outputVideoStream->index;
+
+                                    outputPacket->pts =
+                                        encodedFrameIndex;
+
+                                    outputPacket->dts =
+                                        encodedFrameIndex;
+
+                                    outputPacket->duration =
+                                        1;
+
+                                    av_packet_rescale_ts(
+                                        outputPacket,
+                                        AVRational{1, 30},
+                                        outputVideoStream->time_base
+                                    );
+
+                                    int packetSize =
+                                        outputPacket->size;
+
+                                    int64_t packetPts =
+                                        outputPacket->pts;
+
+                                    int64_t packetDts =
+                                        outputPacket->dts;
+
+                                    int writeResult =
+                                        av_interleaved_write_frame(
+                                            outputFormatContext,
+                                            outputPacket
+                                        );
+
+                                    LOGI(
+                                        "MOV: frame=%lld size=%d pts=%lld dts=%lld write=%d",
+                                        static_cast<long long>(
+                                            encodedFrameIndex
+                                        ),
+                                        packetSize,
+                                        static_cast<long long>(
+                                            packetPts
+                                        ),
+                                        static_cast<long long>(
+                                            packetDts
+                                        ),
+                                        writeResult
+                                    );
+
+                                    if (writeResult < 0) {
+
+                                        char errorBuffer[
+                                            AV_ERROR_MAX_STRING_SIZE
+                                        ];
+
+                                        av_strerror(
+                                            writeResult,
+                                            errorBuffer,
+                                            sizeof(errorBuffer)
+                                        );
+
+                                        LOGI(
+                                            "MOV: ERRO write_frame: %s",
+                                            errorBuffer
+                                        );
+                                    }
+
+                                    av_packet_free(
+                                        &outputPacket
+                                    );
+
+                                    ++encodedFrameIndex;
+                                }
+                            }
 
                             FILE* outputFile =
                                 fopen(outputPath, "ab");
@@ -2589,6 +3381,140 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                             LOGI(
                                 "MediaCodec: FRAME A output buffer liberado"
                             );
+
+                            if (
+                                decodedFrame == frameB
+                            ) {
+
+                                AMediaCodecBufferInfo finalOutputInfo{};
+
+                                ssize_t finalOutputIndex =
+                                    AMediaCodec_dequeueOutputBuffer(
+                                        encoder,
+                                        &finalOutputInfo,
+                                        100000
+                                    );
+
+                                LOGI(
+                                    "MediaCodec: DRAIN B outputIndex=%zd "
+                                    "size=%d pts=%lld flags=%u",
+                                    finalOutputIndex,
+                                    finalOutputInfo.size,
+                                    static_cast<long long>(
+                                        finalOutputInfo.presentationTimeUs
+                                    ),
+                                    finalOutputInfo.flags
+                                );
+
+                                if (finalOutputIndex >= 0) {
+
+                                    size_t finalBufferSize = 0;
+
+                                    uint8_t* finalBuffer =
+                                        AMediaCodec_getOutputBuffer(
+                                            encoder,
+                                            static_cast<size_t>(
+                                                finalOutputIndex
+                                            ),
+                                            &finalBufferSize
+                                        );
+
+                                    if (
+                                        finalBuffer != nullptr &&
+                                        finalOutputInfo.size > 0
+                                    ) {
+
+                                        std::vector<uint8_t> finalEncodedFrame(
+                                            finalBuffer,
+                                            finalBuffer +
+                                                finalOutputInfo.size
+                                        );
+
+                                        std::vector<uint8_t> finalAvccFrame =
+                                            h264AnnexBToAvcc(
+                                                finalEncodedFrame
+                                            );
+
+                                        if (
+                                            mp4Started &&
+                                            !finalAvccFrame.empty()
+                                        ) {
+
+                                            AVPacket* finalPacket =
+                                                av_packet_alloc();
+
+                                            if (finalPacket) {
+
+                                                finalPacket->data =
+                                                    finalAvccFrame.data();
+
+                                                finalPacket->size =
+                                                    static_cast<int>(
+                                                        finalAvccFrame.size()
+                                                    );
+
+                                                finalPacket->stream_index =
+                                                    outputVideoStream->index;
+
+                                                finalPacket->pts =
+                                                    encodedFrameIndex;
+
+                                                finalPacket->dts =
+                                                    encodedFrameIndex;
+
+                                                finalPacket->duration = 1;
+
+                                                av_packet_rescale_ts(
+                                                    finalPacket,
+                                                    AVRational{1, 30},
+                                                    outputVideoStream->time_base
+                                                );
+
+                                                int finalWriteResult =
+                                                    av_interleaved_write_frame(
+                                                        outputFormatContext,
+                                                        finalPacket
+                                                    );
+
+                                                LOGI(
+                                                    "MOV: DRAIN frame=%lld "
+                                                    "size=%d pts=%lld dts=%lld write=%d",
+                                                    static_cast<long long>(
+                                                        encodedFrameIndex
+                                                    ),
+                                                    finalPacket->size,
+                                                    static_cast<long long>(
+                                                        finalPacket->pts
+                                                    ),
+                                                    static_cast<long long>(
+                                                        finalPacket->dts
+                                                    ),
+                                                    finalWriteResult
+                                                );
+
+                                                av_packet_free(
+                                                    &finalPacket
+                                                );
+
+                                                if (
+                                                    finalWriteResult >= 0
+                                                ) {
+                                                    ++encodedFrameIndex;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    AMediaCodec_releaseOutputBuffer(
+                                        encoder,
+                                        static_cast<size_t>(
+                                            finalOutputIndex
+                                        ),
+                                        false
+                                    );
+                                }
+                            }
+
                         }
 
                     } else {
@@ -2615,6 +3541,43 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
                 foundB = true;
                 ptsB = frame->pts;
 
+                if (
+                    audioStreamIndex >= 0
+                ) {
+
+                    AVRational videoTimeBase =
+                        videoStream->time_base;
+
+                    AVRational audioTimeBase =
+                        formatContext
+                            ->streams[audioStreamIndex]
+                            ->time_base;
+
+                    audioStartPts =
+                        av_rescale_q(
+                            ptsA,
+                            videoTimeBase,
+                            audioTimeBase
+                        );
+
+                    audioEndPts =
+                        av_rescale_q(
+                            ptsB,
+                            videoTimeBase,
+                            audioTimeBase
+                        );
+
+                    LOGI(
+                        "FFmpeg: AUDIO corte pts=%lld -> %lld",
+                        static_cast<long long>(
+                            audioStartPts
+                        ),
+                        static_cast<long long>(
+                            audioEndPts
+                        )
+                    );
+                }
+
                 LOGI(
                     "FFmpeg: frames no corte = %lld",
                     static_cast<long long>(
@@ -2638,6 +3601,125 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
 
             ++decodedFrame;
         }
+    }
+
+    if (
+        foundB &&
+        audioStreamIndex >= 0 &&
+        audioEndPts != AV_NOPTS_VALUE
+    ) {
+
+        while (!audioEndFound) {
+
+            result =
+                av_read_frame(
+                    formatContext,
+                    packet
+                );
+
+            if (result < 0) {
+                break;
+            }
+
+            if (
+                packet->stream_index
+                == audioStreamIndex
+            ) {
+
+                if (
+                    packet->pts != AV_NOPTS_VALUE &&
+                    packet->duration > 0
+                ) {
+
+                    int64_t packetEndPts =
+                        packet->pts +
+                        packet->duration;
+
+                    if (
+                        packet->pts < audioEndPts &&
+                        packetEndPts > audioEndPts
+                    ) {
+
+                        AVPacket* audioPacket =
+                            av_packet_alloc();
+
+                        if (audioPacket) {
+
+                            if (
+                                av_packet_ref(
+                                    audioPacket,
+                                    packet
+                                ) == 0
+                            ) {
+
+                                audioPackets.push_back(
+                                    audioPacket
+                                );
+
+                                audioEndFound = true;
+
+                                LOGI(
+                                    "FFmpeg: AAC pacote final capturado "
+                                    "pts=%lld duration=%lld end=%lld",
+                                    static_cast<long long>(
+                                        packet->pts
+                                    ),
+                                    static_cast<long long>(
+                                        packet->duration
+                                    ),
+                                    static_cast<long long>(
+                                        packetEndPts
+                                    )
+                                );
+
+                            } else {
+
+                                av_packet_free(
+                                    &audioPacket
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+
+            av_packet_unref(packet);
+        }
+    }
+
+
+    LOGI(
+        "FFmpeg: total de pacotes AAC armazenados=%zu",
+        audioPackets.size()
+    );
+
+    if (!audioPackets.empty()) {
+
+        LOGI(
+            "FFmpeg: AAC primeiro pts=%lld dts=%lld duration=%lld",
+            static_cast<long long>(
+                audioPackets.front()->pts
+            ),
+            static_cast<long long>(
+                audioPackets.front()->dts
+            ),
+            static_cast<long long>(
+                audioPackets.front()->duration
+            )
+        );
+
+        LOGI(
+            "FFmpeg: AAC último pts=%lld dts=%lld duration=%lld",
+            static_cast<long long>(
+                audioPackets.back()->pts
+            ),
+            static_cast<long long>(
+                audioPackets.back()->dts
+            ),
+            static_cast<long long>(
+                audioPackets.back()->duration
+            )
+        );
     }
 
     LOGI(
@@ -2666,6 +3748,233 @@ Java_com_rec_gpiv_player_MpvNative_nativeTestCutFrames(
             0,
             6,
             values
+        );
+    }
+
+    if (
+        mp4Started &&
+        outputFormatContext &&
+        outputAudioStream &&
+        audioStartPts != AV_NOPTS_VALUE &&
+        audioEndPts != AV_NOPTS_VALUE
+    ) {
+
+        int audioPacketsWritten = 0;
+
+        for (
+            AVPacket* audioPacket : audioPackets
+        ) {
+
+            if (!audioPacket) {
+                continue;
+            }
+
+            if (
+                audioPacket->pts == AV_NOPTS_VALUE ||
+                audioPacket->duration <= 0
+            ) {
+                continue;
+            }
+
+            int64_t packetStart =
+                audioPacket->pts;
+
+            int64_t packetEnd =
+                audioPacket->pts +
+                audioPacket->duration;
+
+            if (
+                packetEnd <= audioStartPts ||
+                packetStart >= audioEndPts
+            ) {
+                continue;
+            }
+
+            AVPacket* outputAudioPacket =
+                av_packet_alloc();
+
+            if (!outputAudioPacket) {
+                LOGI(
+                    "MOV: falha ao alocar pacote AAC"
+                );
+                continue;
+            }
+
+            int copyResult =
+                av_packet_ref(
+                    outputAudioPacket,
+                    audioPacket
+                );
+
+            if (copyResult < 0) {
+
+                LOGI(
+                    "MOV: av_packet_ref() AAC falhou: %d",
+                    copyResult
+                );
+
+                av_packet_free(
+                    &outputAudioPacket
+                );
+
+                continue;
+            }
+
+            outputAudioPacket->stream_index =
+                outputAudioStream->index;
+
+            outputAudioPacket->pts =
+                av_rescale_q(
+                    packetStart - audioStartPts,
+                    formatContext
+                        ->streams[audioStreamIndex]
+                        ->time_base,
+                    outputAudioStream->time_base
+                );
+
+            outputAudioPacket->dts =
+                av_rescale_q(
+                    audioPacket->dts != AV_NOPTS_VALUE
+                        ? audioPacket->dts - audioStartPts
+                        : packetStart - audioStartPts,
+                    formatContext
+                        ->streams[audioStreamIndex]
+                        ->time_base,
+                    outputAudioStream->time_base
+                );
+
+            outputAudioPacket->duration =
+                audioPacket->duration;
+
+            int writeResult =
+                av_interleaved_write_frame(
+                    outputFormatContext,
+                    outputAudioPacket
+                );
+
+            LOGI(
+                "MOV: AAC packet pts=%lld dts=%lld "
+                "duration=%lld write=%d",
+                static_cast<long long>(
+                    outputAudioPacket->pts
+                ),
+                static_cast<long long>(
+                    outputAudioPacket->dts
+                ),
+                static_cast<long long>(
+                    outputAudioPacket->duration
+                ),
+                writeResult
+            );
+
+            if (writeResult < 0) {
+
+                char errorBuffer[
+                    AV_ERROR_MAX_STRING_SIZE
+                ];
+
+                av_strerror(
+                    writeResult,
+                    errorBuffer,
+                    sizeof(errorBuffer)
+                );
+
+                LOGI(
+                    "MOV: AAC write falhou: %s",
+                    errorBuffer
+                );
+
+            } else {
+
+                ++audioPacketsWritten;
+            }
+
+            av_packet_free(
+                &outputAudioPacket
+            );
+        }
+
+        LOGI(
+            "MOV: AAC packets escritos=%d",
+            audioPacketsWritten
+        );
+    }
+
+    for (
+        AVPacket* audioPacket : audioPackets
+    ) {
+
+        av_packet_free(
+            &audioPacket
+        );
+    }
+
+    audioPackets.clear();
+
+
+    if (
+        mp4Started &&
+        outputFormatContext
+    ) {
+
+        int trailerResult =
+            av_write_trailer(
+                outputFormatContext
+            );
+
+        if (trailerResult < 0) {
+
+            char errorBuffer[
+                AV_ERROR_MAX_STRING_SIZE
+            ];
+
+            av_strerror(
+                trailerResult,
+                errorBuffer,
+                sizeof(errorBuffer)
+            );
+
+            LOGI(
+                "MOV: av_write_trailer() falhou: %s",
+                errorBuffer
+            );
+
+        } else {
+
+            LOGI(
+                "MOV: av_write_trailer() OK"
+            );
+        }
+
+        mp4Started = false;
+    }
+
+    if (
+        outputFormatContext &&
+        !(outputFormatContext->oformat->flags & AVFMT_NOFILE)
+    ) {
+
+        int closeResult =
+            avio_closep(
+                &outputFormatContext->pb
+            );
+
+        LOGI(
+            "MOV: avio_closep() -> %d",
+            closeResult
+        );
+    }
+
+    if (outputFormatContext) {
+
+        avformat_free_context(
+            outputFormatContext
+        );
+
+        outputFormatContext = nullptr;
+
+        LOGI(
+            "MOV: avformat_free_context() OK"
         );
     }
 
