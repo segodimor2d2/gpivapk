@@ -1053,7 +1053,8 @@ class PlayerViewModel(
     private fun findNextCutVideoName(
         resolver: ContentResolver,
         parentDocumentUri: Uri,
-        baseName: String
+        baseName: String,
+        extension: String
     ): String {
 
         val childrenUri =
@@ -1093,7 +1094,7 @@ class PlayerViewModel(
 
                 val match =
                     Regex(
-                        "^${Regex.escape(baseName)}_(\\d+)\\.mov$",
+                        "^${Regex.escape(baseName)}_(\\d+)${Regex.escape(extension)}$",
                         RegexOption.IGNORE_CASE
                     ).matchEntire(name)
 
@@ -1116,9 +1117,10 @@ class PlayerViewModel(
         }
 
         return String.format(
-            "%s_%03d.mov",
+            "%s_%03d%s",
             baseName,
-            number
+            number,
+            extension
         )
     }
     private suspend fun copyScreenshotToTree(
@@ -1217,6 +1219,7 @@ class PlayerViewModel(
                     } else {
                         destinationName
                     }
+
 
                 val destinationUri =
                     DocumentsContract.createDocument(
@@ -1353,18 +1356,27 @@ class PlayerViewModel(
                 val lastDot =
                     originalName.lastIndexOf(".")
 
-                val baseName =
-                    if (
-                        lastDot > 0 &&
-                        lastDot < originalName.length - 1
-                    ) {
+                val baseName: String
+                val extension: String
+
+                if (
+                    lastDot > 0 &&
+                    lastDot < originalName.length - 1
+                ) {
+                    baseName =
                         originalName.substring(
                             0,
                             lastDot
                         )
-                    } else {
-                        originalName
-                    }
+
+                    extension =
+                        originalName.substring(
+                            lastDot
+                        )
+                } else {
+                    baseName = originalName
+                    extension = ""
+                }
 
                 /*
                  * ------------------------------------------------
@@ -1382,7 +1394,8 @@ class PlayerViewModel(
                     findNextCutVideoName(
                         resolver,
                         parentDocumentUri,
-                        baseName
+                        baseName,
+                        extension
                     )
 
                 /*
@@ -1390,11 +1403,14 @@ class PlayerViewModel(
                  * CRIAR ARQUIVO NA PASTA SAF
                  * ------------------------------------------------
                  */
+                println(
+                    "PlayerViewModel: destinationName = [$destinationName]"
+                )
                 val destinationUri =
                     DocumentsContract.createDocument(
                         resolver,
                         parentDocumentUri,
-                        "video/quicktime",
+                        "application/octet-stream",
                         destinationName
                     )
 
