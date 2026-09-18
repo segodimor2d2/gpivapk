@@ -55,6 +55,10 @@ class FakeVideoPlayer : VideoPlayer {
         println("FakeVideoPlayer: frameBackward($frames)")
     }
 
+    override fun findPreviousKeyframeFrame(
+        frame: Long
+    ): Long? = null
+
     override fun screenshot() {
         println("FakeVideoPlayer: screenshot()")
     }

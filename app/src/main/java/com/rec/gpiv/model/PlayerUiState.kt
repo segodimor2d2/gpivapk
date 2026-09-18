@@ -8,6 +8,7 @@ data class PlayerUiState(
     val position: Double = 0.0,
     val duration: Double = 0.0,
     val currentFrame: Long = 0L,
+    val previousKeyframeFrame: Long? = null,
     val markerASet: Boolean = false,
     val markerBSet: Boolean = false,
 

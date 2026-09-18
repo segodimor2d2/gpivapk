@@ -518,7 +518,6 @@ fun PlayerScreen(
                         verticalArrangement =
                             Arrangement.spacedBy(10.dp)
                     ) {
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement =
@@ -530,6 +529,25 @@ fun PlayerScreen(
                             StatusText(
                                 text = "f${uiState.currentFrame}"
                             )
+
+                            StatusText(
+                                text =
+                                    uiState.previousKeyframeFrame?.let {
+                                        keyframe ->
+                                        "KF f$keyframe " +
+                                            "(-${uiState.currentFrame - keyframe})"
+                                    } ?: "KF --"
+                            )
+
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement =
+                                Arrangement.spacedBy( 10.dp,
+                                    Alignment.CenterHorizontally
+                                )
+                        ) {
 
                             CompactButton(
                                 text = "SS MPV",

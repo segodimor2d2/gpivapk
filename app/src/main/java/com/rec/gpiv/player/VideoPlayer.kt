@@ -28,6 +28,10 @@ interface VideoPlayer {
     fun frameForward(frames: Int)
     fun frameBackward(frames: Int)
 
+    fun findPreviousKeyframeFrame(
+        frame: Long
+    ): Long?
+
     fun testCutFrames(
         frameA: Long,
         frameB: Long

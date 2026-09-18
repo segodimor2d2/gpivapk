@@ -267,6 +267,16 @@ class MpvNative {
         )
     }
 
+    fun findPreviousKeyframeFrame(
+        fd: Int,
+        frame: Long
+    ): Long? {
+        checkInitialized()
+
+        return nativeFindPreviousKeyframeFrame(fd, frame)
+            .takeIf { it >= 0L }
+    }
+
     fun play() {
         checkInitialized()
 
@@ -611,6 +621,11 @@ class MpvNative {
         frameA: Long,
         frameB: Long
     ): LongArray?
+
+    private external fun nativeFindPreviousKeyframeFrame(
+        fd: Int,
+        frame: Long
+    ): Long
 
     private external fun nativeProbeFd(
         fd: Int

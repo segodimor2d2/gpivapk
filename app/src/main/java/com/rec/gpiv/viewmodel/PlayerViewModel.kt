@@ -81,6 +81,8 @@ class PlayerViewModel(
     private var markerB: FrameMarker? = null
     private var abLoopEnabled = false
           private var abLoopSeekingToA = false
+    @Volatile
+    private var keyframeCounterEnabled = false
 
     private var lastCutFrameInfo: CutFrameInfo? = null
 
@@ -172,9 +174,14 @@ class PlayerViewModel(
 
                       if (
                           abLoopSeekingToA &&
-                          markerA != null &&
-                          event.position <= markerA!!.position
+                          markerB != null &&
+                          event.position < markerB!!.position
                       ) {
+                          /*
+                           * O mpv pode informar a primeira posição após o
+                           * seek alguns frames depois de A. Basta ter voltado
+                           * para antes de B para liberar o próximo ciclo.
+                           */
                           abLoopSeekingToA = false
                       }
 
@@ -600,6 +607,12 @@ class PlayerViewModel(
 
     private fun play() {
 
+        keyframeCounterEnabled = false
+
+        _uiState.update {
+            it.copy(previousKeyframeFrame = null)
+        }
+
         if (
             markerA != null &&
             markerB != null &&
@@ -643,6 +656,10 @@ class PlayerViewModel(
             position = _uiState.value.position
         )
         _uiState.value = _uiState.value.copy(markerASet = true)
+        keyframeCounterEnabled = true
+        updatePreviousKeyframeCounter(
+            _uiState.value.currentFrame
+        )
 
         println(
             "PlayerViewModel: A = frame=${markerA?.frame}, position=${markerA?.position}"
@@ -655,6 +672,10 @@ class PlayerViewModel(
             position = _uiState.value.position
         )
         _uiState.value = _uiState.value.copy(markerBSet = true)
+        keyframeCounterEnabled = true
+        updatePreviousKeyframeCounter(
+            _uiState.value.currentFrame
+        )
 
         println(
             "PlayerViewModel: B = frame=${markerB?.frame}, position=${markerB?.position}"
@@ -664,6 +685,8 @@ class PlayerViewModel(
     fun testCurrentCut() {
         val a = markerA
         val b = markerB
+
+        clearABMarkers()
 
         if (a == null || b == null) {
             println("PlayerViewModel: A/B não definidos")
@@ -780,9 +803,20 @@ class PlayerViewModel(
     }
 
     fun disableABLoop() {
+        clearABMarkers()
+        println("PlayerViewModel: A/B loop OFF e marcadores limpos")
+    }
+
+    private fun clearABMarkers() {
+        markerA = null
+        markerB = null
         abLoopEnabled = false
         abLoopSeekingToA = false
-        println("PlayerViewModel: A/B loop OFF")
+        _uiState.value =
+            _uiState.value.copy(
+                markerASet = false,
+                markerBSet = false
+            )
     }
 
     fun frameForward(frames: Int) {
@@ -795,6 +829,11 @@ class PlayerViewModel(
                     it.currentFrame + frames
             )
         }
+
+        keyframeCounterEnabled = true
+        updatePreviousKeyframeCounter(
+            _uiState.value.currentFrame
+        )
     }
 
     fun frameBackward(frames: Int) {
@@ -809,6 +848,33 @@ class PlayerViewModel(
                         it.currentFrame - frames
                     )
             )
+        }
+
+        keyframeCounterEnabled = true
+        updatePreviousKeyframeCounter(
+            _uiState.value.currentFrame
+        )
+    }
+
+    private fun updatePreviousKeyframeCounter(
+        frame: Long
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val keyframe =
+                player.findPreviousKeyframeFrame(frame)
+
+            _uiState.update { state ->
+                if (
+                    keyframeCounterEnabled &&
+                    state.currentFrame == frame
+                ) {
+                    state.copy(
+                        previousKeyframeFrame = keyframe
+                    )
+                } else {
+                    state
+                }
+            }
         }
     }
 

@@ -260,6 +260,22 @@ class MpvPlayer(
         native.frameBackward(frames)
     }
 
+    override fun findPreviousKeyframeFrame(
+        frame: Long
+    ): Long? {
+        val uri = currentUri ?: return null
+        val pfd = videoSource.openIndependentFileDescriptor(uri) ?: return null
+
+        return try {
+            native.findPreviousKeyframeFrame(
+                fd = pfd.fd,
+                frame = frame
+            )
+        } finally {
+            pfd.close()
+        }
+    }
+
     override fun screenshot() {
 
         println(
