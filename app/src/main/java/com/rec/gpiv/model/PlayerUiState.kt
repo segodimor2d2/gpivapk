@@ -8,6 +8,8 @@ data class PlayerUiState(
     val position: Double = 0.0,
     val duration: Double = 0.0,
     val currentFrame: Long = 0L,
+    val markerASet: Boolean = false,
+    val markerBSet: Boolean = false,
 
     val volume: Double = 100.0,
     val muted: Boolean = false,

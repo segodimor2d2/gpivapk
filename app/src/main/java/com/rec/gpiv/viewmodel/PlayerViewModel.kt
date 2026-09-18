@@ -642,6 +642,7 @@ class PlayerViewModel(
             frame = _uiState.value.currentFrame,
             position = _uiState.value.position
         )
+        _uiState.value = _uiState.value.copy(markerASet = true)
 
         println(
             "PlayerViewModel: A = frame=${markerA?.frame}, position=${markerA?.position}"
@@ -653,6 +654,7 @@ class PlayerViewModel(
             frame = _uiState.value.currentFrame,
             position = _uiState.value.position
         )
+        _uiState.value = _uiState.value.copy(markerBSet = true)
 
         println(
             "PlayerViewModel: B = frame=${markerB?.frame}, position=${markerB?.position}"
