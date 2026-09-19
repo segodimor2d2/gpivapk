@@ -117,11 +117,9 @@ fun PlayerScreen(
         mutableStateOf(GestureTool.NONE)
     }
 
-    fun nextControlRow() {
-
-        controlRow =
-            (controlRow + 1) % 4
-    }
+    var controlSubRowA by remember { mutableStateOf(false) }
+    var controlSubRowB by remember { mutableStateOf(false) }
+    var controlSubRowC by remember { mutableStateOf(false) }
 
     /*
      * --------------------------------------------------------
@@ -263,64 +261,12 @@ fun PlayerScreen(
                     Arrangement.spacedBy(6.dp)
             ) {
 
-                if (controlRow == 3) {
+                if (controlSubRowC) {
 
                     Column(
                         verticalArrangement =
                             Arrangement.spacedBy(10.dp)
                     ) {
-
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-                            CompactButton(
-                                text = "+",
-                                onClick = onNextFile
-                            )
-
-                            CompactButton(
-                                text = "-",
-                                onClick = onPreviousFile
-                            )
-
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-                            CompactButton(
-                                text = "+10",
-                                onClick = onJumpFilesForward
-                            )
-
-                            CompactButton(
-                                text = "-10",
-                                onClick = onJumpFilesBackward
-                            )
-
-                            CompactButton(
-                                text = "A",
-                                onClick = onFirstFile
-                            )
-
-                            CompactButton(
-                                text = "Z",
-                                onClick = onLastFile
-                            )
-                        }
 
                         Row(
                             modifier = Modifier
@@ -355,18 +301,6 @@ fun PlayerScreen(
 
                         }
 
-                    }
-                }
-
-                if (controlRow == 2) {
-
-                    Column(
-                        verticalArrangement =
-                            Arrangement.spacedBy(10.dp)
-                    ) {
-
-
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement =
@@ -376,143 +310,32 @@ fun PlayerScreen(
                                 )
                         ) {
 
-
                             CompactButton(
-                                text = "vol ${uiState.volume}",
-                                onClick = onMute
+                                text = "+10",
+                                onClick = onJumpFilesForward
                             )
 
                             CompactButton(
-                                text = "-",
-                                onClick = onVolumeDown
+                                text = "-10",
+                                onClick = onJumpFilesBackward
                             )
-
 
                             CompactButton(
-                                text = "+",
-                                onClick = onVolumeUp
+                                text = "A",
+                                onClick = onFirstFile
                             )
-                        }
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-                            StatusText(
+                            CompactButton(
                                 text = "Z",
-                                backgroundColor =
-                                    if (gestureTool == GestureTool.ZOOM) {
-                                        Color(0x9900994C)
-                                    } else {
-                                        Color.Transparent
-                                    },
-                                modifier = Modifier
-                                    .clickable {
-                                        gestureTool =
-                                            if (gestureTool == GestureTool.ZOOM) {
-                                                GestureTool.NONE
-                                            } else {
-                                                GestureTool.ZOOM
-                                            }
-                                    }
-                            )
-
-                            StatusText(
-                                text = "B",
-                                backgroundColor =
-                                    if (gestureTool == GestureTool.BRIGHTNESS) {
-                                        Color(0x9900994C)
-                                    } else {
-                                        Color.Transparent
-                                    },
-                                modifier = Modifier
-                                    .clickable {
-                                        gestureTool =
-                                            if (gestureTool == GestureTool.BRIGHTNESS) {
-                                                GestureTool.NONE
-                                            } else {
-                                                GestureTool.BRIGHTNESS
-                                            }
-                                    }
-                            )
-
-
-                            StatusText(
-                                text = "C",
-                                backgroundColor =
-                                    if (gestureTool == GestureTool.CONTRAST) {
-                                        Color(0x9900994C)
-                                    } else {
-                                        Color.Transparent
-                                    },
-                                modifier = Modifier
-                                    .clickable {
-                                        gestureTool =
-                                            if (gestureTool == GestureTool.CONTRAST) {
-                                                GestureTool.NONE
-                                            } else {
-                                                GestureTool.CONTRAST
-                                            }
-                                    }
-                            )
-
-                            StatusText(
-                                text = "G",
-                                backgroundColor =
-                                    if (gestureTool == GestureTool.GAMMA) {
-                                        Color(0x9900994C)
-                                    } else {
-                                        Color.Transparent
-                                    },
-                                modifier = Modifier
-                                    .clickable {
-                                        gestureTool =
-                                            if (gestureTool == GestureTool.GAMMA) {
-                                                GestureTool.NONE
-                                            } else {
-                                                GestureTool.GAMMA
-                                            }
-                                    }
-                            )
-
-                            StatusText(
-                                text = "S",
-                                backgroundColor =
-                                    if (gestureTool == GestureTool.SATURATION) {
-                                        Color(0x9900994C)
-                                    } else {
-                                        Color.Transparent
-                                    },
-                                modifier = Modifier
-                                    .clickable {
-                                        gestureTool =
-                                            if (gestureTool == GestureTool.SATURATION) {
-                                                GestureTool.NONE
-                                            } else {
-                                                GestureTool.SATURATION
-                                            }
-                                    }
-                            )
-
-
-                            StatusText(
-                                text = "0",
-                                modifier = Modifier
-                                    .clickable {
-                                        gestureTool = GestureTool.NONE
-                                    }
+                                onClick = onLastFile
                             )
                         }
+
 
                     }
                 }
 
-                if (controlRow == 1) {
+                if (controlSubRowB) {
 
                     Column(
                         verticalArrangement =
@@ -614,172 +437,277 @@ fun PlayerScreen(
 
                         }
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
 
-
-                            CompactButton(
-                                text = "<<",
-                                onClick = {
-                                    onSeekBackward(SEEK_SECONDS)
-                                }
-                            )
-
-                            CompactButton(
-                                text = ">>",
-                                onClick = {
-                                    onSeekForward(SEEK_SECONDS)
-                                }
-                            )
-
-                            CompactButton(
-                                text = "<=",
-                                onClick = {
-                                    onFrameBackward(SEEK_FRAMES_PLUS)
-                                }
-                            )
-
-                            CompactButton(
-                                text = "=>",
-                                onClick = {
-                                    onFrameForward(SEEK_FRAMES_PLUS)
-                                }
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy( 10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-                            CompactButton(
-                                text = "<",
-                                onClick = {
-                                    onFrameBackward(SEEK_FRAMES)
-                                }
-                            )
-
-                            CompactButton(
-                                text = ">",
-                                onClick = {
-                                    onFrameForward(SEEK_FRAMES)
-                                }
-                            )
-
-                        }
 
                     }
                 }
 
 
+                if (controlSubRowA) {
 
-                if (controlRow == 0) {
-
-                    Column(
-                        verticalArrangement =
-                            Arrangement.spacedBy(10.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement =
+                            Arrangement.spacedBy(
+                                10.dp,
+                                Alignment.CenterHorizontally
+                            )
                     ) {
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
 
-                            CompactButton(
-                                text = "+",
-                                onClick = onNextFile
-                            )
+                        CompactButton(
+                            text = "vol ${uiState.volume}",
+                            onClick = onMute
+                        )
 
-                            CompactButton(
-                                text = "-",
-                                onClick = onPreviousFile
-                            )
-
-                        }
+                        CompactButton(
+                            text = "-",
+                            onClick = onVolumeDown
+                        )
 
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy(
-                                    10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-
-                            CompactButton(
-                                text = "<<",
-                                onClick = {
-                                    onSeekBackward(SEEK_SECONDS)
-                                }
-                            )
-
-                            CompactButton(
-                                text = ">>",
-                                onClick = {
-                                    onSeekForward(SEEK_SECONDS)
-                                }
-                            )
-
-                            CompactButton(
-                                text = "<=",
-                                onClick = {
-                                    onFrameBackward(SEEK_FRAMES_PLUS)
-                                }
-                            )
-
-                            CompactButton(
-                                text = "=>",
-                                onClick = {
-                                    onFrameForward(SEEK_FRAMES_PLUS)
-                                }
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy( 10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-                            CompactButton(
-                                text = "<",
-                                onClick = {
-                                    onFrameBackward(SEEK_FRAMES)
-                                }
-                            )
-
-                            CompactButton(
-                                text = ">",
-                                onClick = {
-                                    onFrameForward(SEEK_FRAMES)
-                                }
-                            )
-
-                        }
-
-
+                        CompactButton(
+                            text = "+",
+                            onClick = onVolumeUp
+                        )
                     }
 
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement =
+                            Arrangement.spacedBy(
+                                10.dp,
+                                Alignment.CenterHorizontally
+                            )
+                    ) {
+
+                        StatusText(
+                            text = "Z",
+                            backgroundColor =
+                                if (gestureTool == GestureTool.ZOOM) {
+                                    Color(0x9900994C)
+                                } else {
+                                    Color.Transparent
+                                },
+                            modifier = Modifier
+                                .clickable {
+                                    gestureTool =
+                                        if (gestureTool == GestureTool.ZOOM) {
+                                            GestureTool.NONE
+                                        } else {
+                                            GestureTool.ZOOM
+                                        }
+                                }
+                        )
+
+                        StatusText(
+                            text = "B",
+                            backgroundColor =
+                                if (gestureTool == GestureTool.BRIGHTNESS) {
+                                    Color(0x9900994C)
+                                } else {
+                                    Color.Transparent
+                                },
+                            modifier = Modifier
+                                .clickable {
+                                    gestureTool =
+                                        if (gestureTool == GestureTool.BRIGHTNESS) {
+                                            GestureTool.NONE
+                                        } else {
+                                            GestureTool.BRIGHTNESS
+                                        }
+                                }
+                        )
+
+
+                        StatusText(
+                            text = "C",
+                            backgroundColor =
+                                if (gestureTool == GestureTool.CONTRAST) {
+                                    Color(0x9900994C)
+                                } else {
+                                    Color.Transparent
+                                },
+                            modifier = Modifier
+                                .clickable {
+                                    gestureTool =
+                                        if (gestureTool == GestureTool.CONTRAST) {
+                                            GestureTool.NONE
+                                        } else {
+                                            GestureTool.CONTRAST
+                                        }
+                                }
+                        )
+
+                        StatusText(
+                            text = "G",
+                            backgroundColor =
+                                if (gestureTool == GestureTool.GAMMA) {
+                                    Color(0x9900994C)
+                                } else {
+                                    Color.Transparent
+                                },
+                            modifier = Modifier
+                                .clickable {
+                                    gestureTool =
+                                        if (gestureTool == GestureTool.GAMMA) {
+                                            GestureTool.NONE
+                                        } else {
+                                            GestureTool.GAMMA
+                                        }
+                                }
+                        )
+
+                        StatusText(
+                            text = "S",
+                            backgroundColor =
+                                if (gestureTool == GestureTool.SATURATION) {
+                                    Color(0x9900994C)
+                                } else {
+                                    Color.Transparent
+                                },
+                            modifier = Modifier
+                                .clickable {
+                                    gestureTool =
+                                        if (gestureTool == GestureTool.SATURATION) {
+                                            GestureTool.NONE
+                                        } else {
+                                            GestureTool.SATURATION
+                                        }
+                                }
+                        )
+
+
+                        StatusText(
+                            text = "0",
+                            modifier = Modifier
+                                .clickable {
+                                    gestureTool = GestureTool.NONE
+                                }
+                        )
+                    }
                 }
 
 
+
+
+                Column(
+                    verticalArrangement =
+                        Arrangement.spacedBy(10.dp)
+                ) {
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement =
+                            Arrangement.spacedBy(
+                                10.dp,
+                                Alignment.CenterHorizontally
+                            )
+                    ) {
+
+                        CompactButton(
+                            text = "+",
+                            onClick = onNextFile
+                        )
+
+                        CompactButton(
+                            text = "-",
+                            onClick = onPreviousFile
+                        )
+
+                    }
+
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement =
+                            Arrangement.spacedBy(
+                                10.dp,
+                                Alignment.CenterHorizontally
+                            )
+                    ) {
+
+
+                        CompactButton(
+                            text = "<<",
+                            onClick = {
+                                onSeekBackward(SEEK_SECONDS)
+                            }
+                        )
+
+                        CompactButton(
+                            text = ">>",
+                            onClick = {
+                                onSeekForward(SEEK_SECONDS)
+                            }
+                        )
+
+                        CompactButton(
+                            text = "<=",
+                            onClick = {
+                                onFrameBackward(SEEK_FRAMES_PLUS)
+                            }
+                        )
+
+                        CompactButton(
+                            text = "=>",
+                            onClick = {
+                                onFrameForward(SEEK_FRAMES_PLUS)
+                            }
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement =
+                            Arrangement.spacedBy( 10.dp,
+                                Alignment.CenterHorizontally
+                            )
+                    ) {
+
+                        StatusText(
+                            text = "↻",
+                            modifier =
+                                Modifier.clickable {
+                                    onRotate()
+                                }
+                        )
+                        CompactButton(
+                            text = "<",
+                            onClick = {
+                                onFrameBackward(SEEK_FRAMES)
+                            }
+                        )
+
+                        CompactButton(
+                            text = ">",
+                            onClick = {
+                                onFrameForward(SEEK_FRAMES)
+                            }
+                        )
+                        StatusText(
+                            text = "Z",
+                            backgroundColor =
+                                if (gestureTool == GestureTool.ZOOM) {
+                                    Color(0x9900994C)
+                                } else {
+                                    Color.Transparent
+                                },
+                            modifier = Modifier
+                                .clickable {
+                                    gestureTool =
+                                        if (gestureTool == GestureTool.ZOOM) {
+                                            GestureTool.NONE
+                                        } else {
+                                            GestureTool.ZOOM
+                                        }
+                                }
+                        )
+
+                    }
+
+
+                }
 
 
                 /*
@@ -815,7 +743,9 @@ fun PlayerScreen(
                             "%.2f".format(
                                 uiState.duration
                             ),
-                        modifier = Modifier.clickable { nextControlRow() }
+                        modifier = Modifier.clickable {
+                            controlSubRowB = !controlSubRowB
+                        }
                     )
 
                     StatusText(
@@ -846,34 +776,33 @@ fun PlayerScreen(
                         Alignment.CenterVertically
                 ) {
 
-
-
                     StatusText(
-                        text = "Z",
+                        text = "mn",
                         backgroundColor =
-                            if (gestureTool == GestureTool.ZOOM) {
+                            if (controlSubRowC ) {
                                 Color(0x9900994C)
                             } else {
                                 Color.Transparent
                             },
-                        modifier = Modifier
-                            .clickable {
-                                gestureTool =
-                                    if (gestureTool == GestureTool.ZOOM) {
-                                        GestureTool.NONE
-                                    } else {
-                                        GestureTool.ZOOM
-                                    }
-                            }
+                        modifier = Modifier.clickable {
+                            controlSubRowC = !controlSubRowC
+                        }
                     )
 
                     StatusText(
-                        text = "↻",
-                        modifier =
-                            Modifier.clickable {
-                                onRotate()
-                            }
+                        text = "ff",
+                        backgroundColor =
+                            if (controlSubRowA) {
+                                Color(0x9900994C)
+                            } else {
+                                Color.Transparent
+                            },
+                        modifier = Modifier.clickable {
+                            controlSubRowA = !controlSubRowA
+                        }
                     )
+
+
 
                     StatusText(
                         text = "%",
@@ -912,6 +841,7 @@ fun PlayerScreen(
                                     }
                             }
                     )
+
 
                 }
 
