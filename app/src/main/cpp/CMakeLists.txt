@@ -69,6 +69,7 @@ add_library(
     gpiv_native
     SHARED
     mpv_native.cpp
+    mpv_native_surface.cpp
     mpv_context.cpp
     mpv_context_egl.cpp
     mpv_context_render.cpp
