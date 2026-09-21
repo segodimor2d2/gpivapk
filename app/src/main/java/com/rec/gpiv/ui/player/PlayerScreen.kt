@@ -79,6 +79,7 @@ fun PlayerScreen(
     onDisableABLoop: () -> Unit,
     onSaveFileTag: (String) -> Unit,
     onMakeTags: () -> Unit,
+    onTestMoveTags: () -> Unit,
 
     onScreenshot: () -> Unit,
     onSetScreenshotMethod: (String) -> Unit,
@@ -438,7 +439,11 @@ fun PlayerScreen(
                             )
 
                             StatusText(
-                                text = "mv"
+                                text = "mv",
+                                modifier = Modifier
+                                    .clickable {
+                                        onTestMoveTags()
+                                    }
                             )
 
                             StatusText(

@@ -570,6 +570,9 @@ class MainActivity : ComponentActivity() {
                         onMakeTags =
                             viewModel::makeTagFolders,
 
+                        onTestMoveTags =
+                            viewModel::testMoveTags,
+
                         onTestCut =
                             viewModel::testCurrentCut,
 

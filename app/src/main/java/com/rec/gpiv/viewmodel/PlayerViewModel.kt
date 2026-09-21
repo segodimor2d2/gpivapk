@@ -1179,6 +1179,625 @@ class PlayerViewModel(
         return null
     }
 
+    private fun getUniqueDestinationName(
+        resolver: ContentResolver,
+        destinationChildrenUri: Uri,
+        fileName: String
+    ): String {
+
+        val existingNames =
+            mutableSetOf<String>()
+
+        resolver.query(
+            destinationChildrenUri,
+            arrayOf(
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+
+            val nameIndex =
+                cursor.getColumnIndex(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                )
+
+            while (cursor.moveToNext()) {
+
+                existingNames.add(
+                    cursor.getString(nameIndex)
+                )
+            }
+        }
+
+        if (!existingNames.contains(fileName)) {
+            return fileName
+        }
+
+        val dotIndex =
+            fileName.lastIndexOf('.')
+
+        val baseName: String
+        val extension: String
+
+        if (
+            dotIndex > 0 &&
+            dotIndex < fileName.length - 1
+        ) {
+
+            baseName =
+                fileName.substring(
+                    0,
+                    dotIndex
+                )
+
+            extension =
+                fileName.substring(
+                    dotIndex
+                )
+
+        } else {
+
+            baseName = fileName
+            extension = ""
+        }
+
+        var number = 1
+
+        while (true) {
+
+            val candidate =
+                String.format(
+                    "%s_%03d%s",
+                    baseName,
+                    number,
+                    extension
+                )
+
+            if (!existingNames.contains(candidate)) {
+                return candidate
+            }
+
+            number++
+        }
+    }
+
+    fun testMoveTags() {
+
+        val treeUri =
+            fileList.getCurrentTreeUri()
+
+        if (treeUri == null) {
+
+            println(
+                "PlayerViewModel: " +
+                    "nenhuma pasta selecionada"
+            )
+
+            return
+        }
+
+        val resolver =
+            getApplication<Application>()
+                .contentResolver
+
+        try {
+
+            val treeDocumentId =
+                DocumentsContract.getTreeDocumentId(
+                    treeUri
+                )
+
+            val rootUri =
+                DocumentsContract.buildDocumentUriUsingTree(
+                    treeUri,
+                    treeDocumentId
+                )
+
+            val childrenUri =
+                DocumentsContract.buildChildDocumentsUriUsingTree(
+                    treeUri,
+                    treeDocumentId
+                )
+
+            var csvUri: Uri? = null
+
+            /*
+             * ----------------------------------------------------
+             * LOCALIZAR gpivtags.csv
+             * ----------------------------------------------------
+             */
+
+            resolver.query(
+                childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                ),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+
+                val idIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                    )
+
+                val nameIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                    )
+
+                while (cursor.moveToNext()) {
+
+                    val name =
+                        cursor.getString(nameIndex)
+
+                    if (name == "gpivtags.csv") {
+
+                        val documentId =
+                            cursor.getString(idIndex)
+
+                        csvUri =
+                            DocumentsContract
+                                .buildDocumentUriUsingTree(
+                                    treeUri,
+                                    documentId
+                                )
+
+                        break
+                    }
+                }
+            }
+
+            if (csvUri == null) {
+
+                println(
+                    "PlayerViewModel: " +
+                        "gpivtags.csv não encontrado"
+                )
+
+                return
+            }
+
+            /*
+             * ----------------------------------------------------
+             * LOCALIZAR PASTAS DAS TAGS
+             * ----------------------------------------------------
+             */
+
+            val tagFolders =
+                mutableMapOf<String, Uri>()
+
+            resolver.query(
+                childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_MIME_TYPE
+                ),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+
+                val idIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                    )
+
+                val nameIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                    )
+
+                val mimeIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_MIME_TYPE
+                    )
+
+                while (cursor.moveToNext()) {
+
+                    val name =
+                        cursor.getString(nameIndex)
+
+                    val mime =
+                        cursor.getString(mimeIndex)
+
+                    if (
+                        mime ==
+                            DocumentsContract.Document.MIME_TYPE_DIR
+                    ) {
+
+                        val folderUri =
+                            DocumentsContract
+                                .buildDocumentUriUsingTree(
+                                    treeUri,
+                                    cursor.getString(idIndex)
+                                )
+
+                        tagFolders[name] =
+                            folderUri
+                    }
+                }
+            }
+
+            /*
+             * ----------------------------------------------------
+             * PROCESSAR gpivtags.csv
+             * ----------------------------------------------------
+             */
+
+            var allMovesSuccessful = true
+
+            resolver.openInputStream(
+                csvUri!!
+            )?.bufferedReader(
+                Charsets.UTF_8
+            )?.useLines { lines ->
+
+
+                lines.forEach { line ->
+
+                    val parts =
+                        line.split(",")
+
+                    if (parts.size < 3) {
+
+                        println(
+                            "PlayerViewModel: " +
+                                "linha inválida = $line"
+                        )
+
+                        allMovesSuccessful = false
+
+                        return@forEach
+                    }
+
+                    val fileUri =
+                        Uri.parse(parts[0])
+
+                    val tag =
+                        parts[1].trim()
+
+                    val destinationUri =
+                        tagFolders[tag]
+
+                    if (destinationUri == null) {
+
+                        println(
+                            "PlayerViewModel: " +
+                                "ERRO -> pasta não encontrada " +
+                                "para tag=$tag"
+                        )
+
+                        allMovesSuccessful = false
+
+                        return@forEach
+                    }
+
+                    /*
+                     * ------------------------------------------------
+                     * OBTER NOME DO ARQUIVO
+                     * ------------------------------------------------
+                     */
+
+                    val fileName =
+                        getFileName(fileUri)
+
+                    if (
+                        fileName.isBlank() ||
+                        fileName == "Nenhum arquivo"
+                    ) {
+
+                        println(
+                            "PlayerViewModel: " +
+                                "ERRO -> nome vazio para $fileUri"
+                        )
+
+                        allMovesSuccessful = false
+
+                        return@forEach
+                    }
+
+                    /*
+                     * ------------------------------------------------
+                     * VERIFICAR COLISÃO
+                     * ------------------------------------------------
+                     */
+
+                    val destinationChildrenUri =
+                        DocumentsContract
+                            .buildChildDocumentsUriUsingTree(
+                                treeUri,
+                                DocumentsContract
+                                    .getDocumentId(destinationUri)
+                            )
+
+                    var destinationExists =
+                        false
+
+                    resolver.query(
+                        destinationChildrenUri,
+                        arrayOf(
+                            DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                        ),
+                        null,
+                        null,
+                        null
+                    )?.use { cursor ->
+
+                        val nameIndex =
+                            cursor.getColumnIndex(
+                                DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                            )
+
+                        while (cursor.moveToNext()) {
+
+                            val existingName =
+                                cursor.getString(nameIndex)
+
+                            if (
+                                existingName == fileName
+                            ) {
+
+                                destinationExists =
+                                    true
+
+                                break
+                            }
+                        }
+                    }
+
+                    var destinationFileName =
+                        fileName
+
+                    if (destinationExists) {
+
+                        destinationFileName =
+                            getUniqueDestinationName(
+                                resolver,
+                                destinationChildrenUri,
+                                fileName
+                            )
+
+                        println(
+                            "PlayerViewModel: " +
+                                "COLISÃO -> $fileName " +
+                                "novo nome = $destinationFileName"
+                        )
+                    }
+
+
+                    /*
+                     * ------------------------------------------------
+                     * MOVER / COPIAR ARQUIVO
+                     * ------------------------------------------------
+                     */
+
+                    println(
+                        "PlayerViewModel: " +
+                            "MV -> $fileName para $tag"
+                    )
+
+                    if (!destinationExists) {
+
+                        /*
+                         * ------------------------------------------------
+                         * SEM COLISÃO
+                         * ------------------------------------------------
+                         */
+
+                        val movedUri =
+                            DocumentsContract.moveDocument(
+                                resolver,
+                                fileUri,
+                                rootUri,
+                                destinationUri
+                            )
+
+                        if (movedUri != null) {
+
+                            println(
+                                "PlayerViewModel: " +
+                                    "MV SUCESSO -> $fileName -> $tag"
+                            )
+
+                        } else {
+
+                            println(
+                                "PlayerViewModel: " +
+                                    "MV ERRO -> $fileName -> $tag"
+                            )
+
+                            allMovesSuccessful = false
+                        }
+
+                    } else {
+
+                        /*
+                         * ------------------------------------------------
+                         * COM COLISÃO
+                         *
+                         * COPIAR -> CONFIRMAR -> APAGAR ORIGINAL
+                         * ------------------------------------------------
+                         */
+
+                        println(
+                            "PlayerViewModel: " +
+                                "COLISÃO -> copiando como " +
+                                destinationFileName
+                        )
+
+                        val mimeType =
+                            resolver.getType(fileUri)
+                                ?: "application/octet-stream"
+
+                        val newFileUri =
+                            DocumentsContract.createDocument(
+                                resolver,
+                                destinationUri,
+                                mimeType,
+                                destinationFileName
+                            )
+
+                        if (newFileUri == null) {
+
+                            println(
+                                "PlayerViewModel: " +
+                                    "ERRO -> não foi possível criar " +
+                                    destinationFileName
+                            )
+
+                            allMovesSuccessful = false
+
+                            return@forEach
+                        }
+
+                        var bytesCopied = 0L
+
+                        try {
+
+                            resolver.openInputStream(fileUri).use { input ->
+
+                                resolver.openOutputStream(newFileUri).use { output ->
+
+                                    if (input == null || output == null) {
+
+                                        throw IllegalStateException(
+                                            "Não foi possível abrir origem ou destino"
+                                        )
+                                    }
+
+                                    val buffer =
+                                        ByteArray(1024 * 1024)
+
+                                    while (true) {
+
+                                        val count =
+                                            input.read(buffer)
+
+                                        if (count == -1) {
+                                            break
+                                        }
+
+                                        output.write(
+                                            buffer,
+                                            0,
+                                            count
+                                        )
+
+                                        bytesCopied += count
+                                    }
+
+                                    output.flush()
+                                }
+                            }
+
+                            println(
+                                "PlayerViewModel: " +
+                                    "CÓPIA SUCESSO -> " +
+                                    destinationFileName +
+                                    " bytes=" +
+                                    bytesCopied
+                            )
+
+                            /*
+                             * ------------------------------------------------
+                             * APAGAR ORIGINAL SOMENTE APÓS A CÓPIA
+                             * ------------------------------------------------
+                             */
+
+                            val deleted =
+                                DocumentsContract.deleteDocument(
+                                    resolver,
+                                    fileUri
+                                )
+
+                            if (deleted) {
+
+                                println(
+                                    "PlayerViewModel: " +
+                                        "MV SUCESSO -> " +
+                                        fileName +
+                                        " -> " +
+                                        destinationFileName
+                                )
+
+                            } else {
+
+                                println(
+                                    "PlayerViewModel: " +
+                                        "ERRO -> cópia feita, " +
+                                        "mas não foi possível apagar " +
+                                        fileName
+                                )
+
+                                allMovesSuccessful = false
+                            }
+
+                        } catch (e: Exception) {
+
+                            /*
+                             * A cópia falhou.
+                             *
+                             * NÃO apagamos o original.
+                             */
+
+                            println(
+                                "PlayerViewModel: " +
+                                    "ERRO NA CÓPIA -> " +
+                                    destinationFileName
+                            )
+
+                            Log.e(
+                                "PlayerViewModel",
+                                "Erro ao copiar arquivo por colisão",
+                                e
+                            )
+
+                            allMovesSuccessful = false
+                        }
+
+                    }
+                }
+
+            }
+
+            /*
+             * ------------------------------------------------
+             * RESULTADO DO MV
+             * ------------------------------------------------
+             */
+
+            if (allMovesSuccessful) {
+
+                println(
+                    "PlayerViewModel: " +
+                        "TODOS OS MOVIMENTOS FORAM CONCLUÍDOS"
+                )
+
+            } else {
+
+                println(
+                    "PlayerViewModel: " +
+                        "ERRO -> pelo menos um arquivo " +
+                        "não foi movido"
+                )
+            }
+
+        } catch (e: Exception) {
+
+            Log.e(
+                "PlayerViewModel",
+                "Erro ao mover arquivos por tag",
+                e
+            )
+        }
+    }
+
     private fun getFileName(uri: Uri): String {
         val resolver = getApplication<Application>().contentResolver
 
