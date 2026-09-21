@@ -18,6 +18,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -26,7 +28,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,12 +40,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.text.style.TextAlign
 
 import com.rec.gpiv.model.PlayerUiState
 import com.rec.gpiv.player.MpvNative
 import com.rec.gpiv.player.SEEK_SECONDS
 import com.rec.gpiv.player.SEEK_FRAMES
 import com.rec.gpiv.player.SEEK_FRAMES_PLUS
+
 
 @Composable
 fun PlayerScreen(
@@ -121,6 +129,18 @@ fun PlayerScreen(
     var controlSubRowB by remember { mutableStateOf(false) }
     var controlSubRowC by remember { mutableStateOf(false) }
 
+    var controlSubRowD by remember { mutableStateOf(false) }
+    var texto by remember { mutableStateOf("") }
+    val tagFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(controlSubRowD) {
+        if (controlSubRowD) {
+            tagFocusRequester.requestFocus()
+            // keyboardController?.show()
+        }
+    }
+
     /*
      * --------------------------------------------------------
      * TELA INTEIRA
@@ -195,8 +215,6 @@ fun PlayerScreen(
                 horizontalAlignment =
                     Alignment.CenterHorizontally,
 
-                verticalArrangement =
-                    Arrangement.spacedBy(6.dp)
             ) {
 
 
@@ -230,6 +248,41 @@ fun PlayerScreen(
                     )
 
                 }
+
+                if (controlSubRowD) {
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "tag"
+                        )
+
+                        OutlinedTextField(
+                            value = texto,
+                            onValueChange = { texto = it },
+                            singleLine = true,
+
+                            textStyle = LocalTextStyle.current.copy(
+                                textAlign = TextAlign.Center
+                            ),
+
+                            modifier = Modifier
+                                .fillMaxWidth(0.1f)
+                                .focusRequester(tagFocusRequester),
+
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                disabledBorderColor = Color.Transparent,
+                                errorBorderColor = Color.Transparent
+                            )
+                        )
+                    }
+                }
+
             }
         }
 
@@ -260,6 +313,7 @@ fun PlayerScreen(
                 verticalArrangement =
                     Arrangement.spacedBy(6.dp)
             ) {
+
 
                 if (controlSubRowC) {
 
@@ -605,14 +659,44 @@ fun PlayerScreen(
                             )
                     ) {
 
-                        CompactButton(
-                            text = "+",
-                            onClick = onNextFile
+                        StatusText(
+                            text = "tg",
+                            backgroundColor =
+                                if (controlSubRowD) {
+                                    Color(0x9900994C)
+                                } else {
+                                    Color.Transparent
+                                },
+                            modifier = Modifier.clickable {
+                                controlSubRowD = !controlSubRowD
+                            }
                         )
 
-                        CompactButton(
+                        StatusText(
+                            text = "+",
+                            Modifier.clickable {
+                                onNextFile()
+                            }
+                        )
+
+                        StatusText(
                             text = "-",
-                            onClick = onPreviousFile
+                            Modifier.clickable {
+                                onPreviousFile()
+                            }
+                        )
+
+                        StatusText(
+                            text = "mn",
+                            backgroundColor =
+                                if (controlSubRowC ) {
+                                    Color(0x9900994C)
+                                } else {
+                                    Color.Transparent
+                                },
+                            modifier = Modifier.clickable {
+                                controlSubRowC = !controlSubRowC
+                            }
                         )
 
                     }
@@ -777,19 +861,6 @@ fun PlayerScreen(
                 ) {
 
                     StatusText(
-                        text = "mn",
-                        backgroundColor =
-                            if (controlSubRowC ) {
-                                Color(0x9900994C)
-                            } else {
-                                Color.Transparent
-                            },
-                        modifier = Modifier.clickable {
-                            controlSubRowC = !controlSubRowC
-                        }
-                    )
-
-                    StatusText(
                         text = "ff",
                         backgroundColor =
                             if (controlSubRowA) {
@@ -801,8 +872,6 @@ fun PlayerScreen(
                             controlSubRowA = !controlSubRowA
                         }
                     )
-
-
 
                     StatusText(
                         text = "%",
