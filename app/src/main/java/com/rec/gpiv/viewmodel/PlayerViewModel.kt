@@ -6,6 +6,7 @@ import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rec.gpiv.model.PlayerUiState
+import com.rec.gpiv.player.FileItem
 import com.rec.gpiv.player.FileList
 import com.rec.gpiv.player.MpvNative
 import com.rec.gpiv.player.MpvPlayer
@@ -413,9 +414,16 @@ class PlayerViewModel(
 
                 if (currentFile != null) {
 
+                    val fileTag =
+                        readFileTag(
+                            uri,
+                            currentFile.uri
+                        )
+
                     _uiState.value =
                         _uiState.value.copy(
                             filename = currentFile.name,
+                            fileTag = fileTag,
                             fileIndex = fileList.currentIndex(),
                             fileCount = fileList.size()
                         )
@@ -605,23 +613,102 @@ class PlayerViewModel(
                 return
             }
 
-            val line =
-                "${fileUri},${tag},${index}\n"
+            if (tag.isBlank()) {
+
+                val lines =
+                    resolver.openInputStream(
+                        csvUri!!
+                    )?.bufferedReader(
+                        Charsets.UTF_8
+                    )?.use { reader ->
+                        reader.readLines()
+                    } ?: emptyList()
+
+                val updatedLines =
+                    lines.filter { line ->
+
+                        val parts =
+                            line.split(",")
+
+                        parts.size < 3 ||
+                            parts[0] != fileUri.toString()
+                    }
+
+                resolver.openOutputStream(
+                    csvUri!!,
+                    "wt"
+                )?.use { output ->
+
+                    output.write(
+                        (
+                            updatedLines.joinToString("\n") +
+                                if (updatedLines.isNotEmpty()) "\n" else ""
+                        ).toByteArray(
+                            Charsets.UTF_8
+                        )
+                    )
+                }
+
+                println(
+                    "PlayerViewModel: tag removida = $fileUri"
+                )
+
+                return
+            }
+
+            val newLine =
+                "${fileUri},${tag},${index}"
+
+            val lines =
+                resolver.openInputStream(
+                    csvUri!!
+                )?.bufferedReader(Charsets.UTF_8)?.use { reader ->
+                    reader.readLines()
+                } ?: emptyList()
+
+            val updatedLines =
+                mutableListOf<String>()
+
+            var found =
+                false
+
+            for (oldLine in lines) {
+
+                val parts =
+                    oldLine.split(",")
+
+                if (
+                    parts.size >= 3 &&
+                    parts[0] == fileUri.toString()
+                ) {
+                    updatedLines.add(newLine)
+                    found = true
+                } else {
+                    updatedLines.add(oldLine)
+                }
+            }
+
+            if (!found) {
+                updatedLines.add(newLine)
+            }
 
             resolver.openOutputStream(
                 csvUri!!,
-                "wa"
+                "wt"
             )?.use { output ->
 
                 output.write(
-                    line.toByteArray(
+                    (
+                        updatedLines.joinToString("\n") +
+                            "\n"
+                    ).toByteArray(
                         Charsets.UTF_8
                     )
                 )
             }
 
             println(
-                "PlayerViewModel: tag salva = $line"
+                "PlayerViewModel: tag salva = $newLine"
             )
 
         } catch (e: Exception) {
@@ -638,6 +725,127 @@ class PlayerViewModel(
         tag: String
     ) {
         saveFileTag(tag)
+    }
+
+    private fun readFileTag(
+        treeUri: Uri,
+        fileUri: Uri
+    ): String? {
+
+        val resolver =
+            getApplication<Application>()
+                .contentResolver
+
+        try {
+
+            val treeDocumentId =
+                DocumentsContract.getTreeDocumentId(
+                    treeUri
+                )
+
+            val childrenUri =
+                DocumentsContract.buildChildDocumentsUriUsingTree(
+                    treeUri,
+                    treeDocumentId
+                )
+
+            var csvUri: Uri? = null
+
+            resolver.query(
+                childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                ),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+
+                val idIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                    )
+
+                val nameIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                    )
+
+                while (cursor.moveToNext()) {
+
+                    val name =
+                        cursor.getString(nameIndex)
+
+                    if (name == "gpivtags.csv") {
+
+                        val documentId =
+                            cursor.getString(idIndex)
+
+                        csvUri =
+                            DocumentsContract
+                                .buildDocumentUriUsingTree(
+                                    treeUri,
+                                    documentId
+                                )
+
+                        break
+                    }
+                }
+            }
+
+            if (csvUri == null) {
+
+                println(
+                    "PlayerViewModel: " +
+                        "gpivtags.csv não encontrado para leitura"
+                )
+
+                return null
+            }
+
+            resolver.openInputStream(
+                csvUri!!
+            )?.bufferedReader(
+                Charsets.UTF_8
+            )?.useLines { lines ->
+
+                for (line in lines) {
+
+                    val parts =
+                        line.split(",")
+
+                    if (parts.size >= 3) {
+
+                        val uri =
+                            parts[0]
+
+                        val tag =
+                            parts[1]
+
+                        if (uri == fileUri.toString()) {
+
+                            println(
+                                "PlayerViewModel: " +
+                                    "tag encontrada = $tag"
+                            )
+
+                            return tag
+                        }
+                    }
+                }
+            }
+
+        } catch (e: Exception) {
+
+            Log.e(
+                "PlayerViewModel",
+                "Erro ao ler gpivtags.csv",
+                e
+            )
+        }
+
+        return null
     }
 
     private fun getFileName(uri: Uri): String {
@@ -668,6 +876,39 @@ class PlayerViewModel(
         }
     }
 
+    private fun updateCurrentFileState(
+        file: FileItem
+    ) {
+
+        val treeUri =
+            fileList.getCurrentTreeUri()
+                ?: return
+
+        selectedUri =
+            file.uri
+
+        val fileTag =
+            readFileTag(
+                treeUri,
+                file.uri
+            )
+
+        _uiState.value =
+            _uiState.value.copy(
+                filename = file.name,
+                fileTag = fileTag,
+                fileIndex = fileList.currentIndex(),
+                fileCount = fileList.size(),
+                loading = true,
+                position = 0.0,
+                duration = 0.0
+            )
+
+        player.load(
+            file.uri
+        )
+    }
+
     fun nextFile() {
 
         val file =
@@ -682,19 +923,7 @@ class PlayerViewModel(
             return
         }
 
-        selectedUri = file.uri
-
-        _uiState.value =
-            _uiState.value.copy(
-                filename = file.name,
-                fileIndex = fileList.currentIndex(),
-                fileCount = fileList.size(),
-                loading = true,
-                position = 0.0,
-                duration = 0.0
-            )
-
-        player.load(file.uri)
+        updateCurrentFileState(file)
     }
 
     fun previousFile() {
@@ -711,19 +940,7 @@ class PlayerViewModel(
             return
         }
 
-        selectedUri = file.uri
-
-        _uiState.value =
-            _uiState.value.copy(
-                filename = file.name,
-                fileIndex = fileList.currentIndex(),
-                fileCount = fileList.size(),
-                loading = true,
-                position = 0.0,
-                duration = 0.0
-            )
-
-        player.load(file.uri)
+        updateCurrentFileState(file)
     }
 
     fun firstFile() {
@@ -738,19 +955,7 @@ class PlayerViewModel(
             return
         }
 
-        selectedUri = file.uri
-
-        _uiState.value =
-            _uiState.value.copy(
-                filename = file.name,
-                fileIndex = fileList.currentIndex(),
-                fileCount = fileList.size(),
-                loading = true,
-                position = 0.0,
-                duration = 0.0
-            )
-
-        player.load(file.uri)
+        updateCurrentFileState(file)
     }
 
     fun lastFile() {
@@ -765,19 +970,7 @@ class PlayerViewModel(
             return
         }
 
-        selectedUri = file.uri
-
-        _uiState.value =
-            _uiState.value.copy(
-                filename = file.name,
-                fileIndex = fileList.currentIndex(),
-                fileCount = fileList.size(),
-                loading = true,
-                position = 0.0,
-                duration = 0.0
-            )
-
-        player.load(file.uri)
+        updateCurrentFileState(file)
     }
 
     fun jumpFiles(offset: Int) {
@@ -792,19 +985,7 @@ class PlayerViewModel(
             return
         }
 
-        selectedUri = file.uri
-
-        _uiState.value =
-            _uiState.value.copy(
-                filename = file.name,
-                fileIndex = fileList.currentIndex(),
-                fileCount = fileList.size(),
-                loading = true,
-                position = 0.0,
-                duration = 0.0
-            )
-
-        player.load(file.uri)
+        updateCurrentFileState(file)
     }
 
     fun jumpFilesForward() {

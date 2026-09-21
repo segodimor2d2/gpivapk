@@ -275,6 +275,15 @@ class FileList(
                         continue
                     }
 
+                    if (name == "gpivtags.csv") {
+
+                        println(
+                            "FileList: ignorando arquivo de tags = $name"
+                        )
+
+                        continue
+                    }
+
 
                     /*
                      * ----------------------------------------
