@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -41,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.ImeAction
 
 import com.rec.gpiv.model.PlayerUiState
 import com.rec.gpiv.player.MpvNative
@@ -74,6 +77,7 @@ fun PlayerScreen(
     onSeekForward: (Double) -> Unit,
     onSeekTo: (Double) -> Unit,
     onDisableABLoop: () -> Unit,
+    onSaveFileTag: (String) -> Unit,
 
     onScreenshot: () -> Unit,
     onSetScreenshotMethod: (String) -> Unit,
@@ -277,6 +281,16 @@ fun PlayerScreen(
                             modifier = Modifier
                                 .fillMaxWidth(0.1f)
                                 .focusRequester(tagFocusRequester),
+
+                            keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Done
+                            ),
+
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    onSaveFileTag(texto)
+                                }
+                            ),
 
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color.Transparent,

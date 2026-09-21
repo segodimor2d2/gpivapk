@@ -389,6 +389,10 @@ class PlayerViewModel(
                 uri
             )
 
+        if (loaded) {
+            ensureGpivTagsFile(uri)
+        }
+
         val currentUri =
             selectedUri
 
@@ -419,6 +423,221 @@ class PlayerViewModel(
             }
 
         }
+    }
+
+    private fun ensureGpivTagsFile(
+        treeUri: Uri
+    ) {
+
+        val resolver =
+            getApplication<Application>()
+                .contentResolver
+
+        try {
+
+            val treeDocumentId =
+                DocumentsContract.getTreeDocumentId(
+                    treeUri
+                )
+
+            val childrenUri =
+                DocumentsContract.buildChildDocumentsUriUsingTree(
+                    treeUri,
+                    treeDocumentId
+                )
+
+            resolver.query(
+                childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                ),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+
+                val idIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                    )
+
+                val nameIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                    )
+
+                while (cursor.moveToNext()) {
+
+                    val name =
+                        cursor.getString(nameIndex)
+
+                    if (name == "gpivtags.csv") {
+
+                        println(
+                            "PlayerViewModel: gpivtags.csv já existe"
+                        )
+
+                        return
+                    }
+                }
+            }
+
+            val documentUri =
+                DocumentsContract.buildDocumentUriUsingTree(
+                    treeUri,
+                    treeDocumentId
+                )
+
+            val createdUri =
+                DocumentsContract.createDocument(
+                    resolver,
+                    documentUri,
+                    "text/csv",
+                    "gpivtags.csv"
+                )
+
+            println(
+                "PlayerViewModel: gpivtags.csv criado = $createdUri"
+            )
+
+        } catch (e: Exception) {
+
+            Log.e(
+                "PlayerViewModel",
+                "Erro ao criar gpivtags.csv",
+                e
+            )
+        }
+    }
+
+    private fun saveFileTag(
+        tag: String
+    ) {
+
+        val currentFile =
+            fileList.current()
+                ?: return
+
+        val treeUri =
+            fileList.getCurrentTreeUri()
+                ?: return
+
+        val index =
+            fileList.currentIndex()
+
+        val fileUri =
+            currentFile.uri
+
+        println(
+            "PlayerViewModel: arquivo atual = $fileUri"
+        )
+
+        val resolver =
+            getApplication<Application>()
+                .contentResolver
+
+        try {
+
+            val treeDocumentId =
+                DocumentsContract.getTreeDocumentId(
+                    treeUri
+                )
+
+            val childrenUri =
+                DocumentsContract.buildChildDocumentsUriUsingTree(
+                    treeUri,
+                    treeDocumentId
+                )
+
+            var csvUri: Uri? = null
+
+            resolver.query(
+                childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                ),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+
+                val idIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                    )
+
+                val nameIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                    )
+
+                while (cursor.moveToNext()) {
+
+                    val name =
+                        cursor.getString(nameIndex)
+
+                    if (name == "gpivtags.csv") {
+
+                        val documentId =
+                            cursor.getString(idIndex)
+
+                        csvUri =
+                            DocumentsContract
+                                .buildDocumentUriUsingTree(
+                                    treeUri,
+                                    documentId
+                                )
+
+                        break
+                    }
+                }
+            }
+
+            if (csvUri == null) {
+
+                println(
+                    "PlayerViewModel: " +
+                        "gpivtags.csv não encontrado"
+                )
+
+                return
+            }
+
+            val line =
+                "${fileUri},${tag},${index}\n"
+
+            resolver.openOutputStream(
+                csvUri!!,
+                "wa"
+            )?.use { output ->
+
+                output.write(
+                    line.toByteArray(
+                        Charsets.UTF_8
+                    )
+                )
+            }
+
+            println(
+                "PlayerViewModel: tag salva = $line"
+            )
+
+        } catch (e: Exception) {
+
+            Log.e(
+                "PlayerViewModel",
+                "Erro ao salvar tag",
+                e
+            )
+        }
+    }
+
+    fun testSaveFileTag(
+        tag: String
+    ) {
+        saveFileTag(tag)
     }
 
     private fun getFileName(uri: Uri): String {

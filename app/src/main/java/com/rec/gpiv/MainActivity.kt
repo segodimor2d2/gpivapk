@@ -564,6 +564,9 @@ class MainActivity : ComponentActivity() {
                         onSetMarkerB =
                             viewModel::setMarkerB,
 
+                        onSaveFileTag =
+                            viewModel::testSaveFileTag,
+
                         onTestCut =
                             viewModel::testCurrentCut,
 
