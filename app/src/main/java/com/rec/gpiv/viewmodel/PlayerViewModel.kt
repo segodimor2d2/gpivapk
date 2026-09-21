@@ -457,11 +457,20 @@ class PlayerViewModel(
                     treeDocumentId
                 )
 
+            /*
+             * ----------------------------------------------------
+             * LOCALIZAR OU CRIAR gpivlogs
+             * ----------------------------------------------------
+             */
+
+            var gpivlogsUri: Uri? = null
+
             resolver.query(
                 childrenUri,
                 arrayOf(
                     DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_MIME_TYPE
                 ),
                 null,
                 null,
@@ -483,40 +492,135 @@ class PlayerViewModel(
                     val name =
                         cursor.getString(nameIndex)
 
-                    if (name == "gpivtags.csv") {
+                    if (name == "gpivlogs") {
 
-                        println(
-                            "PlayerViewModel: gpivtags.csv já existe"
-                        )
+                        val documentId =
+                            cursor.getString(idIndex)
 
-                        return
+                        gpivlogsUri =
+                            DocumentsContract
+                                .buildDocumentUriUsingTree(
+                                    treeUri,
+                                    documentId
+                                )
+
+                        break
                     }
                 }
             }
 
-            val documentUri =
-                DocumentsContract.buildDocumentUriUsingTree(
-                    treeUri,
-                    treeDocumentId
+            if (gpivlogsUri == null) {
+
+                val rootUri =
+                    DocumentsContract
+                        .buildDocumentUriUsingTree(
+                            treeUri,
+                            treeDocumentId
+                        )
+
+                gpivlogsUri =
+                    DocumentsContract.createDocument(
+                        resolver,
+                        rootUri,
+                        DocumentsContract.Document.MIME_TYPE_DIR,
+                        "gpivlogs"
+                    )
+
+                println(
+                    "PlayerViewModel: " +
+                        "gpivlogs criado = $gpivlogsUri"
                 )
+            }
+
+            if (gpivlogsUri == null) {
+
+                println(
+                    "PlayerViewModel: " +
+                        "ERRO -> não foi possível criar gpivlogs"
+                )
+
+                return
+            }
+
+            /*
+             * ----------------------------------------------------
+             * LOCALIZAR gpivtags.csv DENTRO DE gpivlogs
+             * ----------------------------------------------------
+             */
+
+            val gpivlogsChildrenUri =
+                DocumentsContract
+                    .buildChildDocumentsUriUsingTree(
+                        treeUri,
+                        DocumentsContract.getDocumentId(
+                            gpivlogsUri
+                        )
+                    )
+
+            var csvExists = false
+
+            resolver.query(
+                gpivlogsChildrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                ),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+
+                val nameIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                    )
+
+                while (cursor.moveToNext()) {
+
+                    val name =
+                        cursor.getString(nameIndex)
+
+                    if (name == "gpivtags.csv") {
+
+                        csvExists = true
+                        break
+                    }
+                }
+            }
+
+            if (csvExists) {
+
+                println(
+                    "PlayerViewModel: " +
+                        "gpivlogs/gpivtags.csv já existe"
+                )
+
+                return
+            }
+
+            /*
+             * ----------------------------------------------------
+             * CRIAR gpivtags.csv DENTRO DE gpivlogs
+             * ----------------------------------------------------
+             */
 
             val createdUri =
                 DocumentsContract.createDocument(
                     resolver,
-                    documentUri,
+                    gpivlogsUri,
                     "text/csv",
                     "gpivtags.csv"
                 )
 
             println(
-                "PlayerViewModel: gpivtags.csv criado = $createdUri"
+                "PlayerViewModel: " +
+                    "gpivlogs/gpivtags.csv criado = $createdUri"
             )
 
         } catch (e: Exception) {
 
             Log.e(
                 "PlayerViewModel",
-                "Erro ao criar gpivtags.csv",
+                "Erro ao criar gpivlogs/gpivtags.csv",
                 e
             )
         }
@@ -543,16 +647,88 @@ class PlayerViewModel(
                     treeDocumentId
                 )
 
-            var csvUri: Uri? = null
-
             /*
              * ----------------------------------------------------
-             * LOCALIZAR gpivtags.csv
+             * LOCALIZAR gpivlogs
              * ----------------------------------------------------
              */
 
+            var gpivlogsUri: Uri? = null
+
             resolver.query(
                 childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                ),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+
+                val idIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                    )
+
+                val nameIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                    )
+
+                while (cursor.moveToNext()) {
+
+                    val name =
+                        cursor.getString(nameIndex)
+
+                    if (name == "gpivlogs") {
+
+                        val documentId =
+                            cursor.getString(idIndex)
+
+                        gpivlogsUri =
+                            DocumentsContract
+                                .buildDocumentUriUsingTree(
+                                    treeUri,
+                                    documentId
+                                )
+
+                        break
+                    }
+                }
+            }
+
+            if (gpivlogsUri == null) {
+
+                println(
+                    "PlayerViewModel: " +
+                        "gpivlogs não encontrado"
+                )
+
+                lisTags.clear()
+
+                return
+            }
+
+            /*
+             * ----------------------------------------------------
+             * LOCALIZAR gpivtags.csv DENTRO DE gpivlogs
+             * ----------------------------------------------------
+             */
+
+            val gpivlogsChildrenUri =
+                DocumentsContract
+                    .buildChildDocumentsUriUsingTree(
+                        treeUri,
+                        DocumentsContract.getDocumentId(
+                            gpivlogsUri
+                        )
+                    )
+
+            var csvUri: Uri? = null
+
+            resolver.query(
+                gpivlogsChildrenUri,
                 arrayOf(
                     DocumentsContract.Document.COLUMN_DOCUMENT_ID,
                     DocumentsContract.Document.COLUMN_DISPLAY_NAME
@@ -598,8 +774,10 @@ class PlayerViewModel(
 
                 println(
                     "PlayerViewModel: " +
-                        "gpivtags.csv não encontrado"
+                        "gpivlogs/gpivtags.csv não encontrado"
                 )
+
+                lisTags.clear()
 
                 return
             }
@@ -628,9 +806,16 @@ class PlayerViewModel(
                         val tag =
                             parts[1].trim()
 
-                        if (tag.isNotBlank()) {
+                        if (isValidTag(tag)) {
 
                             lisTags.add(tag)
+
+                        } else {
+
+                            println(
+                                "PlayerViewModel: " +
+                                    "TAG INVÁLIDA NO CSV -> $tag"
+                            )
                         }
                     }
                 }
@@ -662,7 +847,8 @@ class PlayerViewModel(
             )
 
             println(
-                "PlayerViewModel: quantidade de tags = ${lisTags.size}"
+                "PlayerViewModel: " +
+                    "quantidade de tags = ${lisTags.size}"
             )
 
         } catch (e: Exception) {
@@ -840,9 +1026,20 @@ class PlayerViewModel(
         }
     }
 
+    private fun isValidTag(tag: String): Boolean {
+        return tag.matches(Regex("[a-z0-9]+"))
+    }
+
     private fun saveFileTag(
         tag: String
     ) {
+
+        if (!isValidTag(tag)) {
+            println(
+                "PlayerViewModel: TAG INVÁLIDA -> $tag"
+            )
+            return
+        }
 
         val currentFile =
             fileList.current()
@@ -879,10 +1076,86 @@ class PlayerViewModel(
                     treeDocumentId
                 )
 
-            var csvUri: Uri? = null
+            /*
+             * ----------------------------------------------------
+             * LOCALIZAR gpivlogs
+             * ----------------------------------------------------
+             */
+
+            var gpivlogsUri: Uri? = null
 
             resolver.query(
                 childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                ),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+
+                val idIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                    )
+
+                val nameIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                    )
+
+                while (cursor.moveToNext()) {
+
+                    val name =
+                        cursor.getString(nameIndex)
+
+                    if (name == "gpivlogs") {
+
+                        val documentId =
+                            cursor.getString(idIndex)
+
+                        gpivlogsUri =
+                            DocumentsContract
+                                .buildDocumentUriUsingTree(
+                                    treeUri,
+                                    documentId
+                                )
+
+                        break
+                    }
+                }
+            }
+
+            if (gpivlogsUri == null) {
+
+                println(
+                    "PlayerViewModel: " +
+                        "gpivlogs não encontrado"
+                )
+
+                return
+            }
+
+            /*
+             * ----------------------------------------------------
+             * LOCALIZAR gpivtags.csv DENTRO DE gpivlogs
+             * ----------------------------------------------------
+             */
+
+            val gpivlogsChildrenUri =
+                DocumentsContract
+                    .buildChildDocumentsUriUsingTree(
+                        treeUri,
+                        DocumentsContract.getDocumentId(
+                            gpivlogsUri
+                        )
+                    )
+
+            var csvUri: Uri? = null
+
+            resolver.query(
+                gpivlogsChildrenUri,
                 arrayOf(
                     DocumentsContract.Document.COLUMN_DOCUMENT_ID,
                     DocumentsContract.Document.COLUMN_DISPLAY_NAME
@@ -928,11 +1201,17 @@ class PlayerViewModel(
 
                 println(
                     "PlayerViewModel: " +
-                        "gpivtags.csv não encontrado"
+                        "gpivlogs/gpivtags.csv não encontrado"
                 )
 
                 return
             }
+
+            /*
+             * ----------------------------------------------------
+             * REMOVER TAG
+             * ----------------------------------------------------
+             */
 
             if (tag.isBlank()) {
 
@@ -982,13 +1261,21 @@ class PlayerViewModel(
                 return
             }
 
+            /*
+             * ----------------------------------------------------
+             * SALVAR TAG
+             * ----------------------------------------------------
+             */
+
             val newLine =
                 "${fileUri},${tag},${index}"
 
             val lines =
                 resolver.openInputStream(
                     csvUri!!
-                )?.bufferedReader(Charsets.UTF_8)?.use { reader ->
+                )?.bufferedReader(
+                    Charsets.UTF_8
+                )?.use { reader ->
                     reader.readLines()
                 } ?: emptyList()
 
@@ -1080,10 +1367,86 @@ class PlayerViewModel(
                     treeDocumentId
                 )
 
-            var csvUri: Uri? = null
+            /*
+             * ----------------------------------------------------
+             * LOCALIZAR gpivlogs
+             * ----------------------------------------------------
+             */
+
+            var gpivlogsUri: Uri? = null
 
             resolver.query(
                 childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                ),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+
+                val idIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                    )
+
+                val nameIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                    )
+
+                while (cursor.moveToNext()) {
+
+                    val name =
+                        cursor.getString(nameIndex)
+
+                    if (name == "gpivlogs") {
+
+                        val documentId =
+                            cursor.getString(idIndex)
+
+                        gpivlogsUri =
+                            DocumentsContract
+                                .buildDocumentUriUsingTree(
+                                    treeUri,
+                                    documentId
+                                )
+
+                        break
+                    }
+                }
+            }
+
+            if (gpivlogsUri == null) {
+
+                println(
+                    "PlayerViewModel: " +
+                        "gpivlogs não encontrado para leitura"
+                )
+
+                return null
+            }
+
+            /*
+             * ----------------------------------------------------
+             * LOCALIZAR gpivtags.csv DENTRO DE gpivlogs
+             * ----------------------------------------------------
+             */
+
+            val gpivlogsChildrenUri =
+                DocumentsContract
+                    .buildChildDocumentsUriUsingTree(
+                        treeUri,
+                        DocumentsContract.getDocumentId(
+                            gpivlogsUri
+                        )
+                    )
+
+            var csvUri: Uri? = null
+
+            resolver.query(
+                gpivlogsChildrenUri,
                 arrayOf(
                     DocumentsContract.Document.COLUMN_DOCUMENT_ID,
                     DocumentsContract.Document.COLUMN_DISPLAY_NAME
@@ -1129,11 +1492,17 @@ class PlayerViewModel(
 
                 println(
                     "PlayerViewModel: " +
-                        "gpivtags.csv não encontrado para leitura"
+                        "gpivlogs/gpivtags.csv não encontrado para leitura"
                 )
 
                 return null
             }
+
+            /*
+             * ----------------------------------------------------
+             * LER TAG DO ARQUIVO
+             * ----------------------------------------------------
+             */
 
             resolver.openInputStream(
                 csvUri!!
@@ -1263,6 +1632,57 @@ class PlayerViewModel(
         }
     }
 
+    private fun getNextGpivTagsLogName(
+        resolver: ContentResolver,
+        gpivlogsChildrenUri: Uri
+    ): String {
+
+        val existingNames =
+            mutableSetOf<String>()
+
+        resolver.query(
+            gpivlogsChildrenUri,
+            arrayOf(
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+
+            val nameIndex =
+                cursor.getColumnIndex(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                )
+
+            while (cursor.moveToNext()) {
+
+                if (nameIndex >= 0) {
+
+                    existingNames.add(
+                        cursor.getString(nameIndex)
+                    )
+                }
+            }
+        }
+
+        for (index in 1..999) {
+
+            val name =
+                "gpivtagslog_" +
+                    String.format("%03d", index) +
+                    ".txt"
+
+            if (!existingNames.contains(name)) {
+                return name
+            }
+        }
+
+        throw IllegalStateException(
+            "Não foi possível encontrar nome disponível para gpivtagslog"
+        )
+    }
+
     private fun getNextGpivTagsBackupName(
         resolver: ContentResolver,
         childrenUri: Uri
@@ -1350,16 +1770,86 @@ class PlayerViewModel(
                     treeDocumentId
                 )
 
-            var csvUri: Uri? = null
-
             /*
              * ----------------------------------------------------
-             * LOCALIZAR gpivtags.csv
+             * LOCALIZAR gpivlogs
              * ----------------------------------------------------
              */
 
+            var gpivlogsUri: Uri? = null
+
             resolver.query(
                 childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                ),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+
+                val idIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                    )
+
+                val nameIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                    )
+
+                while (cursor.moveToNext()) {
+
+                    val name =
+                        cursor.getString(nameIndex)
+
+                    if (name == "gpivlogs") {
+
+                        val documentId =
+                            cursor.getString(idIndex)
+
+                        gpivlogsUri =
+                            DocumentsContract
+                                .buildDocumentUriUsingTree(
+                                    treeUri,
+                                    documentId
+                                )
+
+                        break
+                    }
+                }
+            }
+
+            if (gpivlogsUri == null) {
+
+                println(
+                    "PlayerViewModel: " +
+                        "gpivlogs não encontrado"
+                )
+
+                return
+            }
+
+            /*
+             * ----------------------------------------------------
+             * LOCALIZAR gpivtags.csv DENTRO DE gpivlogs
+             * ----------------------------------------------------
+             */
+
+            val gpivlogsChildrenUri =
+                DocumentsContract
+                    .buildChildDocumentsUriUsingTree(
+                        treeUri,
+                        DocumentsContract.getDocumentId(
+                            gpivlogsUri
+                        )
+                    )
+
+            var csvUri: Uri? = null
+
+            resolver.query(
+                gpivlogsChildrenUri,
                 arrayOf(
                     DocumentsContract.Document.COLUMN_DOCUMENT_ID,
                     DocumentsContract.Document.COLUMN_DISPLAY_NAME
@@ -1405,7 +1895,7 @@ class PlayerViewModel(
 
                 println(
                     "PlayerViewModel: " +
-                        "gpivtags.csv não encontrado"
+                        "gpivlogs/gpivtags.csv não encontrado"
                 )
 
                 return
@@ -1479,14 +1969,18 @@ class PlayerViewModel(
              * ----------------------------------------------------
              */
 
-            var allMovesSuccessful = true
+            val pendingLines =
+                mutableListOf<String>()
+
+            var processedCount = 0
+            var failedCount = 0
+            val logLines = mutableListOf<String>()
 
             resolver.openInputStream(
                 csvUri!!
             )?.bufferedReader(
                 Charsets.UTF_8
             )?.useLines { lines ->
-
 
                 lines.forEach { line ->
 
@@ -1500,7 +1994,14 @@ class PlayerViewModel(
                                 "linha inválida = $line"
                         )
 
-                        allMovesSuccessful = false
+                        logLines.add(
+                            "ERRO | " +
+                                "Linha: $line | " +
+                                "Motivo: linha CSV inválida"
+                        )
+
+                        pendingLines.add(line)
+                        failedCount++
 
                         return@forEach
                     }
@@ -1522,7 +2023,14 @@ class PlayerViewModel(
                                 "para tag=$tag"
                         )
 
-                        allMovesSuccessful = false
+                        logLines.add(
+                            "ERRO | " +
+                                "Tag: $tag | " +
+                                "Motivo: pasta não encontrada"
+                        )
+
+                        pendingLines.add(line)
+                        failedCount++
 
                         return@forEach
                     }
@@ -1546,7 +2054,14 @@ class PlayerViewModel(
                                 "ERRO -> nome vazio para $fileUri"
                         )
 
-                        allMovesSuccessful = false
+                        logLines.add(
+                            "ERRO | " +
+                                "URI: $fileUri | " +
+                                "Motivo: nome do arquivo vazio ou inacessível"
+                        )
+
+                        pendingLines.add(line)
+                        failedCount++
 
                         return@forEach
                     }
@@ -1619,7 +2134,6 @@ class PlayerViewModel(
                         )
                     }
 
-
                     /*
                      * ------------------------------------------------
                      * MOVER / COPIAR ARQUIVO
@@ -1654,6 +2168,14 @@ class PlayerViewModel(
                                     "MV SUCESSO -> $fileName -> $tag"
                             )
 
+                            logLines.add(
+                                "SUCESSO | " +
+                                    "Arquivo: $fileName | " +
+                                    "Tag: $tag"
+                            )
+
+                            processedCount++
+
                         } else {
 
                             println(
@@ -1661,7 +2183,17 @@ class PlayerViewModel(
                                     "MV ERRO -> $fileName -> $tag"
                             )
 
-                            allMovesSuccessful = false
+                            logLines.add(
+                                "ERRO | " +
+                                    "Arquivo: $fileName | " +
+                                    "Tag: $tag | " +
+                                    "Motivo: falha ao mover arquivo"
+                            )
+
+                            pendingLines.add(line)
+                            failedCount++
+
+                        return@forEach
                         }
 
                     } else {
@@ -1700,7 +2232,17 @@ class PlayerViewModel(
                                     destinationFileName
                             )
 
-                            allMovesSuccessful = false
+                            logLines.add(
+                                "ERRO | " +
+                                    "Arquivo: $fileName | " +
+                                    "Destino: $destinationFileName | " +
+                                    "Motivo: não foi possível criar arquivo de destino"
+                            )
+
+                            pendingLines.add(line)
+                            failedCount++
+
+                        return@forEach
 
                             return@forEach
                         }
@@ -1775,6 +2317,15 @@ class PlayerViewModel(
                                         destinationFileName
                                 )
 
+                                logLines.add(
+                                    "SUCESSO | " +
+                                        "Arquivo: $fileName | " +
+                                        "Destino: $destinationFileName | " +
+                                        "Tag: $tag"
+                                )
+
+                                processedCount++
+
                             } else {
 
                                 println(
@@ -1784,7 +2335,16 @@ class PlayerViewModel(
                                         fileName
                                 )
 
-                                allMovesSuccessful = false
+                                logLines.add(
+                                    "ERRO | " +
+                                        "Arquivo: $fileName | " +
+                                        "Motivo: cópia realizada, mas não foi possível apagar arquivo original"
+                                )
+
+                                pendingLines.add(line)
+                                failedCount++
+
+                        return@forEach
                             }
 
                         } catch (e: Exception) {
@@ -1807,12 +2367,21 @@ class PlayerViewModel(
                                 e
                             )
 
-                            allMovesSuccessful = false
-                        }
+                            logLines.add(
+                                "ERRO | " +
+                                    "Arquivo: $fileName | " +
+                                    "Destino: $destinationFileName | " +
+                                    "Motivo: erro ao copiar arquivo por colisão | " +
+                                    "Erro: ${e.message}"
+                            )
 
+                            pendingLines.add(line)
+                            failedCount++
+
+                        return@forEach
+                        }
                     }
                 }
-
             }
 
             /*
@@ -1821,80 +2390,124 @@ class PlayerViewModel(
              * ------------------------------------------------
              */
 
-            if (allMovesSuccessful) {
+
+            println(
+                "PlayerViewModel: " +
+                    "MOVIMENTOS PROCESSADOS = $processedCount"
+            )
+
+            println(
+                "PlayerViewModel: " +
+                    "MOVIMENTOS PENDENTES = $failedCount"
+            )
+
+            /*
+             * ------------------------------------------------
+             * BACKUP DO gpivtags.csv
+             * ------------------------------------------------
+             */
+
+            val backupName =
+                getNextGpivTagsBackupName(
+                    resolver,
+                    gpivlogsChildrenUri
+                )
+
+            println(
+                "PlayerViewModel: " +
+                    "INICIANDO CRIAÇÃO DO NOME DO LOG"
+            )
+
+            val logName =
+                getNextGpivTagsLogName(
+                    resolver,
+                    gpivlogsChildrenUri
+                )
+
+            println(
+                "PlayerViewModel: " +
+                    "LOG -> $logName"
+            )
+
+            val logUri =
+                DocumentsContract.createDocument(
+                    resolver,
+                    gpivlogsUri,
+                    "text/plain",
+                    logName
+                )
+
+            if (logUri != null) {
 
                 println(
                     "PlayerViewModel: " +
-                        "TODOS OS MOVIMENTOS FORAM CONCLUÍDOS"
+                        "LOG CRIADO -> $logName"
                 )
 
-                /*
-                 * ------------------------------------------------
-                 * BACKUP DO gpivtags.csv
-                 * ------------------------------------------------
-                 */
+                try {
 
-                val backupName =
-                    getNextGpivTagsBackupName(
-                        resolver,
-                        childrenUri
-                    )
+                    resolver.openOutputStream(logUri).use { output ->
 
-                println(
-                    "PlayerViewModel: " +
-                        "BACKUP -> gpivtags.csv -> $backupName"
-                )
+                        if (output == null) {
+                            throw IllegalStateException(
+                                "Não foi possível abrir arquivo de log"
+                            )
+                        }
 
-                val backupUri =
-                    DocumentsContract.renameDocument(
-                        resolver,
-                        csvUri!!,
-                        backupName
-                    )
-
-                if (backupUri != null) {
-
-                    println(
-                        "PlayerViewModel: " +
-                            "BACKUP SUCESSO -> $backupName"
-                    )
-
-                    /*
-                     * ------------------------------------------------
-                     * CRIAR NOVO gpivtags.csv
-                     * ------------------------------------------------
-                     */
-
-                    val newCsvUri =
-                        DocumentsContract.createDocument(
-                            resolver,
-                            rootUri,
-                            "text/csv",
-                            "gpivtags.csv"
+                        output.write(
+                            "GPIV TAGS - LOG\n".toByteArray(Charsets.UTF_8)
                         )
 
-                    if (newCsvUri != null) {
-
-                        println(
-                            "PlayerViewModel: " +
-                                "NOVO CSV CRIADO -> gpivtags.csv"
+                        output.write(
+                            "==============================\n"
+                                .toByteArray(Charsets.UTF_8)
                         )
 
-                    } else {
+                        logLines.forEach { logLine ->
 
-                        println(
-                            "PlayerViewModel: " +
-                                "ERRO -> não foi possível criar " +
-                                "novo gpivtags.csv"
+                            output.write(
+                                "$logLine\n".toByteArray(Charsets.UTF_8)
+                            )
+                        }
+
+                        output.write(
+                            "\n".toByteArray(Charsets.UTF_8)
                         )
+
+                        output.write(
+                            "==============================\n"
+                                .toByteArray(Charsets.UTF_8)
+                        )
+
+                        output.write(
+                            "PROCESSADOS: $processedCount\n"
+                                .toByteArray(Charsets.UTF_8)
+                        )
+
+                        output.write(
+                            "PENDENTES: $failedCount\n"
+                                .toByteArray(Charsets.UTF_8)
+                        )
+
+                        output.write(
+                            "==============================\n"
+                                .toByteArray(Charsets.UTF_8)
+                        )
+
+                        output.flush()
                     }
 
-                } else {
-
                     println(
                         "PlayerViewModel: " +
-                            "ERRO -> não foi possível renomear " +
-                            "gpivtags.csv"
+                            "LOG GRAVADO -> $logName"
+                    )
+
+                } catch (e: Exception) {
+
+                    Log.e(
+                        "PlayerViewModel",
+                        "Erro ao gravar arquivo de log",
+                        e
                     )
                 }
 
@@ -1902,8 +2515,104 @@ class PlayerViewModel(
 
                 println(
                     "PlayerViewModel: " +
-                        "ERRO -> pelo menos um arquivo " +
-                        "não foi movido"
+                        "ERRO -> não foi possível criar " +
+                        "log $logName"
+                )
+            }
+
+            println(
+                "PlayerViewModel: " +
+                    "BACKUP -> gpivtags.csv -> $backupName"
+            )
+
+            val backupUri =
+                DocumentsContract.renameDocument(
+                    resolver,
+                    csvUri!!,
+                    backupName
+                )
+
+            if (backupUri != null) {
+
+                println(
+                    "PlayerViewModel: " +
+                        "BACKUP SUCESSO -> $backupName"
+                )
+
+                /*
+                 * ------------------------------------------------
+                 * CRIAR NOVO gpivtags.csv
+                 * ------------------------------------------------
+                 */
+
+                val newCsvUri =
+                    DocumentsContract.createDocument(
+                        resolver,
+                        gpivlogsUri,
+                        "text/csv",
+                        "gpivtags.csv"
+                    )
+
+                if (newCsvUri != null) {
+
+                    println(
+                        "PlayerViewModel: " +
+                            "NOVO CSV CRIADO -> gpivtags.csv"
+                    )
+                    try {
+
+                        resolver.openOutputStream(newCsvUri).use { output ->
+
+                            if (output == null) {
+                                throw IllegalStateException(
+                                    "Não foi possível abrir novo gpivtags.csv"
+                                )
+                            }
+
+                            pendingLines.forEach { line ->
+
+                                output.write(
+                                    line.toByteArray(Charsets.UTF_8)
+                                )
+
+                                output.write(
+                                    "\n".toByteArray(Charsets.UTF_8)
+                                )
+                            }
+
+                            output.flush()
+                        }
+
+                        println(
+                            "PlayerViewModel: " +
+                                "PENDENTES GRAVADOS = " +
+                                pendingLines.size
+                        )
+
+                    } catch (e: Exception) {
+
+                        Log.e(
+                            "PlayerViewModel",
+                            "Erro ao gravar pendentes no novo gpivtags.csv",
+                            e
+                        )
+                    }
+
+                } else {
+
+                    println(
+                        "PlayerViewModel: " +
+                            "ERRO -> não foi possível criar " +
+                            "novo gpivtags.csv"
+                    )
+                }
+
+            } else {
+
+                println(
+                    "PlayerViewModel: " +
+                        "ERRO -> não foi possível renomear " +
+                        "gpivtags.csv"
                 )
             }
 

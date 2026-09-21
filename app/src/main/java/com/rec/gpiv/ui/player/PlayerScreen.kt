@@ -280,7 +280,7 @@ fun PlayerScreen(
                             ),
 
                             modifier = Modifier
-                                .fillMaxWidth(0.1f)
+                                .fillMaxWidth(0.2f)
                                 .focusRequester(tagFocusRequester),
 
                             keyboardOptions = KeyboardOptions(
@@ -447,7 +447,7 @@ fun PlayerScreen(
                             )
 
                             StatusText(
-                                text = "make",
+                                text = "mkd",
                                 modifier = Modifier
                                     .clickable {
                                         onMakeTags()
@@ -697,42 +697,39 @@ fun PlayerScreen(
                             )
                     ) {
 
-                        StatusText(
+
+                        CompactButton(
                             text = "tg",
-                            backgroundColor =
+                            containerColor =
                                 if (controlSubRowD) {
                                     Color(0x9900994C)
                                 } else {
                                     Color.Transparent
                                 },
-                            modifier = Modifier.clickable {
+                            onClick = {
                                 controlSubRowD = !controlSubRowD
                             }
                         )
 
-                        StatusText(
+                        CompactButton(
                             text = "+",
-                            Modifier.clickable {
-                                onNextFile()
-                            }
+                            onClick = onNextFile
                         )
 
-                        StatusText(
+                        CompactButton(
                             text = "-",
-                            Modifier.clickable {
-                                onPreviousFile()
-                            }
+                            onClick = onPreviousFile
                         )
 
-                        StatusText(
+                        CompactButton(
                             text = "mn",
-                            backgroundColor =
-                                if (controlSubRowC ) {
+                            containerColor =
+                                if (controlSubRowC) {
                                     Color(0x9900994C)
                                 } else {
                                     Color.Transparent
                                 },
-                            modifier = Modifier.clickable {
+                            onClick = {
                                 controlSubRowC = !controlSubRowC
                             }
                         )
