@@ -75,6 +75,8 @@ class PlayerViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
+    private val tagsEnabled = false
+
     private var screenshotMethod =
             ScreenshotMethod.FRAMEBUFFER
 
@@ -392,7 +394,7 @@ class PlayerViewModel(
                 uri
             )
 
-        if (loaded) {
+        if (loaded && tagsEnabled) {
             ensureGpivTagsFile(uri)
             loadLisTags(uri)
         }
@@ -418,10 +420,14 @@ class PlayerViewModel(
                 if (currentFile != null) {
 
                     val fileTag =
-                        readFileTag(
-                            uri,
-                            currentFile.uri
-                        )
+                        if (tagsEnabled) {
+                            readFileTag(
+                                uri,
+                                currentFile.uri
+                            )
+                        } else {
+                            ""
+                        }
 
                     _uiState.value =
                         _uiState.value.copy(
@@ -2669,10 +2675,14 @@ class PlayerViewModel(
             file.uri
 
         val fileTag =
-            readFileTag(
-                treeUri,
-                file.uri
-            )
+            if (tagsEnabled) {
+                readFileTag(
+                    treeUri,
+                    file.uri
+                )
+            } else {
+                ""
+            }
 
         _uiState.value =
             _uiState.value.copy(
