@@ -1263,6 +1263,55 @@ class PlayerViewModel(
         }
     }
 
+    private fun getNextGpivTagsBackupName(
+        resolver: ContentResolver,
+        childrenUri: Uri
+    ): String {
+
+        val existingNames =
+            mutableSetOf<String>()
+
+        resolver.query(
+            childrenUri,
+            arrayOf(
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+
+            val nameIndex =
+                cursor.getColumnIndex(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                )
+
+            while (cursor.moveToNext()) {
+
+                existingNames.add(
+                    cursor.getString(nameIndex)
+                )
+            }
+        }
+
+        var number = 1
+
+        while (true) {
+
+            val candidate =
+                String.format(
+                    "gpivtagsbkp_%03d.csv",
+                    number
+                )
+
+            if (!existingNames.contains(candidate)) {
+                return candidate
+            }
+
+            number++
+        }
+    }
+
     fun testMoveTags() {
 
         val treeUri =
@@ -1779,6 +1828,76 @@ class PlayerViewModel(
                         "TODOS OS MOVIMENTOS FORAM CONCLUÍDOS"
                 )
 
+                /*
+                 * ------------------------------------------------
+                 * BACKUP DO gpivtags.csv
+                 * ------------------------------------------------
+                 */
+
+                val backupName =
+                    getNextGpivTagsBackupName(
+                        resolver,
+                        childrenUri
+                    )
+
+                println(
+                    "PlayerViewModel: " +
+                        "BACKUP -> gpivtags.csv -> $backupName"
+                )
+
+                val backupUri =
+                    DocumentsContract.renameDocument(
+                        resolver,
+                        csvUri!!,
+                        backupName
+                    )
+
+                if (backupUri != null) {
+
+                    println(
+                        "PlayerViewModel: " +
+                            "BACKUP SUCESSO -> $backupName"
+                    )
+
+                    /*
+                     * ------------------------------------------------
+                     * CRIAR NOVO gpivtags.csv
+                     * ------------------------------------------------
+                     */
+
+                    val newCsvUri =
+                        DocumentsContract.createDocument(
+                            resolver,
+                            rootUri,
+                            "text/csv",
+                            "gpivtags.csv"
+                        )
+
+                    if (newCsvUri != null) {
+
+                        println(
+                            "PlayerViewModel: " +
+                                "NOVO CSV CRIADO -> gpivtags.csv"
+                        )
+
+                    } else {
+
+                        println(
+                            "PlayerViewModel: " +
+                                "ERRO -> não foi possível criar " +
+                                "novo gpivtags.csv"
+                        )
+                    }
+
+                } else {
+
+                    println(
+                        "PlayerViewModel: " +
+                            "ERRO -> não foi possível renomear " +
+                            "gpivtags.csv"
+                    )
+                }
+
             } else {
 
                 println(
@@ -1821,7 +1940,10 @@ class PlayerViewModel(
                 }
             } ?: "Nenhum arquivo"
         } catch (e: Exception) {
-            Log.e("PlayerViewModel", "Erro ao obter nome do arquivo: $uri", e)
+            Log.e(
+                "PlayerViewModel",
+                "Arquivo não encontrado ou inacessível: $uri"
+            )
             "Nenhum arquivo"
         }
     }
