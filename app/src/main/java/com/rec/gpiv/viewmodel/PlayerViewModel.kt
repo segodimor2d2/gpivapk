@@ -653,6 +653,11 @@ class PlayerViewModel(
                     "PlayerViewModel: tag removida = $fileUri"
                 )
 
+                _uiState.value =
+                    _uiState.value.copy(
+                        fileTag = null
+                    )
+
                 return
             }
 
@@ -710,6 +715,11 @@ class PlayerViewModel(
             println(
                 "PlayerViewModel: tag salva = $newLine"
             )
+
+            _uiState.value =
+                _uiState.value.copy(
+                    fileTag = tag
+                )
 
         } catch (e: Exception) {
 

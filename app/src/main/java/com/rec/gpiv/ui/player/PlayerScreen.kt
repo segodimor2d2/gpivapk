@@ -252,8 +252,7 @@ fun PlayerScreen(
                     )
 
                     StatusText(
-                        text = "tag",
-                        // text = "${uiState.fileTag}",
+                        text = "${uiState.fileTag}",
                     )
 
                 }
@@ -289,6 +288,8 @@ fun PlayerScreen(
                             keyboardActions = KeyboardActions(
                                 onDone = {
                                     onSaveFileTag(texto)
+                                    texto = ""
+                                    controlSubRowD = false
                                 }
                             ),
 
