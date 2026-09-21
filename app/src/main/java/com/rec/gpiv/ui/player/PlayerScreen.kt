@@ -247,6 +247,11 @@ fun PlayerScreen(
                             }
                     )
 
+                    StatusText(
+                        text = "tag",
+                        // text = "${uiState.fileTag}",
+                    )
+
                 }
 
                 if (controlSubRowD) {
