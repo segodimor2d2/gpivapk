@@ -78,6 +78,7 @@ fun PlayerScreen(
     onSeekTo: (Double) -> Unit,
     onDisableABLoop: () -> Unit,
     onSaveFileTag: (String) -> Unit,
+    onMakeTags: () -> Unit,
 
     onScreenshot: () -> Unit,
     onSetScreenshotMethod: (String) -> Unit,
@@ -434,6 +435,18 @@ fun PlayerScreen(
                                         "KF f$keyframe " +
                                             "(-${uiState.currentFrame - keyframe})"
                                     } ?: "KF --"
+                            )
+
+                            StatusText(
+                                text = "mv"
+                            )
+
+                            StatusText(
+                                text = "make",
+                                modifier = Modifier
+                                    .clickable {
+                                        onMakeTags()
+                                    }
                             )
 
                         }

@@ -567,6 +567,9 @@ class MainActivity : ComponentActivity() {
                         onSaveFileTag =
                             viewModel::testSaveFileTag,
 
+                        onMakeTags =
+                            viewModel::makeTagFolders,
+
                         onTestCut =
                             viewModel::testCurrentCut,
 

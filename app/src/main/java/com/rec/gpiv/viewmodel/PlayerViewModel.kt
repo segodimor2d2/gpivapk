@@ -119,6 +119,8 @@ class PlayerViewModel(
     val uiState: StateFlow<PlayerUiState> =
         _uiState.asStateFlow()
 
+    private val lisTags = mutableListOf<String>()
+
     init {
 
         observePlayerEvents()
@@ -392,6 +394,7 @@ class PlayerViewModel(
 
         if (loaded) {
             ensureGpivTagsFile(uri)
+            loadLisTags(uri)
         }
 
         val currentUri =
@@ -514,6 +517,324 @@ class PlayerViewModel(
             Log.e(
                 "PlayerViewModel",
                 "Erro ao criar gpivtags.csv",
+                e
+            )
+        }
+    }
+
+    private fun loadLisTags(
+        treeUri: Uri
+    ) {
+
+        val resolver =
+            getApplication<Application>()
+                .contentResolver
+
+        try {
+
+            val treeDocumentId =
+                DocumentsContract.getTreeDocumentId(
+                    treeUri
+                )
+
+            val childrenUri =
+                DocumentsContract.buildChildDocumentsUriUsingTree(
+                    treeUri,
+                    treeDocumentId
+                )
+
+            var csvUri: Uri? = null
+
+            /*
+             * ----------------------------------------------------
+             * LOCALIZAR gpivtags.csv
+             * ----------------------------------------------------
+             */
+
+            resolver.query(
+                childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                ),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+
+                val idIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                    )
+
+                val nameIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                    )
+
+                while (cursor.moveToNext()) {
+
+                    val name =
+                        cursor.getString(nameIndex)
+
+                    if (name == "gpivtags.csv") {
+
+                        val documentId =
+                            cursor.getString(idIndex)
+
+                        csvUri =
+                            DocumentsContract
+                                .buildDocumentUriUsingTree(
+                                    treeUri,
+                                    documentId
+                                )
+
+                        break
+                    }
+                }
+            }
+
+            if (csvUri == null) {
+
+                println(
+                    "PlayerViewModel: " +
+                        "gpivtags.csv não encontrado"
+                )
+
+                return
+            }
+
+            /*
+             * ----------------------------------------------------
+             * LER TAGS
+             * ----------------------------------------------------
+             */
+
+            lisTags.clear()
+
+            resolver.openInputStream(
+                csvUri!!
+            )?.bufferedReader(
+                Charsets.UTF_8
+            )?.useLines { lines ->
+
+                lines.forEach { line ->
+
+                    val parts =
+                        line.split(",")
+
+                    if (parts.size >= 2) {
+
+                        val tag =
+                            parts[1].trim()
+
+                        if (tag.isNotBlank()) {
+
+                            lisTags.add(tag)
+                        }
+                    }
+                }
+            }
+
+            /*
+             * ----------------------------------------------------
+             * REMOVER DUPLICADAS
+             * ----------------------------------------------------
+             */
+
+            val uniqueTags =
+                lisTags.distinct()
+
+            lisTags.clear()
+
+            lisTags.addAll(
+                uniqueTags
+            )
+
+            /*
+             * ----------------------------------------------------
+             * DEBUG
+             * ----------------------------------------------------
+             */
+
+            println(
+                "PlayerViewModel: lisTags = $lisTags"
+            )
+
+            println(
+                "PlayerViewModel: quantidade de tags = ${lisTags.size}"
+            )
+
+        } catch (e: Exception) {
+
+            Log.e(
+                "PlayerViewModel",
+                "Erro ao carregar lisTags",
+                e
+            )
+        }
+    }
+
+    fun makeTagFolders() {
+
+        val treeUri =
+            fileList.getCurrentTreeUri()
+
+        if (treeUri == null) {
+
+            println(
+                "PlayerViewModel: " +
+                    "nenhuma pasta selecionada"
+            )
+
+            return
+        }
+
+        makeTagFolders(treeUri)
+    }
+
+    private fun makeTagFolders(
+        treeUri: Uri
+    ) {
+
+        val resolver =
+            getApplication<Application>()
+                .contentResolver
+
+        try {
+
+            /*
+             * ----------------------------------------------------
+             * DOCUMENTO RAIZ DA PASTA
+             * ----------------------------------------------------
+             */
+
+            val treeDocumentId =
+                DocumentsContract.getTreeDocumentId(
+                    treeUri
+                )
+
+            val rootUri =
+                DocumentsContract.buildDocumentUriUsingTree(
+                    treeUri,
+                    treeDocumentId
+                )
+
+            val childrenUri =
+                DocumentsContract.buildChildDocumentsUriUsingTree(
+                    treeUri,
+                    treeDocumentId
+                )
+
+            /*
+             * ----------------------------------------------------
+             * PERCORRER LIS TAGS
+             * ----------------------------------------------------
+             */
+
+            for (tag in lisTags) {
+
+                var folderExists = false
+
+                /*
+                 * ------------------------------------------------
+                 * VERIFICAR SE A PASTA JÁ EXISTE
+                 * ------------------------------------------------
+                 */
+
+                resolver.query(
+                    childrenUri,
+                    arrayOf(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        DocumentsContract.Document.COLUMN_MIME_TYPE
+                    ),
+                    null,
+                    null,
+                    null
+                )?.use { cursor ->
+
+                    val nameIndex =
+                        cursor.getColumnIndex(
+                            DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                        )
+
+                    val mimeIndex =
+                        cursor.getColumnIndex(
+                            DocumentsContract.Document.COLUMN_MIME_TYPE
+                        )
+
+                    while (cursor.moveToNext()) {
+
+                        val name =
+                            cursor.getString(nameIndex)
+
+                        val mime =
+                            cursor.getString(mimeIndex)
+
+                        if (
+                            name == tag &&
+                            mime ==
+                                DocumentsContract.Document.MIME_TYPE_DIR
+                        ) {
+
+                            folderExists = true
+
+                            break
+                        }
+                    }
+                }
+
+                /*
+                 * ------------------------------------------------
+                 * PASTA JÁ EXISTE
+                 * ------------------------------------------------
+                 */
+
+                if (folderExists) {
+
+                    println(
+                        "PlayerViewModel: " +
+                            "pasta já existe = $tag"
+                    )
+
+                    continue
+                }
+
+                /*
+                 * ------------------------------------------------
+                 * CRIAR PASTA
+                 * ------------------------------------------------
+                 */
+
+                val createdUri =
+                    DocumentsContract.createDocument(
+                        resolver,
+                        rootUri,
+                        DocumentsContract.Document.MIME_TYPE_DIR,
+                        tag
+                    )
+
+                if (createdUri != null) {
+
+                    println(
+                        "PlayerViewModel: " +
+                            "pasta criada = $tag"
+                    )
+
+                } else {
+
+                    println(
+                        "PlayerViewModel: " +
+                            "ERRO ao criar pasta = $tag"
+                    )
+                }
+            }
+
+        } catch (e: Exception) {
+
+            Log.e(
+                "PlayerViewModel",
+                "Erro ao criar pastas das tags",
                 e
             )
         }
