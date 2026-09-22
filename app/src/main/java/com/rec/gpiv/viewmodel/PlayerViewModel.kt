@@ -512,189 +512,30 @@ class PlayerViewModel(
         }
     }
 
-    private fun getTrashUri(): Uri? {
+    private val trashManager = FileTrashManager(
+        resolver = application.contentResolver,
+        currentTreeUri = { fileList.getCurrentTreeUri() }
+    )
 
-        val treeUri =
-            fileList.getCurrentTreeUri()
-                ?: return null
-
-        val resolver =
-            getApplication<Application>()
-                .contentResolver
-
-        return try {
-
-            val childrenUri =
-                DocumentsContract.buildChildDocumentsUriUsingTree(
-                    treeUri,
-                    DocumentsContract.getTreeDocumentId(treeUri)
-                )
-
-            resolver.query(
-                childrenUri,
-                arrayOf(
-                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                    DocumentsContract.Document.COLUMN_MIME_TYPE
-                ),
-                null,
-                null,
-                null
-            )?.use { cursor ->
-
-                val nameIndex =
-                    cursor.getColumnIndex(
-                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
-                    )
-
-                val idIndex =
-                    cursor.getColumnIndex(
-                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
-                    )
-
-                while (cursor.moveToNext()) {
-
-                    val name =
-                        cursor.getString(nameIndex)
-
-                    val mimeType =
-                        cursor.getString(
-                            cursor.getColumnIndex(
-                                DocumentsContract.Document.COLUMN_MIME_TYPE
-                            )
-                        )
-
-                    if (
-                        name == "trash" &&
-                        mimeType ==
-                        DocumentsContract.Document.MIME_TYPE_DIR
-                    ) {
-
-                        val documentId =
-                            cursor.getString(idIndex)
-
-                        println(
-                            "PlayerViewModel: pasta trash encontrada"
-                        )
-
-                        return DocumentsContract.buildDocumentUriUsingTree(
-                            treeUri,
-                            documentId
-                        )
-                    }
-                }
-            }
-
-            println(
-                "PlayerViewModel: pasta trash não encontrada"
-            )
-
-            null
-
-        } catch (e: Exception) {
-
-            Log.e(
-                "PlayerViewModel",
-                "Erro ao localizar pasta trash",
-                e
-            )
-
-            null
-        }
-    }
+    private fun getTrashUri(): Uri? = trashManager.findTrashUri()
 
     fun testTrashUri() {
-
-        val trashUri =
-            getTrashUri()
-
-        println(
-            "PlayerViewModel: testTrashUri = $trashUri"
-        )
+        println("PlayerViewModel: testTrashUri = ${getTrashUri()}")
     }
 
-    private fun moveToTrash(
-        uri: Uri
-    ): Boolean {
+    private fun moveToTrash(uri: Uri): Boolean =
+        trashManager.moveToTrash(uri)
 
-        val trashUri =
-            getTrashUri()
-                ?: return false
+    fun deleteFile(permanent: Boolean): Boolean {
+        val uri = selectedUri ?: return false
 
-        val resolver =
-            getApplication<Application>()
-                .contentResolver
-
-        return try {
-
-            val parentUri =
-                DocumentsContract.buildChildDocumentsUriUsingTree(
-                    uri,
-                    DocumentsContract.getTreeDocumentId(uri)
-                )
-
-            val movedUri =
-                DocumentsContract.moveDocument(
-                    resolver,
-                    uri,
-                    parentUri,
-                    trashUri
-                )
-
-            if (movedUri != null) {
-
-                println(
-                    "PlayerViewModel: arquivo movido para trash = $movedUri"
-                )
-
-                true
-
-            } else {
-
-                println(
-                    "PlayerViewModel: moveDocument retornou null"
-                )
-
-                false
-            }
-
-        } catch (e: Exception) {
-
-            Log.e(
-                "PlayerViewModel",
-                "Erro ao mover arquivo para trash",
-                e
-            )
-
-            false
-        }
-    }
-
-    fun deleteFile(
-        permanent: Boolean
-    ): Boolean {
-
-        val uri =
-            selectedUri
-                ?: return false
-
-        if (!permanent) {
-
-            val moved =
-                moveToTrash(uri)
-
-            if (!moved) {
-                return false
-            }
+        if (!permanent && !moveToTrash(uri)) {
+            return false
         }
 
         if (!permanent) {
-
             player.pause()
-
-            val nextFile =
-                fileList.remove(uri)
-
+            val nextFile = fileList.remove(uri)
             selectedUri = null
             pendingUri = null
             markerA = null
@@ -703,109 +544,54 @@ class PlayerViewModel(
             abLoopSeekingToA = false
 
             if (nextFile != null) {
-
-                println(
-                    "PlayerViewModel: carregando próximo arquivo = ${nextFile.name}"
-                )
-
                 updateCurrentFileState(nextFile)
-
             } else {
-
-                println(
-                    "PlayerViewModel: não existem mais arquivos"
+                _uiState.value = _uiState.value.copy(
+                    filename = "Nenhum arquivo",
+                    fileTag = null,
+                    playing = false,
+                    loading = false,
+                    position = 0.0,
+                    duration = 0.0,
+                    fileIndex = 0,
+                    fileCount = 0
                 )
-
-                _uiState.value =
-                    _uiState.value.copy(
-                        filename = "Nenhum arquivo",
-                        fileTag = null,
-                        playing = false,
-                        loading = false,
-                        position = 0.0,
-                        duration = 0.0,
-                        fileIndex = 0,
-                        fileCount = 0
-                    )
             }
-
             return true
         }
 
-        val resolver =
-            getApplication<Application>()
-                .contentResolver
+        println("PlayerViewModel: apagando arquivo = $uri")
+        player.pause()
+        val deleted = trashManager.deletePermanently(uri)
 
-        return try {
-
-            println(
-                "PlayerViewModel: apagando arquivo = $uri"
-            )
-
-            player.pause()
-
-            val deleted =
-                DocumentsContract.deleteDocument(
-                    resolver,
-                    uri
-                )
-
-            if (deleted) {
-
-                println(
-                    "PlayerViewModel: arquivo apagado = $uri"
-                )
-
-                val nextFile =
-                    fileList.remove(uri)
-
-                selectedUri = null
-                pendingUri = null
-                markerA = null
-                markerB = null
-                abLoopEnabled = false
-                abLoopSeekingToA = false
-
-                if (nextFile != null) {
-
-                    println(
-                        "PlayerViewModel: carregando próximo arquivo = ${nextFile.name}"
-                    )
-
-                    updateCurrentFileState(nextFile)
-
-                } else {
-
-                    println(
-                        "PlayerViewModel: não existem mais arquivos"
-                    )
-
-                    _uiState.value =
-                        _uiState.value.copy(
-                            filename = "Nenhum arquivo",
-                            fileTag = null,
-                            playing = false,
-                            loading = false,
-                            position = 0.0,
-                            duration = 0.0,
-                            fileIndex = 0,
-                            fileCount = 0
-                        )
-                }
-            }
-
-            deleted
-
-        } catch (e: Exception) {
-
-            Log.e(
-                "PlayerViewModel",
-                "Erro ao apagar arquivo: $uri",
-                e
-            )
-
-            false
+        if (!deleted) {
+            return false
         }
+
+        val nextFile = fileList.remove(uri)
+        selectedUri = null
+        pendingUri = null
+        markerA = null
+        markerB = null
+        abLoopEnabled = false
+        abLoopSeekingToA = false
+
+        if (nextFile != null) {
+            updateCurrentFileState(nextFile)
+        } else {
+            _uiState.value = _uiState.value.copy(
+                filename = "Nenhum arquivo",
+                fileTag = null,
+                playing = false,
+                loading = false,
+                position = 0.0,
+                duration = 0.0,
+                fileIndex = 0,
+                fileCount = 0
+            )
+        }
+
+        return true
     }
 
     private fun updateCurrentFileState(
