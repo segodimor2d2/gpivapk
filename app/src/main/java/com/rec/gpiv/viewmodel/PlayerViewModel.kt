@@ -36,11 +36,6 @@ import kotlin.math.roundToLong
 import android.content.ContentResolver
 import android.util.Log
 
-data class FrameMarker(
-    val frame: Long,
-    val position: Double
-)
-
 data class CutFrameInfo(
     val frameA: Long,
     val ptsA: Long,
@@ -76,10 +71,6 @@ class PlayerViewModel(
     private val fileTags =
         mutableMapOf<String, String>()
 
-    private var markerA: FrameMarker? = null
-    private var markerB: FrameMarker? = null
-    private var abLoopEnabled = false
-          private var abLoopSeekingToA = false
     @Volatile
     private var keyframeCounterEnabled = false
 
@@ -96,6 +87,8 @@ class PlayerViewModel(
             application.contentResolver,
             mpvNative
         )
+
+    private val markerController = PlayerMarkerController(player)
 
     private val fileList =
         FileList(
@@ -239,34 +232,11 @@ class PlayerViewModel(
                               currentFrame = frame
                           )
 
-                      if (
-                          abLoopSeekingToA &&
-                          markerB != null &&
-                          event.position < markerB!!.position
-                      ) {
-                          /*
-                           * O mpv pode informar a primeira posição após o
-                           * seek alguns frames depois de A. Basta ter voltado
-                           * para antes de B para liberar o próximo ciclo.
-                           */
-                          abLoopSeekingToA = false
-                      }
-
-                      if (
-                          abLoopEnabled &&
-                          !abLoopSeekingToA &&
-                          markerA != null &&
-                          markerB != null &&
-                          event.position >= markerB!!.position
-                      ) {
+                      if (markerController.onPositionChanged(event.position)) {
                           println(
                               "PlayerViewModel: B atingido, voltando para A"
                           )
-
-                          abLoopSeekingToA = true
                           frameSyncPending = true
-
-                          player.seekTo(markerA!!.position)
                       }
                     }
 
@@ -539,10 +509,7 @@ class PlayerViewModel(
             val nextFile = fileList.remove(uri)
             selectedUri = null
             pendingUri = null
-            markerA = null
-            markerB = null
-            abLoopEnabled = false
-            abLoopSeekingToA = false
+            markerController.clear()
 
             if (nextFile != null) {
                 updateCurrentFileState(nextFile)
@@ -572,10 +539,7 @@ class PlayerViewModel(
         val nextFile = fileList.remove(uri)
         selectedUri = null
         pendingUri = null
-        markerA = null
-        markerB = null
-        abLoopEnabled = false
-        abLoopSeekingToA = false
+        markerController.clear()
 
         if (nextFile != null) {
             updateCurrentFileState(nextFile)
@@ -737,20 +701,18 @@ class PlayerViewModel(
         }
 
         if (
-            markerA != null &&
-            markerB != null &&
-            markerA!!.position < markerB!!.position
+            markerController.markerA() != null &&
+            markerController.markerB() != null &&
+            markerController.markerA()!!.position < markerController.markerB()!!.position
         ) {
-            abLoopEnabled = true
-
             println(
                 "PlayerViewModel: A/B loop ON " +
-                "A=${markerA!!.position} " +
-                "B=${markerB!!.position}"
+                "A=${markerController.markerA()!!.position} " +
+                "B=${markerController.markerB()!!.position}"
             )
         }
 
-        player.play()
+        markerController.startPlayback()
     }
 
     private fun pause() {
@@ -774,10 +736,10 @@ class PlayerViewModel(
     }
 
     fun setMarkerA() {
-        markerA = FrameMarker(
+        markerController.setA(FrameMarker(
             frame = _uiState.value.currentFrame,
             position = _uiState.value.position
-        )
+        ))
         _uiState.value = _uiState.value.copy(markerASet = true)
         keyframeCounterEnabled = true
         updatePreviousKeyframeCounter(
@@ -785,15 +747,15 @@ class PlayerViewModel(
         )
 
         println(
-            "PlayerViewModel: A = frame=${markerA?.frame}, position=${markerA?.position}"
+            "PlayerViewModel: A = frame=${markerController.markerA()?.frame}, position=${markerController.markerA()?.position}"
         )
     }
 
     fun setMarkerB() {
-        markerB = FrameMarker(
+        markerController.setB(FrameMarker(
             frame = _uiState.value.currentFrame,
             position = _uiState.value.position
-        )
+        ))
         _uiState.value = _uiState.value.copy(markerBSet = true)
         keyframeCounterEnabled = true
         updatePreviousKeyframeCounter(
@@ -801,17 +763,16 @@ class PlayerViewModel(
         )
 
         println(
-            "PlayerViewModel: B = frame=${markerB?.frame}, position=${markerB?.position}"
+            "PlayerViewModel: B = frame=${markerController.markerB()?.frame}, position=${markerController.markerB()?.position}"
         )
     }
 
     fun testCurrentCut() {
-        val a = markerA
-        val b = markerB
+        val markers = markerController.markersForCut()
 
         clearABMarkers()
 
-        if (a == null || b == null) {
+        if (markers == null) {
             println("PlayerViewModel: A/B não definidos")
             return
         }
@@ -826,11 +787,8 @@ class PlayerViewModel(
             return
         }
 
-        val start =
-            if (a.frame <= b.frame) a else b
-
-        val end =
-            if (a.frame <= b.frame) b else a
+        val start = markers.first
+        val end = markers.second
 
         println(
             "PlayerViewModel: ordem do corte " +
@@ -919,8 +877,8 @@ class PlayerViewModel(
         }
     }
     fun toggleABLoop() {
-        if (markerA != null && markerB != null) {
-            abLoopEnabled = true
+        if (markerController.markerA() != null && markerController.markerB() != null) {
+            markerController.enableLoop()
             println("PlayerViewModel: A/B loop ON")
         }
     }
@@ -931,10 +889,7 @@ class PlayerViewModel(
     }
 
     private fun clearABMarkers() {
-        markerA = null
-        markerB = null
-        abLoopEnabled = false
-        abLoopSeekingToA = false
+        markerController.clear()
         _uiState.value =
             _uiState.value.copy(
                 markerASet = false,
