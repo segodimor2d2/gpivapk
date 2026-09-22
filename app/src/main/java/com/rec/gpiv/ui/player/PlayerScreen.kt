@@ -344,8 +344,8 @@ fun PlayerScreen(
 
                         Row(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 10.dp),
+                                .fillMaxWidth(),
+                                // .padding(vertical = 10.dp),
 
                             horizontalArrangement = Arrangement.Center,
 
@@ -385,6 +385,24 @@ fun PlayerScreen(
                               )
 
                               if (uiState.tagsEnabled) {
+
+                                  StatusText(
+                                      text = "mv",
+                                      modifier = Modifier
+                                          .clickable {
+                                              onTestMoveTags()
+                                          }
+                                  )
+
+                                  StatusText(
+                                      text = "mkd",
+                                      modifier = Modifier
+                                          .clickable {
+                                              onMakeTags()
+                                          }
+
+                                  )
+
                                   StatusText(
                                       text = "+tg",
                                       backgroundColor =
@@ -441,44 +459,6 @@ fun PlayerScreen(
                         verticalArrangement =
                             Arrangement.spacedBy(10.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.spacedBy( 10.dp,
-                                    Alignment.CenterHorizontally
-                                )
-                        ) {
-
-                            StatusText(
-                                text = "f${uiState.currentFrame}"
-                            )
-
-                            StatusText(
-                                text =
-                                    uiState.previousKeyframeFrame?.let {
-                                        keyframe ->
-                                        "KF f$keyframe " +
-                                            "(-${uiState.currentFrame - keyframe})"
-                                    } ?: "KF --"
-                            )
-
-                            StatusText(
-                                text = "mv",
-                                modifier = Modifier
-                                    .clickable {
-                                        onTestMoveTags()
-                                    }
-                            )
-
-                            StatusText(
-                                text = "mkd",
-                                modifier = Modifier
-                                    .clickable {
-                                        onMakeTags()
-                                    }
-                            )
-
-                        }
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -523,6 +503,19 @@ fun PlayerScreen(
                             verticalAlignment =
                                 Alignment.CenterVertically
                         ) {
+
+                            StatusText(
+                                text = "f${uiState.currentFrame}"
+                            )
+
+                            StatusText(
+                                text =
+                                    uiState.previousKeyframeFrame?.let {
+                                        keyframe ->
+                                        "KF f$keyframe " +
+                                            "(-${uiState.currentFrame - keyframe})"
+                                    } ?: "KF --"
+                            )
 
                             CompactButton(
                                 text = "A",
