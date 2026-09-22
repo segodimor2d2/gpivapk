@@ -6,6 +6,7 @@ import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rec.gpiv.model.PlayerUiState
+import com.rec.gpiv.data.FolderRepository
 import com.rec.gpiv.player.FileItem
 import com.rec.gpiv.player.FileList
 import com.rec.gpiv.player.MpvNative
@@ -25,6 +26,8 @@ import kotlin.math.roundToLong
 class PlayerViewModel(
     application: Application
 ) : AndroidViewModel(application) {
+
+    private val folderRepository = FolderRepository(application)
 
     private val tagsEnabled: Boolean
         get() = _uiState.value.tagsEnabled
@@ -167,6 +170,28 @@ class PlayerViewModel(
 
             player.load(uri)
         }
+    }
+
+    fun onVideoSelected(uri: Uri) {
+        load(uri)
+
+        folderRepository.findMatchingFolder(uri)?.let { folderUri ->
+            loadFolder(folderUri)
+        }
+    }
+
+    fun onFolderSelected(uri: Uri) {
+        folderRepository.saveFolder(uri)
+        loadFolder(uri)
+        firstFile()
+    }
+
+    fun handleIncomingUri(uri: Uri) {
+        folderRepository.findMatchingFolder(uri)?.let { folderUri ->
+            loadFolder(folderUri)
+        }
+
+        load(uri)
     }
 
     private fun observePlayerEvents() {
