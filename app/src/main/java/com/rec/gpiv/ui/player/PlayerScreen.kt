@@ -17,6 +17,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
@@ -81,6 +84,7 @@ fun PlayerScreen(
     onMakeTags: () -> Unit,
     onTagsEnabledChange: (Boolean) -> Unit,
     onTestMoveTags: () -> Unit,
+    onDeleteFile: (Boolean) -> Unit,
 
     onScreenshot: () -> Unit,
     onSetScreenshotMethod: (String) -> Unit,
@@ -147,6 +151,9 @@ fun PlayerScreen(
             // keyboardController?.show()
         }
     }
+
+    var deletePopupVisible by remember { mutableStateOf(false) }
+    var deletePermanent by remember { mutableStateOf(false) }
 
     /*
      * --------------------------------------------------------
@@ -258,6 +265,14 @@ fun PlayerScreen(
                         text = "${uiState.fileTag}",
                     )
 
+                    StatusText(
+                        text = "DEL",
+                        modifier = Modifier.clickable {
+                            deletePermanent = false
+                            deletePopupVisible = true
+                        }
+                    )
+
                 }
 
                 if (controlSubRowD) {
@@ -304,6 +319,60 @@ fun PlayerScreen(
                 }
 
             }
+        }
+
+        /*
+         * ----------------------------------------------------
+         * POPUP DE EXCLUSÃO
+         * ----------------------------------------------------
+         */
+
+        if (deletePopupVisible) {
+            AlertDialog(
+                onDismissRequest = {
+                    deletePopupVisible = false
+                },
+                title = {
+                    Text("Excluir arquivo")
+                },
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = deletePermanent,
+                            onCheckedChange = {
+                                deletePermanent = it
+                            }
+                        )
+
+                        Text(
+                            text = "Excluir permanentemente"
+                        )
+                    }
+                },
+
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            deletePopupVisible = false
+                            onDeleteFile(deletePermanent)
+                        }
+                    ) {
+                        Text("EXCLUIR")
+                    }
+                },
+
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            deletePopupVisible = false
+                        }
+                    ) {
+                        Text("CANCELAR")
+                    }
+                }
+            )
         }
 
         /*

@@ -573,6 +573,8 @@ class MainActivity : ComponentActivity() {
                         onTestMoveTags =
                             viewModel::testMoveTags,
 
+                        onDeleteFile = { permanent -> viewModel.deleteFile(permanent) },
+
                         onTagsEnabledChange =
                             viewModel::setTagsEnabled,
 

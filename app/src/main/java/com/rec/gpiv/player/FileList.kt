@@ -626,6 +626,74 @@ class FileList(
         return files.size
     }
 
+    /*
+     * ========================================================
+     * REMOVE
+     * ========================================================
+     */
+    fun remove(
+        uri: Uri
+    ): FileItem? {
+
+        val index =
+            files.indexOfFirst {
+                it.uri == uri
+            }
+
+        if (index < 0) {
+
+            println(
+                "FileList: arquivo não encontrado para remoção = $uri"
+            )
+
+            return current()
+        }
+
+        println(
+            "FileList: removendo = ${files[index].name}"
+        )
+
+        files.removeAt(index)
+
+        if (files.isEmpty()) {
+
+            currentIndex = -1
+
+            println(
+                "FileList: lista ficou vazia"
+            )
+
+            return null
+        }
+
+        /*
+         * Se o arquivo removido estava antes
+         * do arquivo atual, o índice atual diminui.
+         */
+        if (index < currentIndex) {
+
+            currentIndex--
+
+        } else if (index == currentIndex) {
+
+            /*
+             * O próximo arquivo ocupa o mesmo índice.
+             *
+             * Se era o último arquivo, o novo último
+             * passa a ser o anterior.
+             */
+            if (currentIndex >= files.size) {
+                currentIndex = files.lastIndex
+            }
+        }
+
+        println(
+            "FileList: novo currentIndex=$currentIndex"
+        )
+
+        return current()
+    }
+
 
     /*
      * ========================================================
