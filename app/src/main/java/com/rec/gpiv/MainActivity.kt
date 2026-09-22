@@ -609,30 +609,6 @@ class MainActivity : ComponentActivity() {
                         onMute =
                             viewModel::mute,
 
-                        onBrightnessDown =
-                            viewModel::brightnessDown,
-
-                        onBrightnessUp =
-                            viewModel::brightnessUp,
-
-                        onContrastDown =
-                            viewModel::contrastDown,
-
-                        onContrastUp =
-                            viewModel::contrastUp,
-
-                        onGammaDown =
-                            viewModel::gammaDown,
-
-                        onGammaUp =
-                            viewModel::gammaUp,
-
-                        onSaturationDown =
-                            viewModel::saturationDown,
-
-                        onSaturationUp =
-                            viewModel::saturationUp,
-
                         onResetVideoAdjustments =
                             viewModel::resetVideoAdjustments,
 
