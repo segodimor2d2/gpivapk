@@ -1,289 +1,192 @@
 # GROUPED IMAGEM AND VIDEO ANDROID (gpiv)
 
-Sim. E agora temos uma situação muito boa: **o projeto passou pelo teste de clone limpo**, então podemos montar um procedimento reproduzível para um Arch Linux completamente novo.
+Player de vídeo Android baseado em **Kotlin + Jetpack Compose + libmpv + FFmpeg**.
 
-A ideia é separar em:
+O projeto utiliza o `mpv-android` como fonte das bibliotecas nativas e precisa que as dependências nativas sejam preparadas antes da compilação do `gpivapk`.
 
-1. instalar ferramentas do sistema;
-2. instalar Android SDK/NDK/CMake;
-3. clonar o `gpivapk`;
-4. obter exatamente as versões das dependências externas;
-5. criar `local.properties`;
-6. compilar;
-7. conectar o Android;
-8. instalar e executar.
+## 1. Requisitos
 
----
+Sistema Linux, recomendado Arch Linux.
 
-# Procedimento completo — Arch Linux do zero
-
-## 0. Pré-requisitos
-
-Computador:
-
-```text
-Arch Linux 64-bit
-Internet
-Git
-Um telefone Android compatível
-```
-
-Não é necessário ter Android Studio instalado para compilar pelo terminal.
-
----
-
-# 1. Atualizar o Arch
-
-Em uma instalação nova:
+Ferramentas básicas:
 
 ```bash
-sudo pacman -Syu
-```
-
-Reinicie se o sistema solicitar.
-
----
-
-# 2. Instalar ferramentas básicas
-
-```bash
-sudo pacman -S --needed \
-    git \
-    base-devel \
-    curl \
-    wget \
-    unzip \
-    zip \
-    tar \
-    cmake \
-    ninja \
-    pkgconf \
-    python \
-    jdk17-openjdk
-```
-
-Confirme:
-
-```bash
-git --version
-cmake --version
-java -version
-python --version
-```
-
-O Java precisa ser **JDK 17**.
-
----
-
-# 3. Configurar Java 17
-
-Confira:
-
-```bash
-archlinux-java status
-```
-
-Se houver outra versão selecionada:
-
-```bash
-sudo archlinux-java set java-17-openjdk
-```
-
-Depois:
-
-```bash
-java -version
-```
-
----
-
-# 4. Instalar Android SDK
-
-No Arch, uma maneira simples é instalar as ferramentas do Android pelo `pacman`/AUR conforme o ambiente disponível.
-
-O que precisamos no final é uma instalação semelhante a:
-
-```text
-~/Android/Sdk/
-```
-
-com:
-
-```text
-platform-tools
-build-tools
-platforms
-ndk
+git
+curl
+wget
+unzip
+tar
+pkg-config
+make
 cmake
-cmdline-tools
 ```
 
-### Componentes necessários para este projeto
-
-Precisamos especificamente de:
+Java:
 
 ```text
-Android SDK Platform 36
-Android SDK Build Tools
-Android SDK Platform Tools
+JDK 17
+```
+
+Android:
+
+```text
+Android SDK
 Android NDK 28.2.13676358
-CMake 3.22.1
+Android NDK 29.0.14206865
+Android SDK Platform 36
+Android SDK Build-Tools 36.0.0
+Android Command-line Tools
 ```
 
-**Importante:** não substitua o NDK 28.2 por uma versão mais nova só porque ela está disponível.
-
-O projeto atualmente está fixado em:
-
-```kotlin
-ndkVersion = "28.2.13676358"
-```
-
----
-
-# 5. Verificar o Android SDK
-
-Depois de instalar/configurar:
-
-```bash
-ls ~/Android/Sdk
-```
-
-Deve existir algo parecido com:
-
-```text
-build-tools
-cmake
-cmdline-tools
-ndk
-platform-tools
-platforms
-```
-
-Confira o NDK:
-
-```bash
-ls ~/Android/Sdk/ndk
-```
-
-Precisamos encontrar:
+O `gpivapk` utiliza o NDK:
 
 ```text
 28.2.13676358
 ```
 
-Confira o CMake:
-
-```bash
-ls ~/Android/Sdk/cmake
-```
-
-Precisamos de:
+O `mpv-android` utiliza o NDK:
 
 ```text
-3.22.1
+29.0.14206865
 ```
+
+São necessários os dois.
 
 ---
 
-# 6. Criar a pasta dos projetos
+# 2. Diretórios utilizados
 
-No computador novo:
-
-```bash
-mkdir -p ~/03android
-cd ~/03android
-```
-
----
-
-# 7. Clonar o projeto GPIV
-
-Se o projeto estiver em um repositório Git remoto:
-
-```bash
-git clone <URL_DO_REPOSITORIO> gpivapk
-```
-
-Depois:
-
-```bash
-cd ~/03android/gpivapk
-```
-
-Se você estiver transferindo o repositório de outra máquina, também pode simplesmente copiar/clonar o repositório Git.
-
----
-
-# 8. Conferir o estado do projeto
-
-```bash
-git status
-```
-
-Deve aparecer algo semelhante a:
+Neste exemplo:
 
 ```text
-On branch main
-nothing to commit, working tree clean
+/home/usuario/
+├── Android/
+│   └── Sdk/
+│
+└── 03android/
+    ├── gpivapk/
+    └── mpv-android/
 ```
 
----
-
-# 9. Obter as dependências externas
-
-Aqui existe uma característica importante do nosso projeto:
-
-**o Git do `gpivapk` não contém o código-fonte completo do MPV, mpv-android e FFmpeg.**
-
-Eles são dependências externas.
-
-Precisamos recriar:
+O `gpivapk` espera encontrar o `mpv-android` como projeto irmão:
 
 ```text
-~/03android/
+03android/
 ├── gpivapk/
-├── mpv/
 └── mpv-android/
 ```
 
 ---
 
-# 10. Clonar MPV
+# 3. Android SDK
+
+Defina:
 
 ```bash
-cd ~/03android
-
-git clone https://github.com/mpv-player/mpv.git
-cd mpv
+export ANDROID_HOME="$HOME/Android/Sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
 ```
 
-Agora devemos usar **exatamente o commit que estamos utilizando**:
+Para deixar permanente no `zsh`:
+
+```bash
+echo 'export ANDROID_HOME="$HOME/Android/Sdk"' >> ~/.zshrc
+echo 'export ANDROID_SDK_ROOT="$ANDROID_HOME"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+Confira:
+
+```bash
+echo "$ANDROID_HOME"
+```
+
+Deve retornar algo como:
 
 ```text
-f5bcfb195412e0ca733eac2e850879cd3b1ded18
-```
-
-Execute:
-
-```bash
-git checkout f5bcfb195412e0ca733eac2e850879cd3b1ded18
-```
-
-Confirme:
-
-```bash
-git rev-parse HEAD
-```
-
-Deve retornar:
-
-```text
-f5bcfb195412e0ca733eac2e850879cd3b1ded18
+/home/usuario/Android/Sdk
 ```
 
 ---
 
-# 11. Clonar mpv-android
+# 4. Android Command-line Tools
+
+Instale o Android Command-line Tools no SDK:
+
+```text
+$ANDROID_HOME/cmdline-tools/latest/
+```
+
+O executável deverá existir em:
+
+```bash
+$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager
+```
+
+Teste:
+
+```bash
+$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --version
+```
+
+---
+
+# 5. Instalar componentes do Android SDK
+
+Aceite as licenças:
+
+```bash
+yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+```
+
+Instale os componentes necessários:
+
+```bash
+$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+    "platform-tools" \
+    "platforms;android-36" \
+    "build-tools;36.0.0" \
+    "ndk;28.2.13676358" \
+    "ndk;29.0.14206865"
+```
+
+Confira:
+
+```bash
+ls -ld "$ANDROID_HOME/ndk/28.2.13676358"
+ls -ld "$ANDROID_HOME/ndk/29.0.14206865"
+```
+
+---
+
+# 6. Clonar o gpivapk
+
+```bash
+cd ~/03android
+
+git clone https://github.com/segodimor2d2/gpivapk.git
+cd gpivapk
+```
+
+Usar a branch de desenvolvimento:
+
+```bash
+git checkout develop
+```
+
+Confira:
+
+```bash
+git status
+```
+
+---
+
+# 7. Clonar o mpv-android
+
+O `gpivapk` utiliza um checkout específico do `mpv-android`.
+
+Clone:
 
 ```bash
 cd ~/03android
@@ -292,132 +195,401 @@ git clone https://github.com/mpv-android/mpv-android.git
 cd mpv-android
 ```
 
-Fixar o commit:
-
-```bash
-git checkout 725e3d675cc6cb385ebbf7b16fc258401d422ee8
-```
-
-Confirmar:
-
-```bash
-git rev-parse HEAD
-```
-
-Deve retornar:
+O projeto deve usar o commit:
 
 ```text
-725e3d675cc6cb385ebbf7b16fc258401d422ee8
-```
-
----
-
-# 12. Verificar FFmpeg
-
-O FFmpeg utilizado pelo nosso projeto fica dentro do `mpv-android`:
-
-```bash
-~/03android/mpv-android/buildscripts/deps/ffmpeg
+474111adc4abe5b67f3f8082c8a307e80d45c174
 ```
 
 Confira:
 
 ```bash
-cd ~/03android/mpv-android/buildscripts/deps/ffmpeg
+git checkout 474111adc4abe5b67f3f8082c8a307e80d45c174
+```
+
+Confirme:
+
+```bash
 git rev-parse HEAD
 ```
 
-Precisamos de:
+Resultado esperado:
 
 ```text
-c9e36046a338638279782cba4fba3299bf65f46b
+474111adc4abe5b67f3f8082c8a307e80d45c174
 ```
-
-Se o checkout do `mpv-android` já deixar essa árvore no estado correto, ótimo.
 
 ---
 
-# 13. Voltar ao GPIV
+# 8. Preparar o NDK r29 para o mpv-android
+
+O `buildall.sh` do `mpv-android` procura o NDK em:
+
+```text
+buildscripts/sdk/android-ndk-r29
+```
+
+O NDK instalado pelo Android SDK fica em:
+
+```text
+$ANDROID_HOME/ndk/29.0.14206865
+```
+
+Crie o link simbólico:
+
+```bash
+cd ~/03android/mpv-android
+
+mkdir -p buildscripts/sdk
+
+ln -s "$ANDROID_HOME/ndk/29.0.14206865" \
+    buildscripts/sdk/android-ndk-r29
+```
+
+Confira:
+
+```bash
+ls -ld buildscripts/sdk/android-ndk-r29
+```
+
+Deve mostrar:
+
+```text
+android-ndk-r29 -> /home/usuario/Android/Sdk/ndk/29.0.14206865
+```
+
+Confira também o toolchain:
+
+```bash
+ls -ld buildscripts/sdk/android-ndk-r29/toolchains/llvm/prebuilt/*
+```
+
+Deve existir:
+
+```text
+linux-x86_64
+```
+
+---
+
+# 9. Baixar as dependências do mpv-android
+
+Entre no diretório `buildscripts`:
+
+```bash
+cd ~/03android/mpv-android/buildscripts
+```
+
+Execute:
+
+```bash
+./include/download-deps.sh
+```
+
+Esse script prepara as fontes utilizadas pelo build, incluindo:
+
+```text
+deps/mbedtls
+deps/dav1d
+deps/ffmpeg
+deps/freetype2
+deps/fribidi
+deps/harfbuzz
+deps/unibreak
+deps/libxml2
+deps/fontconfig
+deps/libass
+deps/lua
+deps/libplacebo
+deps/curl
+deps/mpv
+```
+
+Confira pelo menos as dependências do FFmpeg:
+
+```bash
+ls -ld \
+    deps/mbedtls \
+    deps/dav1d \
+    deps/ffmpeg \
+    deps/libxml2
+```
+
+---
+
+# 10. Compilar as dependências do mpv-android
+
+O FFmpeg precisa ser compilado para `arm64`.
+
+Execute:
+
+```bash
+cd ~/03android/mpv-android/buildscripts
+
+./buildall.sh --arch arm64 --only-deps mpv
+```
+
+Esse comando prepara as dependências necessárias para o `mpv`.
+
+O processo gera, entre outros arquivos:
+
+```text
+deps/ffmpeg/_build_arm64/libavutil/avconfig.h
+```
+
+Esse arquivo é importante porque o `gpivapk` inclui headers gerados pelo FFmpeg.
+
+Confirme:
+
+```bash
+ls -l \
+    ~/03android/mpv-android/buildscripts/deps/ffmpeg/_build_arm64/libavutil/avconfig.h
+```
+
+Se o arquivo existir, o FFmpeg arm64 foi preparado.
+
+---
+
+# 11. Verificar a estrutura final
+
+A estrutura mínima deverá ser semelhante a:
+
+```text
+~/03android/
+├── gpivapk/
+└── mpv-android/
+    └── buildscripts/
+        ├── deps/
+        │   ├── ffmpeg/
+        │   │   └── _build_arm64/
+        │   │       └── libavutil/
+        │   │           └── avconfig.h
+        │   ├── mbedtls/
+        │   ├── dav1d/
+        │   └── libxml2/
+        │
+        └── sdk/
+            └── android-ndk-r29 -> $ANDROID_HOME/ndk/29.0.14206865
+```
+
+---
+
+# 12. Compilar o gpivapk
+
+Entre no projeto:
 
 ```bash
 cd ~/03android/gpivapk
 ```
 
----
-
-# 14. Criar `local.properties`
-
-Este arquivo **não entra no Git** porque contém caminhos específicos daquela máquina.
-
-Crie:
+Compile:
 
 ```bash
-cat > local.properties <<'EOF'
-sdk.dir=/home/SEU_USUARIO/Android/Sdk
-
-GPIV_MPV_ROOT=/home/SEU_USUARIO/03android/mpv
-GPIV_MPV_ANDROID_ROOT=/home/SEU_USUARIO/03android/mpv-android
-GPIV_FFMPEG_ROOT=/home/SEU_USUARIO/03android/mpv-android/buildscripts/deps/ffmpeg
-EOF
+./gradlew assembleDebug
 ```
 
-Substitua `SEU_USUARIO` pelo usuário daquela máquina.
-
-Por exemplo, se o usuário for `joao`:
-
-```properties
-sdk.dir=/home/joao/Android/Sdk
-
-GPIV_MPV_ROOT=/home/joao/03android/mpv
-GPIV_MPV_ANDROID_ROOT=/home/joao/03android/mpv-android
-GPIV_FFMPEG_ROOT=/home/joao/03android/mpv-android/buildscripts/deps/ffmpeg
-```
-
----
-
-# 15. Conferir o `local.properties`
-
-```bash
-cat local.properties
-```
-
-E:
-
-```bash
-git status --short
-```
-
-**`local.properties` não deve aparecer como arquivo modificado.**
-
-Isso é importante: cada computador terá seu próprio `local.properties`.
-
----
-
-# 16. Conferir o NDK
-
-No projeto:
-
-```bash
-grep -n "ndkVersion" app/build.gradle.kts
-```
-
-Precisamos ver:
+Uma compilação correta termina com:
 
 ```text
-ndkVersion = "28.2.13676358"
+BUILD SUCCESSFUL
 ```
 
 ---
 
-# 17. Primeiro teste — Clean
+# 13. Instalar no Android
 
-Agora:
+Com um dispositivo Android conectado via ADB:
 
 ```bash
+adb devices
+```
+
+Depois:
+
+```bash
+./gradlew installDebug
+```
+
+---
+
+# 14. Build completo
+
+O comando normal para testar o projeto é:
+
+```bash
+cd ~/03android/gpivapk
+./gradlew assembleDebug
+```
+
+Para instalar:
+
+```bash
+./gradlew installDebug
+```
+
+---
+
+# 15. Problema: `libavutil/avconfig.h: No such file or directory`
+
+Erro:
+
+```text
+fatal error: 'libavutil/avconfig.h' file not found
+```
+
+Esse arquivo não pertence diretamente ao código-fonte original do FFmpeg.
+
+Ele é gerado durante a configuração/compilação do FFmpeg.
+
+Verifique:
+
+```bash
+ls -l \
+    ~/03android/mpv-android/buildscripts/deps/ffmpeg/_build_arm64/libavutil/avconfig.h
+```
+
+Se não existir, volte para:
+
+```bash
+cd ~/03android/mpv-android/buildscripts
+```
+
+Execute:
+
+```bash
+./include/download-deps.sh
+```
+
+Depois:
+
+```bash
+./buildall.sh --arch arm64 --only-deps mpv
+```
+
+E verifique novamente o arquivo.
+
+---
+
+# 16. Problema: `Target mbedtls not found`
+
+Erro:
+
+```text
+Target mbedtls not found
+```
+
+Isso significa que os fontes das dependências ainda não foram preparados.
+
+Execute:
+
+```bash
+cd ~/03android/mpv-android/buildscripts
+./include/download-deps.sh
+```
+
+Depois:
+
+```bash
+./buildall.sh --arch arm64 --only-deps mpv
+```
+
+---
+
+# 17. Problema: `Can't find toolchain inside NDK`
+
+Erro:
+
+```text
+Can't find toolchain inside NDK
+```
+
+Verifique:
+
+```bash
+ls -ld \
+    ~/03android/mpv-android/buildscripts/sdk/android-ndk-r29/toolchains/llvm/prebuilt/*
+```
+
+Deve existir:
+
+```text
+linux-x86_64
+```
+
+Se o link do NDK não existir:
+
+```bash
+cd ~/03android/mpv-android
+
+mkdir -p buildscripts/sdk
+
+ln -s "$ANDROID_HOME/ndk/29.0.14206865" \
+    buildscripts/sdk/android-ndk-r29
+```
+
+---
+
+# 18. Limpeza
+
+Evite apagar caches ou diretórios inteiros sem necessidade.
+
+Para limpar somente o build do FFmpeg:
+
+```bash
+cd ~/03android/mpv-android/buildscripts
+./buildall.sh --arch arm64 --only-deps mpv --clean
+```
+
+Use `--clean` somente quando realmente for necessário recompilar as dependências.
+
+No `gpivapk`, para uma limpeza normal do Gradle:
+
+```bash
+cd ~/03android/gpivapk
 ./gradlew clean
 ```
 
-Esperamos:
+Depois:
+
+```bash
+./gradlew assembleDebug
+```
+
+---
+
+# 19. Verificação rápida de uma máquina nova
+
+Depois de preparar tudo, estes comandos devem funcionar:
+
+```bash
+java -version
+```
+
+```bash
+ls -ld "$ANDROID_HOME/ndk/28.2.13676358"
+```
+
+```bash
+ls -ld "$ANDROID_HOME/ndk/29.0.14206865"
+```
+
+```bash
+ls -ld ~/03android/mpv-android/buildscripts/sdk/android-ndk-r29
+```
+
+```bash
+ls -l \
+    ~/03android/mpv-android/buildscripts/deps/ffmpeg/_build_arm64/libavutil/avconfig.h
+```
+
+E finalmente:
+
+```bash
+cd ~/03android/gpivapk
+./gradlew assembleDebug
+```
+
+O resultado esperado é:
 
 ```text
 BUILD SUCCESSFUL
@@ -425,205 +597,73 @@ BUILD SUCCESSFUL
 
 ---
 
-# 18. Segundo teste — Build
+# 20. Resumo — instalação do zero
+
+Em uma máquina nova, a sequência principal é:
 
 ```bash
-./gradlew assembleDebug -Pandroid.injected.build.abi=arm64-v8a
-```
-
-Esperamos:
-
-```text
-BUILD SUCCESSFUL
-```
-
-O APK será gerado em:
-
-```text
-app/build/outputs/apk/debug/app-debug.apk
-```
-
----
-
-# 19. Conectar o Android por USB
-
-No telefone:
-
-```text
-Configurações
-→ Sobre o telefone
-→ Número da versão
-```
-
-Ative as opções de desenvolvedor e:
-
-```text
-Depuração USB
-```
-
-No computador:
-
-```bash
-adb devices -l
-```
-
-Se o `adb` ainda não estiver disponível no PATH, use o `platform-tools` do SDK.
-
-O telefone deve aparecer como:
-
-```text
-device
-```
-
----
-
-# 20. Instalar
-
-```bash
-./gradlew installDebug -Pandroid.injected.build.abi=arm64-v8a
-```
-
-Se aparecer:
-
-```text
-BUILD SUCCESSFUL
-```
-
-a instalação terminou.
-
----
-
-# 21. Abrir o aplicativo
-
-Podemos abrir manualmente pelo telefone ou pelo ADB.
-
-Por exemplo:
-
-```bash
-adb shell monkey -p com.rec.gpiv 1
-```
-
----
-
-# 22. Teste funcional
-
-No telefone:
-
-```text
-[ ] GPIV abre
-[ ] Tela inicial aparece
-[ ] Nenhum vídeo de teste inicia automaticamente
-[ ] Picker abre
-[ ] É possível escolher um vídeo
-[ ] Vídeo aparece
-[ ] Play funciona
-[ ] Pause funciona
-[ ] Troca de vídeo funciona
-[ ] Aplicativo não fecha
-```
-
----
-
-# 23. Verificar logs, se necessário
-
-```bash
-adb logcat -c
-```
-
-Abra o aplicativo e depois:
-
-```bash
-adb logcat -v threadtime | grep -E \
-'GPIV_NATIVE|MpvNative|MpvPlayer|PlayerScreen|FATAL EXCEPTION'
-```
-
----
-
-# 24. Estrutura final esperada
-
-Em uma máquina nova, queremos:
-
-```text
-~/03android/
-│
-├── gpivapk/
-│   ├── app/
-│   ├── gradle/
-│   ├── build.gradle.kts
-│   ├── settings.gradle.kts
-│   ├── gradlew
-│   └── local.properties       ← NÃO versionado
-│
-├── mpv/
-│   └── ...                     ← commit fixado
-│
-└── mpv-android/
-    ├── buildscripts/
-    │   └── deps/
-    │       └── ffmpeg/
-    └── ...                     ← commit fixado
-```
-
----
-
-# Versões que precisamos preservar
-
-Esta é a parte mais importante para o futuro:
-
-| Componente      | Versão/commit                              |
-| --------------- | ------------------------------------------ |
-| **GPIV**        | Git commit do projeto                      |
-| **MPV**         | `f5bcfb195412e0ca733eac2e850879cd3b1ded18` |
-| **mpv-android** | `725e3d675cc6cb385ebbf7b16fc258401d422ee8` |
-| **FFmpeg**      | `c9e36046a338638279782cba4fba3299bf65f46b` |
-| **Android NDK** | `28.2.13676358`                            |
-| **CMake**       | `3.22.1`                                   |
-| **Compile SDK** | `36.1`                                     |
-| **Gradle**      | `9.4.1`                                    |
-| **AGP**         | `9.2.1`                                    |
-| **Kotlin**      | `2.2.10`                                   |
-| **Java**        | `17`                                       |
-| **ABI atual**   | `arm64-v8a`                                |
-
----
-
-## Um detalhe importante
-
-Há uma diferença entre **"reproduzir o ambiente de desenvolvimento"** e **"reproduzir 100% o build original do MPV"**.
-
-Nós já resolvemos a parte do projeto Android: o `gpivapk` agora declara o NDK e recebe os caminhos externos por `local.properties`.
-
-Mas os `.so` do MPV/FFmpeg **já estão dentro do Git do GPIV**:
-
-```text
-app/src/main/jniLibs/arm64-v8a/
-```
-
-Então o computador novo **não precisa recompilar MPV/FFmpeg para compilar o GPIV**. Ele precisa dos fontes externos principalmente porque o CMake usa os headers deles.
-
-Isso é uma grande vantagem do estado atual.
-
-### Portanto, o procedimento mínimo depois que tudo estiver instalado é:
-
-```bash
+# Diretórios
+mkdir -p ~/03android
 cd ~/03android
 
-git clone <URL> gpivapk
-git clone https://github.com/mpv-player/mpv.git
+# gpivapk
+git clone https://github.com/segodimor2d2/gpivapk.git
+cd gpivapk
+git checkout develop
+
+# mpv-android
+cd ~/03android
 git clone https://github.com/mpv-android/mpv-android.git
+cd mpv-android
+git checkout 474111adc4abe5b67f3f8082c8a307e80d45c174
 
-cd mpv
-git checkout f5bcfb195412e0ca733eac2e850879cd3b1ded18
+# Link do NDK r29
+mkdir -p buildscripts/sdk
+ln -s "$ANDROID_HOME/ndk/29.0.14206865" \
+    buildscripts/sdk/android-ndk-r29
 
-cd ../mpv-android
-git checkout 725e3d675cc6cb385ebbf7b16fc258401d422ee8
+# Dependências
+cd buildscripts
+./include/download-deps.sh
 
-cd ../gpivapk
-# criar local.properties
+# FFmpeg + dependências para arm64
+./buildall.sh --arch arm64 --only-deps mpv
 
-./gradlew clean
-./gradlew assembleDebug -Pandroid.injected.build.abi=arm64-v8a
-./gradlew installDebug -Pandroid.injected.build.abi=arm64-v8a
+# Verificação
+ls -l deps/ffmpeg/_build_arm64/libavutil/avconfig.h
+
+# Build do aplicativo
+cd ~/03android/gpivapk
+./gradlew assembleDebug
+
+# Instalação
+./gradlew installDebug
 ```
 
-**Eu considero o próximo passo ideal agora criar um `README.md` de instalação completo no próprio projeto**, contendo esse procedimento, para que daqui a alguns meses você não dependa desta conversa para montar outro computador.
+## Observação importante
+
+O `gpivapk` e o `mpv-android` são projetos separados.
+
+O `gpivapk` **não deve depender de uma cópia pré-compilada do diretório `_build_arm64`** transferida de outra máquina.
+
+O procedimento correto para uma máquina nova é:
+
+```text
+Android SDK
+    ↓
+NDK 28.2 + NDK 29
+    ↓
+mpv-android
+    ↓
+download-deps.sh
+    ↓
+buildall.sh --arch arm64 --only-deps mpv
+    ↓
+FFmpeg _build_arm64
+    ↓
+gpivapk
+    ↓
+./gradlew assembleDebug
+```
+
+Assim os artefatos nativos são gerados localmente na nova máquina.
