@@ -69,6 +69,9 @@ add_library(
     gpiv_native
     SHARED
     mpv_native.cpp
+    mpv_native_ffmpeg_keyframe.cpp
+    mpv_native_ffmpeg_cut.cpp
+    mpv_native_ffmpeg_probe.cpp
     mpv_native_controls.cpp
     mpv_native_playback.cpp
     mpv_native_surface.cpp
