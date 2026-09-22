@@ -79,6 +79,7 @@ fun PlayerScreen(
     onDisableABLoop: () -> Unit,
     onSaveFileTag: (String) -> Unit,
     onMakeTags: () -> Unit,
+    onTagsEnabledChange: (Boolean) -> Unit,
     onTestMoveTags: () -> Unit,
 
     onScreenshot: () -> Unit,
@@ -266,9 +267,6 @@ fun PlayerScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "tag"
-                        )
 
                         OutlinedTextField(
                             value = texto,
@@ -357,6 +355,17 @@ fun PlayerScreen(
 
                               StatusText(
                                   text = "${uiState.fileIndex + 1} / ${uiState.fileCount}",
+                                  backgroundColor =
+                                      if (uiState.tagsEnabled) {
+                                          Color(0x9900994C)
+                                      } else {
+                                          Color.Transparent
+                                      },
+                                  modifier = Modifier.clickable {
+                                      onTagsEnabledChange(
+                                          !uiState.tagsEnabled
+                                      )
+                                  }
                               )
 
                               StatusText(
@@ -374,6 +383,21 @@ fun PlayerScreen(
                                           onOpenFolder()
                                       }
                               )
+
+                              if (uiState.tagsEnabled) {
+                                  StatusText(
+                                      text = "+tg",
+                                      backgroundColor =
+                                          if (controlSubRowD) {
+                                              Color(0x9900994C)
+                                          } else {
+                                              Color.Transparent
+                                          },
+                                      modifier = Modifier.clickable {
+                                          controlSubRowD = !controlSubRowD
+                                      }
+                                  )
+                              }
 
                         }
 
@@ -699,19 +723,6 @@ fun PlayerScreen(
 
 
                         CompactButton(
-                            text = "tg",
-                            containerColor =
-                                if (controlSubRowD) {
-                                    Color(0x9900994C)
-                                } else {
-                                    Color.Transparent
-                                },
-                            onClick = {
-                                controlSubRowD = !controlSubRowD
-                            }
-                        )
-
-                        CompactButton(
                             text = "+",
                             onClick = onNextFile
                         )
@@ -721,18 +732,6 @@ fun PlayerScreen(
                             onClick = onPreviousFile
                         )
 
-                        CompactButton(
-                            text = "mn",
-                            containerColor =
-                                if (controlSubRowC) {
-                                    Color(0x9900994C)
-                                } else {
-                                    Color.Transparent
-                                },
-                            onClick = {
-                                controlSubRowC = !controlSubRowC
-                            }
-                        )
 
                     }
 
@@ -848,6 +847,7 @@ fun PlayerScreen(
                 ) {
 
 
+
                     StatusText(
                         text =
                             "%.2f".format(
@@ -862,6 +862,12 @@ fun PlayerScreen(
                             "%.2f".format(
                                 uiState.duration
                             ),
+                        backgroundColor =
+                            if (controlSubRowB) {
+                                Color(0x9900994C)
+                            } else {
+                                Color.Transparent
+                            },
                         modifier = Modifier.clickable {
                             controlSubRowB = !controlSubRowB
                         }
@@ -874,11 +880,20 @@ fun PlayerScreen(
                                     (uiState.position /
                                         uiState.duration) * 100.0
                                 )
+                            } else {
+                                "0.0%"
+                            },
 
-                            } else { "0.0%" },
-                        Modifier.clickable {
-                                onTogglePlayPause()
-                            }
+                        backgroundColor =
+                            if (uiState.playing) {
+                                Color(0x9900994C)
+                            } else {
+                                Color.Transparent
+                            },
+
+                        modifier = Modifier.clickable {
+                            onTogglePlayPause()
+                        }
                     )
 
 
@@ -894,6 +909,8 @@ fun PlayerScreen(
                     verticalAlignment =
                         Alignment.CenterVertically
                 ) {
+
+
 
                     StatusText(
                         text = "ff",
@@ -944,6 +961,19 @@ fun PlayerScreen(
                                         GestureTool.SEEK
                                     }
                             }
+                    )
+
+                    StatusText(
+                        text = "()",
+                        backgroundColor =
+                            if (controlSubRowC) {
+                                Color(0x9900994C)
+                            } else {
+                                Color.Transparent
+                            },
+                        modifier = Modifier.clickable {
+                            controlSubRowC = !controlSubRowC
+                        }
                     )
 
 

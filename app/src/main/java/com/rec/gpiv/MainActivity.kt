@@ -573,6 +573,9 @@ class MainActivity : ComponentActivity() {
                         onTestMoveTags =
                             viewModel::testMoveTags,
 
+                        onTagsEnabledChange =
+                            viewModel::setTagsEnabled,
+
                         onTestCut =
                             viewModel::testCurrentCut,
 

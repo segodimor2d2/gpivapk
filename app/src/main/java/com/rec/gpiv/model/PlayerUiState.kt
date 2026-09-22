@@ -4,6 +4,7 @@ data class PlayerUiState(
     val playing: Boolean = false,
     val filename: String? = null,
     val fileTag: String? = null,
+    val tagsEnabled: Boolean = false,
     val fileIndex: Int = 0,
     val fileCount: Int = 0,
     val position: Double = 0.0,

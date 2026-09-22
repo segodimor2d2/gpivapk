@@ -75,7 +75,8 @@ class PlayerViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
-    private val tagsEnabled = true
+    private val tagsEnabled: Boolean
+        get() = _uiState.value.tagsEnabled
 
     private val fileTags =
         mutableMapOf<String, String>()
@@ -133,6 +134,53 @@ class PlayerViewModel(
         player.initialize(
             application.cacheDir.absolutePath
         )
+    }
+
+    fun setTagsEnabled(
+        enabled: Boolean
+    ) {
+
+        if (!enabled) {
+
+            fileTags.clear()
+
+            _uiState.update {
+                it.copy(
+                    tagsEnabled = false,
+                    fileTag = null
+                )
+            }
+
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                tagsEnabled = true
+            )
+        }
+
+        val treeUri =
+            fileList.getCurrentTreeUri()
+                ?: return
+
+        loadLisTags(treeUri)
+
+        val currentFile =
+            fileList.current()
+                ?: return
+
+        val fileTag =
+            readFileTag(
+                treeUri,
+                currentFile.uri
+            )
+
+        _uiState.update {
+            it.copy(
+                fileTag = fileTag
+            )
+        }
     }
 
     fun onSurfaceReady() {
