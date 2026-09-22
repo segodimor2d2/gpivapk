@@ -13,53 +13,14 @@ import com.rec.gpiv.player.MpvPlayer
 import com.rec.gpiv.player.PlayerEvent
 import com.rec.gpiv.player.VideoPlayer
 import com.rec.gpiv.player.FILE_JUMP
-import com.rec.gpiv.player.MAX_VOLUME
-import com.rec.gpiv.player.VOLUME_STEP
-
-import com.rec.gpiv.player.BRIGHTNESS_STEP
-import com.rec.gpiv.player.CONTRAST_STEP
-import com.rec.gpiv.player.GAMMA_STEP
-import com.rec.gpiv.player.SATURATION_STEP
-
-import java.io.File
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlin.math.max
 import kotlin.math.roundToLong
-
-import android.content.ContentResolver
-import android.util.Log
-
-data class CutFrameInfo(
-    val frameA: Long,
-    val ptsA: Long,
-    val frameB: Long,
-    val ptsB: Long,
-    val timeBaseNum: Long,
-    val timeBaseDen: Long
-) {
-
-    val timeA: Double
-        get() =
-            ptsA.toDouble() *
-                timeBaseNum /
-                timeBaseDen
-
-    val timeB: Double
-        get() =
-            ptsB.toDouble() *
-                timeBaseNum /
-                timeBaseDen
-
-    val duration: Double
-        get() = timeB - timeA
-}
 
 class PlayerViewModel(
     application: Application
@@ -73,8 +34,6 @@ class PlayerViewModel(
 
     @Volatile
     private var keyframeCounterEnabled = false
-
-    private var lastCutFrameInfo: CutFrameInfo? = null
 
     val mpvNative =
         MpvNative()
@@ -483,6 +442,14 @@ class PlayerViewModel(
         currentFileName = { _uiState.value.filename }
     )
 
+    private val cutController = PlayerCutController(
+        player = player,
+        cacheDir = application.cacheDir,
+        scope = viewModelScope,
+        currentTreeUri = { fileList.getCurrentTreeUri() },
+        mediaExport = mediaExport
+    )
+
     private val trashManager = FileTrashManager(
         resolver = application.contentResolver,
         currentTreeUri = { fileList.getCurrentTreeUri() }
@@ -769,112 +736,8 @@ class PlayerViewModel(
 
     fun testCurrentCut() {
         val markers = markerController.markersForCut()
-
         clearABMarkers()
-
-        if (markers == null) {
-            println("PlayerViewModel: A/B não definidos")
-            return
-        }
-
-        val treeUri =
-            fileList.getCurrentTreeUri()
-
-        if (treeUri == null) {
-            println(
-                "PlayerViewModel: nenhuma pasta SAF selecionada"
-            )
-            return
-        }
-
-        val start = markers.first
-        val end = markers.second
-
-        println(
-            "PlayerViewModel: ordem do corte " +
-                "start=${start.frame} end=${end.frame}"
-        )
-
-        println(
-            "PlayerViewModel: testCutFrames " +
-                "A=${start.frame} B=${end.frame}"
-        )
-
-        val result =
-            player.testCutFrames(
-                frameA = start.frame,
-                frameB = end.frame
-            )
-
-        if (result != null && result.size >= 6) {
-
-            val cutInfo =
-                CutFrameInfo(
-                    frameA = result[0],
-                    ptsA = result[1],
-                    frameB = result[2],
-                    ptsB = result[3],
-                    timeBaseNum = result[4],
-                    timeBaseDen = result[5]
-                )
-
-            lastCutFrameInfo =
-                cutInfo
-
-            val timeA =
-                cutInfo.timeA
-
-            val timeB =
-                cutInfo.timeB
-
-            println(
-                "PlayerViewModel: corte " +
-                    "A=${cutInfo.frameA} " +
-                    "timeA=$timeA " +
-                    "B=${cutInfo.frameB} " +
-                    "timeB=$timeB " +
-                    "duration=${cutInfo.duration}"
-            )
-
-            val cutFile =
-                File(
-                    getApplication<Application>()
-                        .cacheDir,
-                    "frameA.mov"
-                )
-
-            if (!cutFile.isFile || cutFile.length() <= 0L) {
-
-                println(
-                    "PlayerViewModel: arquivo do corte " +
-                        "não encontrado ou vazio = " +
-                        cutFile.absolutePath
-                )
-
-                return
-            }
-
-            println(
-                "PlayerViewModel: vídeo cortado encontrado = " +
-                    cutFile.absolutePath +
-                    " size=" +
-                    cutFile.length()
-            )
-
-            viewModelScope.launch {
-
-                mediaExport.copyCutVideoToTree(
-                    cutFile,
-                    treeUri
-                )
-            }
-
-        } else {
-
-            println(
-                "PlayerViewModel: testCutFrames sem resultado"
-            )
-        }
+        cutController.testCurrentCut(markers)
     }
     fun toggleABLoop() {
         if (markerController.markerA() != null && markerController.markerB() != null) {
