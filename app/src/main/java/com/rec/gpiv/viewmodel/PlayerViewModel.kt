@@ -2538,10 +2538,13 @@ class PlayerViewModel(
 
         return try {
 
+            val treeDocumentId =
+                DocumentsContract.getTreeDocumentId(treeUri)
+
             val childrenUri =
                 DocumentsContract.buildChildDocumentsUriUsingTree(
                     treeUri,
-                    DocumentsContract.getTreeDocumentId(treeUri)
+                    treeDocumentId
                 )
 
             resolver.query(
@@ -2566,17 +2569,18 @@ class PlayerViewModel(
                         DocumentsContract.Document.COLUMN_DOCUMENT_ID
                     )
 
+                val mimeIndex =
+                    cursor.getColumnIndex(
+                        DocumentsContract.Document.COLUMN_MIME_TYPE
+                    )
+
                 while (cursor.moveToNext()) {
 
                     val name =
                         cursor.getString(nameIndex)
 
                     val mimeType =
-                        cursor.getString(
-                            cursor.getColumnIndex(
-                                DocumentsContract.Document.COLUMN_MIME_TYPE
-                            )
-                        )
+                        cursor.getString(mimeIndex)
 
                     if (
                         name == "trash" &&
@@ -2599,17 +2603,40 @@ class PlayerViewModel(
                 }
             }
 
-            println(
-                "PlayerViewModel: pasta trash não encontrada"
-            )
+            val parentUri =
+                DocumentsContract.buildDocumentUriUsingTree(
+                    treeUri,
+                    treeDocumentId
+                )
 
-            null
+            val trashUri =
+                DocumentsContract.createDocument(
+                    resolver,
+                    parentUri,
+                    DocumentsContract.Document.MIME_TYPE_DIR,
+                    "trash"
+                )
+
+            if (trashUri != null) {
+
+                println(
+                    "PlayerViewModel: pasta trash criada = $trashUri"
+                )
+
+            } else {
+
+                println(
+                    "PlayerViewModel: não foi possível criar pasta trash"
+                )
+            }
+
+            trashUri
 
         } catch (e: Exception) {
 
             Log.e(
                 "PlayerViewModel",
-                "Erro ao localizar pasta trash",
+                "Erro ao localizar/criar pasta trash",
                 e
             )
 
