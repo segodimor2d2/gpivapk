@@ -24,6 +24,10 @@ import com.rec.gpiv.model.PlayerUiState
 import com.rec.gpiv.player.SEEK_FRAMES
 import com.rec.gpiv.player.SEEK_FRAMES_PLUS
 import com.rec.gpiv.player.SEEK_SECONDS
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.platform.LocalDensity
 
 @Composable
 fun PlayerControlsOverlay(
@@ -73,6 +77,19 @@ fun PlayerControlsOverlay(
         if (controlSubRowD) tagFocusRequester.requestFocus()
     }
 
+    val textMeasurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val textStyle = LocalTextStyle.current
+
+    val textWidth = remember(texto, textStyle) {
+        textMeasurer
+            .measure(
+                text = texto.ifEmpty { " " },
+                style = textStyle
+            )
+            .size.width
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
             Column(
 
@@ -92,7 +109,6 @@ fun PlayerControlsOverlay(
 
             ) {
 
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement =
@@ -101,6 +117,17 @@ fun PlayerControlsOverlay(
                             Alignment.CenterHorizontally
                         )
                 ) {
+
+
+                    if (uiState.tagsEnabled) {
+                        StatusText(
+                            text = "del",
+                            modifier = Modifier.clickable {
+                                deletePermanent = false
+                                deletePopupVisible = true
+                            }
+                        )
+                    }
 
                     StatusText(
                         text = "${uiState.fileIndex + 1} / ${uiState.fileCount}",
@@ -126,74 +153,103 @@ fun PlayerControlsOverlay(
                         text = "${uiState.fileTag}",
                     )
 
-                    StatusText(
-                        text = "DEL",
-                        modifier = Modifier.clickable {
-                            deletePermanent = false
-                            deletePopupVisible = true
-                        }
-                    )
 
                 }
 
+
+
+                if (controlSubRowD) {
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = texto,
+                            onValueChange = { texto = it },
+                            singleLine = true,
+
+                            textStyle = textStyle.copy(
+                                textAlign = TextAlign.Center,
+                                lineHeight = 16.sp
+                            ),
+
+                            modifier = Modifier
+                                .width(
+                                    with(density) {
+                                        (textWidth + 40.dp.toPx()).toDp()
+                                    }
+                                )
+                                .background(
+                                    Color.Black.copy(alpha = 0.6f)
+                                )
+                                .focusRequester(tagFocusRequester),
+
+                            keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Done
+                            ),
+
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    onSaveFileTag(texto)
+                                    texto = ""
+                                    controlSubRowD = false
+                                }
+                            ),
+
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                disabledBorderColor = Color.Transparent,
+                                errorBorderColor = Color.Transparent
+                            )
+                        )
+                    }
+                }
+
             }
+
 
             if (controlSubRowD) {
                 Column(
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                        .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    OutlinedTextField(
-                        value = texto,
-                        onValueChange = { texto = it },
-                        singleLine = true,
-                        textStyle = LocalTextStyle.current.copy(
-                            textAlign = TextAlign.Center
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth(0.55f)
-                            .focusRequester(tagFocusRequester),
-                        keyboardOptions = KeyboardOptions(
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                onSaveFileTag(texto)
-                                texto = ""
-                                controlSubRowD = false
-                            }
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent,
-                            disabledBorderColor = Color.Transparent,
-                            errorBorderColor = Color.Transparent
-                        )
-                    )
 
-                    Column(
+
+
+                    FlowRow(
                         modifier = Modifier
                             .padding(top = 8.dp)
                             .heightIn(max = 280.dp)
-                            .verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                            .verticalScroll(rememberScrollState())
+                            .fillMaxWidth(0.8f),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         uiState.tags.forEach { tag ->
                             Text(
                                 text = tag,
-                                modifier = Modifier.clickable {
-                                    texto = tag
-                                    onSaveFileTag(tag)
-                                    texto = ""
-                                    controlSubRowD = false
-                                },
+                                modifier = Modifier
+                                    .background(
+                                        Color.Black.copy(alpha = 0.6f)
+                                    )
+                                    .clickable {
+                                        texto = tag
+                                        onSaveFileTag(tag)
+                                        texto = ""
+                                        controlSubRowD = false
+                                    }
+                                    .padding(
+                                        horizontal = 12.dp,
+                                        vertical = 6.dp
+                                    ),
                                 textAlign = TextAlign.Center,
                                 color = Color.White,
-                                fontSize = 18.sp
+                                fontSize = 16.sp
                             )
                         }
                     }
@@ -332,7 +388,20 @@ fun PlayerControlsOverlay(
                                       }
                               )
 
-                              if (uiState.tagsEnabled) {
+                        }
+
+                        if (uiState.tagsEnabled) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                    // .padding(vertical = 10.dp),
+
+                                horizontalArrangement = Arrangement.Center,
+
+                                verticalAlignment =
+                                    Alignment.CenterVertically
+                            ) {
+
 
                                   StatusText(
                                       text = "mv",
@@ -364,8 +433,8 @@ fun PlayerControlsOverlay(
                                       }
                                   )
                               }
-
                         }
+
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -970,9 +1039,9 @@ private fun CompactButton(
 
                 style = LocalTextStyle.current.copy(
                     shadow = Shadow(
-                        Color.Black.copy(alpha = 1.0f),
+                        color = Color.Black,
                         offset = Offset(0f, 0f),
-                        blurRadius = 8f
+                        blurRadius = 3f
                     )
                 )
 
@@ -996,9 +1065,9 @@ private fun StatusText(
 
         style = LocalTextStyle.current.copy(
             shadow = Shadow(
-                Color.Black.copy(alpha = 1.0f),
+                color = Color.Black,
                 offset = Offset(0f, 0f),
-                blurRadius = 8f
+                blurRadius = 3f
             )
         ),
 
