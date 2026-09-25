@@ -616,10 +616,14 @@ class TagFileManager(
     }
 
     private fun saveFileTag(
-        tag: String
+        inputTag: String
     ) {
 
-        if (!isValidTag(tag)) {
+        // Dois espaços são o comando para remover a tag do arquivo atual.
+        // Internamente usamos uma string vazia para acionar o fluxo de remoção.
+        val tag = if (inputTag == "  ") "" else inputTag
+
+        if (tag.isNotEmpty() && !isValidTag(tag)) {
             println(
                 "PlayerViewModel: TAG INVÁLIDA -> $tag"
             )

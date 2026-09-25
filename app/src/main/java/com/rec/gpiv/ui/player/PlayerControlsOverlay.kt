@@ -3,6 +3,8 @@ package com.rec.gpiv.ui.player
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -134,49 +136,68 @@ fun PlayerControlsOverlay(
 
                 }
 
-                if (controlSubRowD) {
+            }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+            if (controlSubRowD) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    OutlinedTextField(
+                        value = texto,
+                        onValueChange = { texto = it },
+                        singleLine = true,
+                        textStyle = LocalTextStyle.current.copy(
+                            textAlign = TextAlign.Center
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth(0.55f)
+                            .focusRequester(tagFocusRequester),
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                onSaveFileTag(texto)
+                                texto = ""
+                                controlSubRowD = false
+                            }
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            disabledBorderColor = Color.Transparent,
+                            errorBorderColor = Color.Transparent
+                        )
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .heightIn(max = 280.dp)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-
-                        OutlinedTextField(
-                            value = texto,
-                            onValueChange = { texto = it },
-                            singleLine = true,
-
-                            textStyle = LocalTextStyle.current.copy(
-                                textAlign = TextAlign.Center
-                            ),
-
-                            modifier = Modifier
-                                .fillMaxWidth(0.2f)
-                                .focusRequester(tagFocusRequester),
-
-                            keyboardOptions = KeyboardOptions(
-                                imeAction = ImeAction.Done
-                            ),
-
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    onSaveFileTag(texto)
+                        uiState.tags.forEach { tag ->
+                            Text(
+                                text = tag,
+                                modifier = Modifier.clickable {
+                                    texto = tag
+                                    onSaveFileTag(tag)
                                     texto = ""
                                     controlSubRowD = false
-                                }
-                            ),
-
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent,
-                                disabledBorderColor = Color.Transparent,
-                                errorBorderColor = Color.Transparent
+                                },
+                                textAlign = TextAlign.Center,
+                                color = Color.White,
+                                fontSize = 18.sp
                             )
-                        )
+                        }
                     }
                 }
-
             }
         }
 

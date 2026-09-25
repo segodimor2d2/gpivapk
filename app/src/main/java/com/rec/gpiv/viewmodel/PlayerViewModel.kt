@@ -88,8 +88,17 @@ class PlayerViewModel(
 
 
     fun makeTagFolders() = tagFiles.makeTagFolders()
-    fun testSaveFileTag(tag: String) = tagFiles.testSaveFileTag(tag)
+
+    fun testSaveFileTag(tag: String) {
+        tagFiles.testSaveFileTag(tag)
+        syncTagsWithUiState()
+    }
+
     fun testMoveTags() = tagFiles.testMoveTags()
+
+    private fun syncTagsWithUiState() {
+        _uiState.update { it.copy(tags = lisTags.toList()) }
+    }
 
     init {
 
@@ -111,7 +120,8 @@ class PlayerViewModel(
             _uiState.update {
                 it.copy(
                     tagsEnabled = false,
-                    fileTag = null
+                    fileTag = null,
+                    tags = emptyList()
                 )
             }
 
@@ -131,6 +141,7 @@ class PlayerViewModel(
         // tagsEnabled=true sempre garante a estrutura SAF antes da leitura.
         tagFiles.ensureGpivTagsFile(treeUri)
         tagFiles.loadLisTags(treeUri)
+        syncTagsWithUiState()
 
         val currentFile =
             fileList.current()
@@ -413,6 +424,7 @@ class PlayerViewModel(
         if (loaded && tagsEnabled) {
             tagFiles.ensureGpivTagsFile(uri)
             tagFiles.loadLisTags(uri)
+            syncTagsWithUiState()
         }
 
         val currentUri =
