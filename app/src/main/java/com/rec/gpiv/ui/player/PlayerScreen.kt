@@ -1,6 +1,8 @@
 package com.rec.gpiv.ui.player
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -88,7 +90,7 @@ fun PlayerScreen(
      */
 
     Box(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize().background(Color.Black)
     ) {
 
         /*

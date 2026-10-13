@@ -5,7 +5,7 @@ import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-/** Executa o corte nativo e exporta o vídeo temporário para a pasta SAF. */
+/** Executa o corte nativo e exporta o vídeo temporário para a pasta aberta. */
 class PlayerCutController(
     private val player: VideoPlayer,
     private val cacheDir: File,
@@ -23,7 +23,7 @@ class PlayerCutController(
             return
         }
         if (treeUri == null) {
-            println("PlayerViewModel: nenhuma pasta SAF selecionada")
+            println("PlayerViewModel: nenhuma pasta selecionada para salvar o corte")
             return
         }
 

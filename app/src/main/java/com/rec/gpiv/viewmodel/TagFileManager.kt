@@ -36,12 +36,43 @@ class TagFileManager(
         tags.clear()
         fileTags.clear()
         lines.forEach { line ->
-            val parts = line.split(',')
-            if (parts.size >= 3 && isValidTag(parts[1].trim())) {
-                val tag = parts[1].trim()
+            val parts = TagCsv.parse(line)
+            if (parts.size >= 3 && isValidTag(parts[1])) {
+                val tag = parts[1]
                 fileTags[parts[0]] = tag
                 if (tag !in tags) tags.add(tag)
             }
+        }
+        addFolderTags(folderUri)
+    }
+
+    private fun addFolderTags(folderUri: Uri) {
+        try {
+            val names = if (folderUri.scheme == "file") {
+                File(requireNotNull(folderUri.path)).listFiles()?.filter { it.isDirectory }
+                    ?.map { it.name }.orEmpty()
+            } else {
+                val names = mutableListOf<String>()
+                val children = DocumentsContract.buildChildDocumentsUriUsingTree(
+                    folderUri, DocumentsContract.getTreeDocumentId(folderUri)
+                )
+                contentResolver.query(children, arrayOf(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_MIME_TYPE
+                ), null, null, null)?.use { cursor ->
+                    val nameColumn = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                    val mimeColumn = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
+                    while (cursor.moveToNext()) {
+                        if (cursor.getString(mimeColumn) == DocumentsContract.Document.MIME_TYPE_DIR) {
+                            names.add(cursor.getString(nameColumn))
+                        }
+                    }
+                }
+                names
+            }
+            names.filter(::isValidTag).sorted().forEach { if (it !in tags) tags.add(it) }
+        } catch (e: Exception) {
+            Log.e("TagFileManager", "Erro ao listar pastas como tags", e)
         }
     }
 
@@ -56,7 +87,7 @@ class TagFileManager(
             do { backup = File(csv.parentFile, "gpivtagsbkp_%03d.csv".format(number++)) } while (backup.exists())
             csv.copyTo(backup)
             val pending = lines.filter { line ->
-                val parts = line.split(',')
+                val parts = TagCsv.parse(line)
                 if (parts.size < 3 || !isValidTag(parts[1])) return@filter true
                 val uri = Uri.parse(parts[0])
                 if (uri.scheme != "file" || uri.path == null) return@filter true
@@ -460,12 +491,12 @@ class TagFileManager(
                 lines.forEach { line ->
 
                     val parts =
-                        line.split(",")
+                        TagCsv.parse(line)
 
                     if (parts.size >= 2) {
 
                         val tag =
-                            parts[1].trim()
+                            parts[1]
 
                         if (isValidTag(tag)) {
 
@@ -524,6 +555,8 @@ class TagFileManager(
                 "Erro ao carregar lisTags",
                 e
             )
+        } finally {
+            addFolderTags(treeUri)
         }
     }
 
@@ -701,7 +734,8 @@ class TagFileManager(
     }
 
     private fun isValidTag(tag: String): Boolean {
-        return tag.matches(Regex("[a-z0-9]+"))
+        return tag.isNotBlank() && tag != "." && tag != ".." &&
+            tag != "gpvlogs" && tag.none { it == '/' || it == '\\' || it.isISOControl() }
     }
 
     private fun saveFileTag(
@@ -732,7 +766,7 @@ class TagFileManager(
                 val csv = localCsv(treeUri)
                 val key = currentFile.uri.toString()
                 val lines = csv.readLines().filter { it.substringBefore(',') != key }.toMutableList()
-                if (tag.isNotEmpty()) lines.add("$key,$tag,${currentIndex()}")
+                if (tag.isNotEmpty()) lines.add(TagCsv.row(key, tag, currentIndex()))
                 writeLocalCsv(csv, lines)
                 loadLocalTags(treeUri)
                 onFileTagChanged(tag.ifEmpty { null })
@@ -920,7 +954,7 @@ class TagFileManager(
                     lines.filter { line ->
 
                         val parts =
-                            line.split(",")
+                            TagCsv.parse(line)
 
                         parts.size < 3 ||
                             parts[0] != fileUri.toString()
@@ -958,7 +992,7 @@ class TagFileManager(
              */
 
             val newLine =
-                "${fileUri},${tag},${index}"
+                TagCsv.row(fileUri.toString(), tag, index)
 
             val lines =
                 resolver.openInputStream(
@@ -978,7 +1012,7 @@ class TagFileManager(
             for (oldLine in lines) {
 
                 val parts =
-                    oldLine.split(",")
+                    TagCsv.parse(oldLine)
 
                 if (
                     parts.size >= 3 &&
@@ -1486,7 +1520,7 @@ class TagFileManager(
                 lines.forEach { line ->
 
                     val parts =
-                        line.split(",")
+                        TagCsv.parse(line)
 
                     if (parts.size < 3) {
 
@@ -1511,7 +1545,7 @@ class TagFileManager(
                         Uri.parse(parts[0])
 
                     val tag =
-                        parts[1].trim()
+                        parts[1]
 
                     val destinationUri =
                         tagFolders[tag]

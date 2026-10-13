@@ -485,7 +485,7 @@ class PlayerViewModel(
         player = player,
         cacheDir = application.cacheDir,
         scope = viewModelScope,
-        currentTreeUri = { fileList.getCurrentTreeUri() },
+        currentTreeUri = { fileList.getTagFolderUri() },
         mediaExport = mediaExport
     )
 

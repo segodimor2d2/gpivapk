@@ -575,6 +575,30 @@ class MediaExportManager(
                  * CONVERTER treeUri -> documentUri DA PASTA
                  * ------------------------------------------------
                  */
+                if (treeUri.scheme == "file") {
+                    val directory = File(requireNotNull(treeUri.path))
+                    check(directory.isDirectory) { "Pasta do corte inacessível" }
+                    val originalName = currentFileName() ?: "video"
+                    val dot = originalName.lastIndexOf('.')
+                    val baseName = if (dot > 0) originalName.substring(0, dot) else originalName
+                    val extension = if (dot > 0 && dot < originalName.lastIndex) originalName.substring(dot) else ".mov"
+                    var number = 1
+                    var destination: File
+                    do {
+                        destination = File(directory, "%s_%03d%s".format(baseName, number++, extension))
+                    } while (!destination.createNewFile())
+                    try {
+                        cutFile.inputStream().use { input ->
+                            destination.outputStream().use { output -> input.copyTo(output) }
+                        }
+                    } catch (e: Exception) {
+                        destination.delete()
+                        throw e
+                    }
+                    println("PlayerViewModel: vídeo cortado copiado com sucesso: ${destination.absolutePath}")
+                    return@withContext
+                }
+
                 val treeDocumentId =
                     DocumentsContract.getTreeDocumentId(
                         treeUri
