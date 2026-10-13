@@ -8,7 +8,7 @@ O projeto utiliza o `mpv-android` como fonte das bibliotecas nativas e precisa q
 
 Abra o popup de miniaturas para comparar as imagens e vídeos da pasta atual. Outros tipos de arquivo são ignorados, sem exclusão. A identificação usa o conteúdo, inclusive para arquivos sem extensão.
 
-O slider vertical começa em `=`: acima favorece A, abaixo favorece B. A intensidade vai de 2 a 9 em cada direção; o centro equivale a 1. Toque ou arraste e solte para salvar e avançar. Todos os pares são avaliados (`n × (n − 1) / 2` comparações). Fechar o popup permite retomar as avaliações enquanto o conjunto de arquivos permanecer igual.
+Os thumbnails ficam lado a lado: A à esquerda e B à direita. O slider horizontal começa em `=`: esquerda favorece A, direita favorece B. A intensidade vai de 2 a 9 em cada direção; o centro equivale a 1. Toque ou arraste e solte para salvar e avançar. Todos os pares são avaliados (`n × (n − 1) / 2` comparações). Fechar o popup permite retomar as avaliações enquanto o conjunto de arquivos permanecer igual.
 
 Ao completar a última comparação, o autovetor principal da matriz recíproca determina a ordem, do mais preferido ao menos preferido. Empates mantêm a ordem inicial das URIs. O resultado mostra a razão de consistência CR para até 15 arquivos; acima disso, mostra o índice CI. CR acima de 10% é indicado no resultado, sem bloquear a renomeação.
 
