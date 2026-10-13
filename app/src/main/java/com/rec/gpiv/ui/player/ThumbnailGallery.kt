@@ -2,6 +2,10 @@ package com.rec.gpiv.ui.player
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.border
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -96,14 +100,19 @@ private fun SelectionThumbnail(entry: ThumbnailEntry, number: Int, enabled: Bool
     val preview by produceState<ImageBitmap?>(null, entry.thumbnailPath) {
         value = withContext(Dispatchers.IO) { entry.thumbnailPath?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() } }
     }
+    val thumbnailShape = RoundedCornerShape(12.dp)
     Column(Modifier.semantics { selected = number > 0 }.clickable(enabled = enabled, onClick = onClick)) {
-        Box(Modifier.fillMaxWidth().aspectRatio(1f).background(Color(0xFF151515))
-            .border(if (number > 0) 2.dp else 0.dp, if (number > 0) Color(0xFF80CBC4) else Color.Transparent),
+        Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(thumbnailShape).background(Color(0xFF151515))
+            .border(if (number > 0) 2.dp else 0.dp, if (number > 0) Color.White else Color.Transparent, thumbnailShape),
             contentAlignment = Alignment.Center) {
             preview?.let { Image(it, entry.name, Modifier.fillMaxSize(), contentScale = ContentScale.Fit) }
                 ?: Text("Prévia indisponível", color = Color.LightGray, fontSize = 11.sp)
-            if (number > 0) Text(number.toString(), color = Color.Black,
-                modifier = Modifier.align(Alignment.TopEnd).background(Color(0xFF80CBC4)).padding(horizontal = 8.dp, vertical = 4.dp))
+            if (number > 0) {
+                Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(34.dp)
+                    .background(Color.Black, CircleShape), contentAlignment = Alignment.Center) {
+                    Text(number.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp, maxLines = 1)
+                }
+            }
         }
         Text(entry.name, color = Color.White, maxLines = 2, fontSize = 11.sp)
     }
