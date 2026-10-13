@@ -36,6 +36,7 @@ fun PlayerControlsOverlay(
     gestureToolState: MutableState<GestureTool>,
     onOpenVideo: () -> Unit,
     onOpenFolder: () -> Unit,
+    onOpenThumbnails: () -> Unit,
     onPreviousFile: () -> Unit,
     onFirstFile: () -> Unit,
     onLastFile: () -> Unit,
@@ -360,8 +361,7 @@ fun PlayerControlsOverlay(
                               StatusText(
                                   text = "#",
                                   modifier =
-                                      Modifier.clickable {
-                                      }
+                                      Modifier.clickable { onOpenThumbnails() }
                               )
 
                               StatusText(

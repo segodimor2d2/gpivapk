@@ -5,6 +5,9 @@ import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.rec.gpiv.model.ThumbnailEntry
+import com.rec.gpiv.data.ThumbnailRepository
+import kotlinx.coroutines.ensureActive
 import com.rec.gpiv.model.PlayerUiState
 import com.rec.gpiv.model.OperationStatus
 import com.rec.gpiv.data.FolderRepository
@@ -74,6 +77,38 @@ class PlayerViewModel(
 
     val uiState: StateFlow<PlayerUiState> =
         _uiState.asStateFlow()
+
+    private val thumbnailRepository = ThumbnailRepository(application.contentResolver, application.cacheDir)
+    private var galleryJob: Job? = null
+
+    fun openThumbnailGallery() {
+        galleryJob?.cancel()
+        val files = fileList.all()
+        val folder = fileList.getTagFolderUri()
+        _uiState.update { it.copy(galleryVisible = true, thumbnails = files.map { file -> ThumbnailEntry(file.uri, file.name) }) }
+        galleryJob = viewModelScope.launch {
+            val persist = withContext(Dispatchers.IO) { thumbnailRepository.prepare(folder) }
+            files.forEachIndexed { index, file ->
+                ensureActive()
+                val preview = withContext(Dispatchers.IO) { thumbnailRepository.thumbnail(file, persist) }
+                _uiState.update {
+                    val entries = it.thumbnails.toMutableList()
+                    entries[index] = entries[index].copy(thumbnailPath = preview?.absolutePath, processed = true)
+                    it.copy(thumbnails = entries)
+                }
+            }
+        }
+    }
+
+    fun closeThumbnailGallery() {
+        galleryJob?.cancel()
+        _uiState.update { it.copy(galleryVisible = false, thumbnails = emptyList()) }
+    }
+
+    fun selectThumbnail(uri: Uri) {
+        closeThumbnailGallery()
+        load(uri)
+    }
 
     private val lisTags = mutableListOf<String>()
 

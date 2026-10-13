@@ -146,6 +146,9 @@ class MainActivity : ComponentActivity() {
                         onOpenFolder = {
                             openStorageBrowser()
                         },
+                        onOpenThumbnails = viewModel::openThumbnailGallery,
+                        onCloseThumbnails = viewModel::closeThumbnailGallery,
+                        onSelectThumbnail = viewModel::selectThumbnail,
                         onPreviousFile = viewModel::previousFile,
                         onFirstFile = viewModel::firstFile,
                         onLastFile = viewModel::lastFile,

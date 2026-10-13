@@ -21,6 +21,9 @@ fun PlayerScreen(
 
     onOpenVideo: () -> Unit,
     onOpenFolder: () -> Unit,
+    onOpenThumbnails: () -> Unit,
+    onCloseThumbnails: () -> Unit,
+    onSelectThumbnail: (android.net.Uri) -> Unit,
 
     onPreviousFile: () -> Unit,
     onFirstFile: () -> Unit,
@@ -135,6 +138,7 @@ fun PlayerScreen(
                 gestureToolState = gestureToolState,
                 onOpenVideo = onOpenVideo,
                 onOpenFolder = onOpenFolder,
+                onOpenThumbnails = onOpenThumbnails,
                 onPreviousFile = onPreviousFile,
                 onFirstFile = onFirstFile,
                 onLastFile = onLastFile,
@@ -163,6 +167,9 @@ fun PlayerScreen(
                 onMute = onMute,
                 onResetVideoAdjustments = onResetVideoAdjustments
             )
+        }
+        if (uiState.galleryVisible) {
+            ThumbnailGallery(uiState.thumbnails, onCloseThumbnails, onSelectThumbnail)
         }
     }
 }
