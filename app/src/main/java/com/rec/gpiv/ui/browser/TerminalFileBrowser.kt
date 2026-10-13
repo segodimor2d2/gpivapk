@@ -40,14 +40,14 @@ fun showTerminalFileBrowser(
         typeface = Typeface.MONOSPACE
         textSize = 14f
         setTextColor(Color.WHITE)
-        setPadding(dp(16), dp(16), dp(16), dp(12))
+        setPadding(dp(6), dp(6), dp(6), dp(6))
         maxLines = 2
         ellipsize = TextUtils.TruncateAt.MIDDLE
     }
     dialog.setCustomTitle(title)
     val grid = GridView(dialog.context).apply {
         setBackgroundColor(Color.BLACK)
-        setPadding(dp(8), 0, dp(8), dp(8))
+        setPadding(dp(6), dp(6), dp(6), dp(6))
         horizontalSpacing = dp(8)
         stretchMode = GridView.STRETCH_COLUMN_WIDTH
         numColumns = 2
@@ -60,7 +60,7 @@ fun showTerminalFileBrowser(
                     typeface = Typeface.MONOSPACE
                     textSize = 13f
                     setTextColor(Color.WHITE)
-                    setPadding(dp(8), dp(12), dp(8), dp(12))
+                    setPadding(dp(6), dp(6), dp(6), dp(6))
                     minHeight = dp(48)
                     setSingleLine()
                     ellipsize = TextUtils.TruncateAt.MIDDLE
@@ -82,12 +82,16 @@ fun showTerminalFileBrowser(
         setBackgroundColor(Color.BLACK)
         addView(grid, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            (context.resources.displayMetrics.heightPixels * 0.65f).toInt()
+            ViewGroup.LayoutParams.MATCH_PARENT
         ))
     }
-    dialog.setView(container)
+    dialog.setView(container, 0, 0, 0, 0)
     dialog.show()
-    dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+    dialog.window?.apply {
+        setBackgroundDrawableResource(R.drawable.file_browser_background)
+        decorView.clipToOutline = true
+        setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+    }
     grid.post {
         // Mantém pelo menos duas colunas; telas maiores comportam mais nomes.
         grid.numColumns = ((grid.width - grid.paddingLeft - grid.paddingRight) / dp(160)).coerceIn(2, 5)
