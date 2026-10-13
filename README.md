@@ -14,7 +14,7 @@ Ao completar a última comparação, o autovetor principal da matriz recíproca 
 
 Os nomes ficam sem extensão: `.<pasta><Im ou Mv><yyyyMMddHHmmss>_<sequência>`. A data e hora local são as do início da renomeação; a sequência começa em 1010 e aumenta de 4 em 4. Exemplo: `.FériasIm20261013153045_1010`.
 
-A operação verifica colisões e usa nomes temporários com um registro interno de recuperação. Se houver falha, tenta restaurar os nomes originais e conserva as avaliações para nova tentativa. Depois de uma interrupção, abrir o popup tenta recuperar uma renomeação pendente. A pasta `gpvlogs/thumbnails` é removida somente após a renomeação completa; falhas na limpeza aparecem no resultado.
+A operação verifica colisões e usa nomes temporários com um registro interno de recuperação. Se houver falha, tenta restaurar os nomes originais e conserva as avaliações para nova tentativa. Depois de uma interrupção, abrir o popup tenta recuperar uma renomeação pendente. Ao concluir, a pasta atual é recarregada para aplicar a ordenação por timestamp e abrir o primeiro arquivo da lista reordenada. A pasta `gpvlogs/thumbnails` é removida somente após a renomeação completa; falhas na limpeza aparecem no resultado.
 
 ## 1. Requisitos
 

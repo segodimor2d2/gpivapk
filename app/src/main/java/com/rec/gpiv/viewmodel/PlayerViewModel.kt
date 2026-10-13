@@ -164,7 +164,7 @@ class PlayerViewModel(
                     if (folder.scheme == "file") fileList.loadFromDirectory(java.io.File(requireNotNull(folder.path)))
                     else fileList.loadFromTree(folder)
                     reloadTags()
-                    load(renamed.first())
+                    firstFile()
                 }
                 _uiState.update { it.copy(ahpBusy = false, ahpReady = false, thumbnails = emptyList(),
                     ahpMessage = "${renamed.size} arquivos renomeados. $consistency" +
