@@ -89,14 +89,59 @@ class PlayerViewModel(
 
 
 
-    fun makeTagFolders() = tagFiles.makeTagFolders()
+    fun makeTagFolders() {
+        if (_uiState.value.movingTaggedFiles) return
+        tagFiles.makeTagFolders()
+    }
 
     fun testSaveFileTag(tag: String) {
+        if (_uiState.value.movingTaggedFiles) return
         tagFiles.testSaveFileTag(tag)
         syncTagsWithUiState()
     }
 
-    fun testMoveTags() = tagFiles.testMoveTags()
+    fun testMoveTags() {
+        if (_uiState.value.movingTaggedFiles) return
+        val folder = fileList.getTagFolderUri() ?: return
+        val file = fileList.current()
+        val index = fileList.currentIndex()
+        // The worker owns its collections and keeps the original folder even
+        // when the user navigates elsewhere during a long move.
+        val movedTags = lisTags.toMutableList()
+        val movedFileTags = fileTags.toMutableMap()
+        val worker = TagFileManager(
+            contentResolver = getApplication<Application>().contentResolver,
+            currentTreeUri = { folder },
+            currentFile = { file },
+            currentIndex = { index },
+            tags = movedTags,
+            fileTags = movedFileTags,
+            onFileTagChanged = {}
+        )
+        _uiState.update { it.copy(movingTaggedFiles = true) }
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    worker.testMoveTags()
+                    worker.loadLisTags(folder)
+                }
+                if (fileList.getTagFolderUri() == folder && tagsEnabled) {
+                    lisTags.clear()
+                    lisTags.addAll(movedTags)
+                    fileTags.clear()
+                    fileTags.putAll(movedFileTags)
+                    _uiState.update {
+                        it.copy(
+                            tags = lisTags.toList(),
+                            fileTag = fileList.current()?.uri?.toString()?.let(fileTags::get)
+                        )
+                    }
+                }
+            } finally {
+                _uiState.update { it.copy(movingTaggedFiles = false) }
+            }
+        }
+    }
 
     private fun reloadTags() {
         fileTags.clear()
@@ -126,6 +171,7 @@ class PlayerViewModel(
     fun setTagsEnabled(
         enabled: Boolean
     ) {
+        if (_uiState.value.movingTaggedFiles) return
 
         if (!enabled) {
 
@@ -478,7 +524,12 @@ class PlayerViewModel(
         scope = viewModelScope,
         currentTreeUri = { fileList.getCurrentTreeUri() },
         currentFileName = { _uiState.value.filename },
-        currentFileUri = { fileList.current()?.uri }
+        currentFileUri = { fileList.current()?.uri },
+        onScreenshotStatus = { mpv, status ->
+            _uiState.update {
+                if (mpv) it.copy(screenshotMpvStatus = status) else it.copy(screenshotStatus = status)
+            }
+        }
     )
 
     private val cutController = PlayerCutController(
@@ -486,7 +537,9 @@ class PlayerViewModel(
         cacheDir = application.cacheDir,
         scope = viewModelScope,
         currentTreeUri = { fileList.getTagFolderUri() },
-        mediaExport = mediaExport
+        mediaExport = mediaExport,
+        currentFileName = { _uiState.value.filename },
+        onStatus = { status -> _uiState.update { it.copy(cutStatus = status) } }
     )
 
     private val trashManager = FileTrashManager(

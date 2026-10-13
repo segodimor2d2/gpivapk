@@ -1,11 +1,17 @@
 package com.rec.gpiv.model
 
+enum class OperationStatus { IDLE, RUNNING, SUCCESS, ERROR }
+
 data class PlayerUiState(
+    val screenshotMpvStatus: OperationStatus = OperationStatus.IDLE,
+    val screenshotStatus: OperationStatus = OperationStatus.IDLE,
+    val cutStatus: OperationStatus = OperationStatus.IDLE,
     val playing: Boolean = false,
     val filename: String? = null,
     val fileTag: String? = null,
     val tagsEnabled: Boolean = false,
     val tags: List<String> = emptyList(),
+    val movingTaggedFiles: Boolean = false,
     val fileIndex: Int = 0,
     val fileCount: Int = 0,
     val position: Double = 0.0,

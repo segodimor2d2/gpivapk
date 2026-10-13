@@ -27,6 +27,7 @@ import com.rec.gpiv.player.SEEK_SECONDS
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.rememberTextMeasurer
+import com.rec.gpiv.model.OperationStatus
 import androidx.compose.ui.platform.LocalDensity
 
 @Composable
@@ -371,7 +372,7 @@ fun PlayerControlsOverlay(
                                       } else {
                                           Color.Transparent
                                       },
-                                  modifier = Modifier.clickable {
+                                  modifier = Modifier.clickable(enabled = !uiState.movingTaggedFiles) {
                                       onTagsEnabledChange(
                                           !uiState.tagsEnabled
                                       )
@@ -410,9 +411,9 @@ fun PlayerControlsOverlay(
 
 
                                   StatusText(
-                                      text = "mv",
+                                      text = if (uiState.movingTaggedFiles) "movendo..." else "mv",
                                       modifier = Modifier
-                                          .clickable {
+                                          .clickable(enabled = !uiState.movingTaggedFiles) {
                                               onTestMoveTags()
                                           }
                                   )
@@ -420,7 +421,7 @@ fun PlayerControlsOverlay(
                                   StatusText(
                                       text = "mkd",
                                       modifier = Modifier
-                                          .clickable {
+                                          .clickable(enabled = !uiState.movingTaggedFiles) {
                                               onMakeTags()
                                           }
 
@@ -434,7 +435,7 @@ fun PlayerControlsOverlay(
                                           } else {
                                               Color.Transparent
                                           },
-                                      modifier = Modifier.clickable {
+                                      modifier = Modifier.clickable(enabled = !uiState.movingTaggedFiles) {
                                           controlSubRowD = !controlSubRowD
                                       }
                                   )
@@ -491,24 +492,29 @@ fun PlayerControlsOverlay(
                                 )
                         ) {
 
-                            CompactButton(
+                            FeedbackButton(
                                 text = "SS MPV",
+                                status = uiState.screenshotMpvStatus,
+                                enabled = uiState.screenshotStatus != OperationStatus.RUNNING,
                                 onClick = {
                                   onSetScreenshotMethod("MPV")
                                   onScreenshot()
                                 }
                             )
 
-                            CompactButton(
+                            FeedbackButton(
                                 text = "[SS]",
+                                status = uiState.screenshotStatus,
+                                enabled = uiState.screenshotMpvStatus != OperationStatus.RUNNING,
                                 onClick = {
                                   onSetScreenshotMethod("FRAMEBUFFER")
                                   onScreenshot()
                                 }
                             )
 
-                            CompactButton(
+                            FeedbackButton(
                                 text = "[CUT]",
+                                status = uiState.cutStatus,
                                 onClick = onTestCut
                             )
 
@@ -1006,11 +1012,33 @@ fun PlayerControlsOverlay(
  */
 
 @Composable
+private fun FeedbackButton(
+    text: String,
+    status: OperationStatus,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    val color = when (status) {
+        OperationStatus.IDLE -> Color.Transparent
+        OperationStatus.RUNNING -> Color(0xFF996600)
+        OperationStatus.SUCCESS -> Color(0xFF00994C)
+        OperationStatus.ERROR -> Color(0xFFB3261E)
+    }
+    CompactButton(
+        text = if (status == OperationStatus.RUNNING) "$text..." else text,
+        containerColor = color,
+        enabled = enabled && status != OperationStatus.RUNNING,
+        onClick = onClick
+    )
+}
+
+@Composable
 private fun CompactButton(
     text: String,
     onClick: () -> Unit,
     containerColor: Color = Color.Black.copy(alpha = 0.0f),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
 
     CompositionLocalProvider(
@@ -1020,12 +1048,15 @@ private fun CompactButton(
 
         Button(
             onClick = onClick,
+            enabled = enabled,
 
             modifier = modifier
                 .height(28.dp),
 
             colors = ButtonDefaults.buttonColors(
                 containerColor = containerColor,
+                disabledContainerColor = containerColor,
+                disabledContentColor = Color.White,
                 contentColor =
                     Color.White
             ),

@@ -1,5 +1,7 @@
 package com.rec.gpiv.viewmodel
 
+import com.rec.gpiv.model.OperationStatus
+import kotlinx.coroutines.CancellationException
 import android.content.ContentResolver
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -24,101 +26,52 @@ class MediaExportManager(
     private val scope: CoroutineScope,
     private val currentTreeUri: () -> Uri?,
     private val currentFileName: () -> String?,
-    private val currentFileUri: () -> Uri?
+    private val currentFileUri: () -> Uri?,
+    private val onScreenshotStatus: (Boolean, OperationStatus) -> Unit = { _, _ -> }
 ) {
 
     private var screenshotMethod = ScreenshotMethod.FRAMEBUFFER
 
+    private var screenshotRunning = false
+
     fun screenshot() {
-
-        println(
-            "PlayerViewModel: screenshot()"
-        )
-
-        val cacheDir =
-            cacheDir
-
-        val treeUri =
-            currentTreeUri()
-
+        if (screenshotRunning) return
+        val method = screenshotMethod
+        val mpv = method == ScreenshotMethod.MPV
+        val treeUri = currentTreeUri()
         val fileUri = currentFileUri()
-        val localDirectory = if (fileUri?.scheme == "file") {
-            fileUri.path?.let { File(it).parentFile }
-        } else {
-            null
-        }
+        val localDirectory = if (fileUri?.scheme == "file") fileUri.path?.let { File(it).parentFile } else null
         val originalName = currentFileName() ?: "screenshot"
-
+        onScreenshotStatus(mpv, OperationStatus.RUNNING)
         if (treeUri == null && localDirectory == null) {
-
-            println(
-                "PlayerViewModel: nenhuma pasta SAF selecionada"
-            )
-
+            onScreenshotStatus(mpv, OperationStatus.ERROR)
             return
         }
-
-        /*
-         * Guarda os screenshots existentes antes
-         * de disparar o novo screenshot.
-         */
-        val existingFiles =
-            cacheDir
-                .listFiles()
-                ?.filter {
-                    it.name.startsWith("mpv-shot") &&
-                    it.name.endsWith(".jpg")
-                }
-                ?.map {
-                    it.name
-                }
-                ?.toSet()
-                ?: emptySet()
-
-        /*
-         * Dispara o screenshot no mpv.
-         *
-         * O arquivo será criado assincronamente
-         * dentro do cacheDir.
-         */
-
-        when (screenshotMethod) {
-
-            ScreenshotMethod.FRAMEBUFFER -> {
-                player.screenshot()
-            }
-
-            ScreenshotMethod.MPV -> {
-                player.screenshotMpv()
-            }
-        }
-
+        screenshotRunning = true
         scope.launch {
-
-            val screenshotFile =
-                waitForNewScreenshot(
-                    cacheDir,
-                    existingFiles
-                )
-
-            if (screenshotFile == null) {
-
-                println(
-                    "PlayerViewModel: screenshot não apareceu no cache"
-                )
-
-                return@launch
-            }
-
-            println(
-                "PlayerViewModel: screenshot encontrado = " +
-                    screenshotFile.absolutePath
-            )
-
-            if (localDirectory != null) {
-                copyScreenshotToDirectory(screenshotFile, localDirectory, originalName)
-            } else if (treeUri != null) {
-                copyScreenshotToTree(screenshotFile, treeUri, originalName)
+            try {
+                val existingFiles = withContext(Dispatchers.IO) {
+                    cacheDir.listFiles()?.filter { it.name.startsWith("mpv-shot") && it.name.endsWith(".jpg") }
+                        ?.map { it.name }?.toSet().orEmpty()
+                }
+                when (method) {
+                    ScreenshotMethod.FRAMEBUFFER -> player.screenshot()
+                    ScreenshotMethod.MPV -> player.screenshotMpv()
+                }
+                val success = withContext(Dispatchers.IO) {
+                    val screenshotFile = waitForNewScreenshot(cacheDir, existingFiles)
+                    if (screenshotFile == null) false
+                    else if (localDirectory != null) copyScreenshotToDirectory(screenshotFile, localDirectory, originalName)
+                    else copyScreenshotToTree(screenshotFile, requireNotNull(treeUri), originalName)
+                }
+                onScreenshotStatus(mpv, if (success) OperationStatus.SUCCESS else OperationStatus.ERROR)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                println("PlayerViewModel: erro no screenshot: ${e.message}")
+                onScreenshotStatus(mpv, OperationStatus.ERROR)
+            } finally {
+                screenshotRunning = false
             }
         }
     }
@@ -140,8 +93,10 @@ class MediaExportManager(
             } while (destination.exists())
             screenshotFile.copyTo(destination, overwrite = false)
             println("PlayerViewModel: screenshot salvo = ${destination.absolutePath}")
+            true
         } catch (e: Exception) {
             println("PlayerViewModel: erro ao copiar screenshot: ${e.message}")
+            false
         }
     }
 
@@ -376,9 +331,7 @@ class MediaExportManager(
         screenshotFile: File,
         treeUri: Uri,
         originalName: String
-    ) {
-
-        withContext(Dispatchers.IO) {
+    ): Boolean = withContext(Dispatchers.IO) {
 
             try {
 
@@ -480,7 +433,7 @@ class MediaExportManager(
                           "arquivo SAF"
                   )
 
-                  return@withContext
+                  return@withContext false
                 }
 
                 val finalDestinationUri =
@@ -501,7 +454,7 @@ class MediaExportManager(
                                 "renomear arquivo SAF"
                         )
 
-                        return@withContext
+                        return@withContext false
                     }
 
 
@@ -533,7 +486,7 @@ class MediaExportManager(
                                 "abrir outputStream"
                         )
 
-                        return@withContext
+                        return@withContext false
                     }
 
 
@@ -549,22 +502,24 @@ class MediaExportManager(
                 )
 
 
+                true
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
 
                 println(
                     "PlayerViewModel: erro ao copiar screenshot: " +
                         e.message
                 )
+                false
             }
         }
-    }
 
     suspend fun copyCutVideoToTree(
         cutFile: File,
-        treeUri: Uri
-    ) {
-
-        withContext(Dispatchers.IO) {
+        treeUri: Uri,
+        originalName: String = currentFileName() ?: "video"
+    ): Boolean = withContext(Dispatchers.IO) {
 
             try {
 
@@ -578,7 +533,6 @@ class MediaExportManager(
                 if (treeUri.scheme == "file") {
                     val directory = File(requireNotNull(treeUri.path))
                     check(directory.isDirectory) { "Pasta do corte inacessível" }
-                    val originalName = currentFileName() ?: "video"
                     val dot = originalName.lastIndexOf('.')
                     val baseName = if (dot > 0) originalName.substring(0, dot) else originalName
                     val extension = if (dot > 0 && dot < originalName.lastIndex) originalName.substring(dot) else ".mov"
@@ -596,7 +550,7 @@ class MediaExportManager(
                         throw e
                     }
                     println("PlayerViewModel: vídeo cortado copiado com sucesso: ${destination.absolutePath}")
-                    return@withContext
+                    return@withContext true
                 }
 
                 val treeDocumentId =
@@ -615,9 +569,6 @@ class MediaExportManager(
                  * NOME DO VÍDEO ORIGINAL
                  * ------------------------------------------------
                  */
-                val originalName =
-                    currentFileName()
-                        ?: "video"
 
                 val lastDot =
                     originalName.lastIndexOf(".")
@@ -687,7 +638,7 @@ class MediaExportManager(
                             "vídeo cortado na pasta SAF"
                     )
 
-                    return@withContext
+                    return@withContext false
                 }
 
                 /*
@@ -717,7 +668,7 @@ class MediaExportManager(
                                 "abrir outputStream do vídeo"
                         )
 
-                        return@withContext
+                        return@withContext false
                     }
 
                 println(
@@ -725,15 +676,18 @@ class MediaExportManager(
                         "com sucesso: $destinationName"
                 )
 
+                true
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
 
                 println(
                     "PlayerViewModel: erro ao copiar vídeo cortado: " +
                         e.message
                 )
+                false
             }
         }
-    }
 
 
 }
