@@ -77,7 +77,7 @@ class PlayerViewModel(
 
     private val lisTags = mutableListOf<String>()
 
-    private enum class FeedbackOperation { SCREENSHOT_MPV, SCREENSHOT, CUT }
+    private enum class FeedbackOperation { SCREENSHOT_MPV, SCREENSHOT, CUT, MAKE_FOLDERS, MOVE_TAGS }
     private val feedbackTimers = mutableMapOf<FeedbackOperation, Job>()
 
     private fun setOperationStatus(operation: FeedbackOperation, status: OperationStatus) {
@@ -85,7 +85,7 @@ class PlayerViewModel(
         updateOperationStatus(operation, status)
         if (status == OperationStatus.SUCCESS || status == OperationStatus.ERROR) {
             feedbackTimers[operation] = viewModelScope.launch {
-                delay(5_00)
+                delay(if (operation == FeedbackOperation.MAKE_FOLDERS || operation == FeedbackOperation.MOVE_TAGS) 2_00 else 2_00)
                 updateOperationStatus(operation, OperationStatus.IDLE)
                 feedbackTimers.remove(operation)
             }
@@ -98,6 +98,8 @@ class PlayerViewModel(
                 FeedbackOperation.SCREENSHOT_MPV -> it.copy(screenshotMpvStatus = status)
                 FeedbackOperation.SCREENSHOT -> it.copy(screenshotStatus = status)
                 FeedbackOperation.CUT -> it.copy(cutStatus = status)
+                FeedbackOperation.MAKE_FOLDERS -> it.copy(makeFoldersStatus = status)
+                FeedbackOperation.MOVE_TAGS -> it.copy(moveTagsStatus = status)
             }
         }
     }
@@ -116,10 +118,7 @@ class PlayerViewModel(
 
 
 
-    fun makeTagFolders() {
-        if (_uiState.value.movingTaggedFiles) return
-        tagFiles.makeTagFolders()
-    }
+    fun makeTagFolders() = runTagOperation(move = false)
 
     fun testSaveFileTag(tag: String) {
         if (_uiState.value.movingTaggedFiles) return
@@ -127,9 +126,16 @@ class PlayerViewModel(
         syncTagsWithUiState()
     }
 
-    fun testMoveTags() {
+    fun testMoveTags() = runTagOperation(move = true)
+
+    private fun runTagOperation(move: Boolean) {
         if (_uiState.value.movingTaggedFiles) return
-        val folder = fileList.getTagFolderUri() ?: return
+        val operation = if (move) FeedbackOperation.MOVE_TAGS else FeedbackOperation.MAKE_FOLDERS
+        val folder = fileList.getTagFolderUri()
+        if (folder == null) {
+            setOperationStatus(operation, OperationStatus.ERROR)
+            return
+        }
         val file = fileList.current()
         val index = fileList.currentIndex()
         // The worker owns its collections and keeps the original folder even
@@ -145,13 +151,16 @@ class PlayerViewModel(
             fileTags = movedFileTags,
             onFileTagChanged = {}
         )
+        setOperationStatus(operation, OperationStatus.RUNNING)
         _uiState.update { it.copy(movingTaggedFiles = true) }
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) {
-                    worker.testMoveTags()
+                val success = withContext(Dispatchers.IO) {
+                    val result = if (move) worker.testMoveTags() else worker.makeTagFolders()
                     worker.loadLisTags(folder)
+                    result
                 }
+                setOperationStatus(operation, if (success) OperationStatus.SUCCESS else OperationStatus.ERROR)
                 if (fileList.getTagFolderUri() == folder && tagsEnabled) {
                     lisTags.clear()
                     lisTags.addAll(movedTags)
@@ -164,6 +173,10 @@ class PlayerViewModel(
                         )
                     }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                setOperationStatus(operation, OperationStatus.ERROR)
             } finally {
                 _uiState.update { it.copy(movingTaggedFiles = false) }
             }

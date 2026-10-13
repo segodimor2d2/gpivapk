@@ -410,21 +410,18 @@ fun PlayerControlsOverlay(
                             ) {
 
 
-                                  StatusText(
-                                      text = if (uiState.movingTaggedFiles) "movendo..." else "mv",
-                                      modifier = Modifier
-                                          .clickable(enabled = !uiState.movingTaggedFiles) {
-                                              onTestMoveTags()
-                                          }
+                                  FeedbackButton(
+                                      text = "mv",
+                                      status = uiState.moveTagsStatus,
+                                      enabled = !uiState.movingTaggedFiles,
+                                      onClick = onTestMoveTags
                                   )
 
-                                  StatusText(
+                                  FeedbackButton(
                                       text = "mkd",
-                                      modifier = Modifier
-                                          .clickable(enabled = !uiState.movingTaggedFiles) {
-                                              onMakeTags()
-                                          }
-
+                                      status = uiState.makeFoldersStatus,
+                                      enabled = !uiState.movingTaggedFiles,
+                                      onClick = onMakeTags
                                   )
 
                                   StatusText(

@@ -5,6 +5,8 @@ enum class OperationStatus { IDLE, RUNNING, SUCCESS, ERROR }
 data class PlayerUiState(
     val screenshotMpvStatus: OperationStatus = OperationStatus.IDLE,
     val screenshotStatus: OperationStatus = OperationStatus.IDLE,
+    val makeFoldersStatus: OperationStatus = OperationStatus.IDLE,
+    val moveTagsStatus: OperationStatus = OperationStatus.IDLE,
     val cutStatus: OperationStatus = OperationStatus.IDLE,
     val playing: Boolean = false,
     val filename: String? = null,

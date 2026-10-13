@@ -76,7 +76,7 @@ class TagFileManager(
         }
     }
 
-    private fun moveLocalTags(folderUri: Uri) {
+    private fun moveLocalTags(folderUri: Uri): Boolean {
         try {
             val root = File(requireNotNull(folderUri.path)).canonicalFile
             val csv = localCsv(folderUri)
@@ -106,8 +106,10 @@ class TagFileManager(
             writeLocalCsv(csv, pending)
             loadLocalTags(folderUri)
             onFileTagChanged(currentFile()?.uri?.toString()?.let(fileTags::get))
+            return pending.isEmpty()
         } catch (e: Exception) {
             Log.e("TagFileManager", "Erro ao mover arquivos por tag local", e)
+            return false
         }
     }
 
@@ -560,7 +562,7 @@ class TagFileManager(
         }
     }
 
-    fun makeTagFolders() {
+    fun makeTagFolders(): Boolean {
 
         val treeUri =
             currentTreeUri()
@@ -572,28 +574,29 @@ class TagFileManager(
                     "nenhuma pasta selecionada"
             )
 
-            return
+            return false
         }
 
-        makeTagFolders(treeUri)
+        return makeTagFolders(treeUri)
     }
 
     private fun makeTagFolders(
         treeUri: Uri
-    ) {
+    ): Boolean {
         if (treeUri.scheme == "file") {
             try {
                 tags.forEach { check(File(requireNotNull(treeUri.path), it).isDirectory || File(requireNotNull(treeUri.path), it).mkdir()) }
-                return
+                return true
             } catch (e: Exception) {
                 Log.e("TagFileManager", "Erro nas tags da pasta local", e)
-                return
+                return false
             }
         }
 
         val resolver =
             contentResolver
 
+        var success = true
         try {
 
             /*
@@ -715,6 +718,7 @@ class TagFileManager(
                     )
 
                 } else {
+                    success = false
 
                     println(
                         "PlayerViewModel: " +
@@ -724,6 +728,7 @@ class TagFileManager(
             }
 
         } catch (e: Exception) {
+            success = false
 
             Log.e(
                 "PlayerViewModel",
@@ -731,6 +736,7 @@ class TagFileManager(
                 e
             )
         }
+        return success
     }
 
     private fun isValidTag(tag: String): Boolean {
@@ -1263,7 +1269,7 @@ class TagFileManager(
         }
     }
 
-    fun testMoveTags() {
+    fun testMoveTags(): Boolean {
 
         val treeUri =
             currentTreeUri()
@@ -1275,17 +1281,17 @@ class TagFileManager(
                     "nenhuma pasta selecionada"
             )
 
-            return
+            return false
         }
 
         if (treeUri.scheme == "file") {
-            moveLocalTags(treeUri)
-            return
+            return moveLocalTags(treeUri)
         }
 
         val resolver =
             contentResolver
 
+        var success = true
         try {
 
             val treeDocumentId =
@@ -1363,7 +1369,7 @@ class TagFileManager(
                         "gpvlogs não encontrado"
                 )
 
-                return
+                return false
             }
 
             /*
@@ -1433,7 +1439,7 @@ class TagFileManager(
                         "gpvlogs/gpivtags.csv não encontrado"
                 )
 
-                return
+                return false
             }
 
             /*
@@ -1511,11 +1517,8 @@ class TagFileManager(
             var failedCount = 0
             val logLines = mutableListOf<String>()
 
-            resolver.openInputStream(
-                csvUri!!
-            )?.bufferedReader(
-                Charsets.UTF_8
-            )?.useLines { lines ->
+            requireNotNull(resolver.openInputStream(csvUri!!)) { "Não foi possível ler as tags" }
+                .bufferedReader(Charsets.UTF_8).useLines { lines ->
 
                 lines.forEach { line ->
 
@@ -1883,6 +1886,7 @@ class TagFileManager(
                             }
 
                         } catch (e: Exception) {
+                            success = false
 
                             /*
                              * A cópia falhou.
@@ -1941,6 +1945,8 @@ class TagFileManager(
              * BACKUP DO gpivtags.csv
              * ------------------------------------------------
              */
+
+            success = success && failedCount == 0
 
             val backupName =
                 getNextGpivTagsBackupName(
@@ -2038,6 +2044,7 @@ class TagFileManager(
                     )
 
                 } catch (e: Exception) {
+                    success = false
 
                     Log.e(
                         "PlayerViewModel",
@@ -2125,6 +2132,7 @@ class TagFileManager(
                         )
 
                     } catch (e: Exception) {
+                        success = false
 
                         Log.e(
                             "PlayerViewModel",
@@ -2134,6 +2142,7 @@ class TagFileManager(
                     }
 
                 } else {
+                    success = false
 
                     println(
                         "PlayerViewModel: " +
@@ -2143,6 +2152,7 @@ class TagFileManager(
                 }
 
             } else {
+                success = false
 
                 println(
                     "PlayerViewModel: " +
@@ -2152,6 +2162,7 @@ class TagFileManager(
             }
 
         } catch (e: Exception) {
+            success = false
 
             Log.e(
                 "PlayerViewModel",
@@ -2159,6 +2170,7 @@ class TagFileManager(
                 e
             )
         }
+        return success
     }
 
     fun getFileName(uri: Uri): String {
