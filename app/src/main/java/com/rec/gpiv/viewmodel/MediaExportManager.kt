@@ -23,7 +23,8 @@ class MediaExportManager(
     private val player: VideoPlayer,
     private val scope: CoroutineScope,
     private val currentTreeUri: () -> Uri?,
-    private val currentFileName: () -> String?
+    private val currentFileName: () -> String?,
+    private val currentFileUri: () -> Uri?
 ) {
 
     private var screenshotMethod = ScreenshotMethod.FRAMEBUFFER
@@ -40,7 +41,15 @@ class MediaExportManager(
         val treeUri =
             currentTreeUri()
 
-        if (treeUri == null) {
+        val fileUri = currentFileUri()
+        val localDirectory = if (fileUri?.scheme == "file") {
+            fileUri.path?.let { File(it).parentFile }
+        } else {
+            null
+        }
+        val originalName = currentFileName() ?: "screenshot"
+
+        if (treeUri == null && localDirectory == null) {
 
             println(
                 "PlayerViewModel: nenhuma pasta SAF selecionada"
@@ -106,10 +115,33 @@ class MediaExportManager(
                     screenshotFile.absolutePath
             )
 
-            copyScreenshotToTree(
-                screenshotFile,
-                treeUri
-            )
+            if (localDirectory != null) {
+                copyScreenshotToDirectory(screenshotFile, localDirectory, originalName)
+            } else if (treeUri != null) {
+                copyScreenshotToTree(screenshotFile, treeUri, originalName)
+            }
+        }
+    }
+
+    private suspend fun copyScreenshotToDirectory(
+        screenshotFile: File,
+        directory: File,
+        originalName: String
+    ) = withContext(Dispatchers.IO) {
+        try {
+            val lastDot = originalName.lastIndexOf('.')
+            val hasExtension = lastDot > 0 && lastDot < originalName.length - 1
+            val baseName = if (hasExtension) originalName.substring(0, lastDot) else originalName
+            val extension = if (hasExtension) ".jpg" else ""
+            var number = 1
+            var destination: File
+            do {
+                destination = File(directory, String.format("%s_%03d%s", baseName, number++, extension))
+            } while (destination.exists())
+            screenshotFile.copyTo(destination, overwrite = false)
+            println("PlayerViewModel: screenshot salvo = ${destination.absolutePath}")
+        } catch (e: Exception) {
+            println("PlayerViewModel: erro ao copiar screenshot: ${e.message}")
         }
     }
 
@@ -342,7 +374,8 @@ class MediaExportManager(
     }
     private suspend fun copyScreenshotToTree(
         screenshotFile: File,
-        treeUri: Uri
+        treeUri: Uri,
+        originalName: String
     ) {
 
         withContext(Dispatchers.IO) {
@@ -373,10 +406,6 @@ class MediaExportManager(
                  * NOME DO SCREENSHOT
                  * ------------------------------------------------
                  */
-
-                val originalName =
-                    currentFileName()
-                        ?: "screenshot"
 
                 val lastDot =
                     originalName.lastIndexOf(".")

@@ -356,6 +356,12 @@ fun PlayerControlsOverlay(
                             verticalAlignment =
                                 Alignment.CenterVertically
                         ) {
+                              StatusText(
+                                  text = "#",
+                                  modifier =
+                                      Modifier.clickable {
+                                      }
+                              )
 
                               StatusText(
                                   text = "${uiState.fileIndex + 1} / ${uiState.fileCount}",

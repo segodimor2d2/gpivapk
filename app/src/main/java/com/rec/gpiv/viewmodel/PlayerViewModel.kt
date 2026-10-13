@@ -462,7 +462,8 @@ class PlayerViewModel(
         player = player,
         scope = viewModelScope,
         currentTreeUri = { fileList.getCurrentTreeUri() },
-        currentFileName = { _uiState.value.filename }
+        currentFileName = { _uiState.value.filename },
+        currentFileUri = { fileList.current()?.uri }
     )
 
     private val cutController = PlayerCutController(
