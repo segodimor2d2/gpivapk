@@ -72,6 +72,7 @@ fun PlayerControlsOverlay(
     var controlSubRowD by remember { mutableStateOf(false) }
     var texto by remember { mutableStateOf("") }
     val tagFocusRequester = remember { FocusRequester() }
+    var ahpConfirmationVisible by remember { mutableStateOf(false) }
     var deletePopupVisible by remember { mutableStateOf(false) }
     var deletePermanent by remember { mutableStateOf(false) }
 
@@ -90,6 +91,23 @@ fun PlayerControlsOverlay(
                 style = textStyle
             )
             .size.width
+    }
+
+    if (ahpConfirmationVisible) {
+        AlertDialog(
+            onDismissRequest = { ahpConfirmationVisible = false },
+            title = { Text("Iniciar avaliação AHP?") },
+            text = { Text("Você vai comparar as imagens e vídeos desta pasta. Ao concluir todas as comparações, os arquivos serão renomeados sem extensão, seguindo a classificação AHP.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    ahpConfirmationVisible = false
+                    onOpenThumbnails()
+                }) { Text("Continuar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { ahpConfirmationVisible = false }) { Text("Cancelar") }
+            }
+        )
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -361,7 +379,7 @@ fun PlayerControlsOverlay(
                               FeedbackButton(
                                   text = "#",
                                   status = uiState.thumbnailStatus,
-                                  onClick = onOpenThumbnails
+                                  onClick = { ahpConfirmationVisible = true }
                               )
 
                               StatusText(

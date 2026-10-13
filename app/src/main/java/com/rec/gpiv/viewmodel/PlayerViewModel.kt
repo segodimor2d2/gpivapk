@@ -97,7 +97,7 @@ class PlayerViewModel(
                 withContext(Dispatchers.IO) { ahpRepository.recover() }
                 if (folder.scheme == "file") fileList.loadFromDirectory(java.io.File(requireNotNull(folder.path)))
                 else fileList.loadFromTree(folder)
-                val files = fileList.all().sortedBy { it.uri.toString() }
+                val files = fileList.all()
                 val persist = withContext(Dispatchers.IO) { thumbnailRepository.prepare(folder) }
                 val entries = mutableListOf<ThumbnailEntry>()
                 for (file in files) {

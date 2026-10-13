@@ -351,13 +351,12 @@ class FileList(
          * ORDENAR
          * ----------------------------------------------------
          *
-         * Mais recente primeiro.
+         * Timestamp do nome decrescente; sem timestamp válido, modificação decrescente.
          */
 
-        files.sortByDescending {
-
-            it.modifiedTime
-        }
+        val ordered = FileNameOrder.sorted(files.toList(), FileItem::name, FileItem::modifiedTime)
+        files.clear()
+        files.addAll(ordered)
 
 
         /*
@@ -413,9 +412,9 @@ class FileList(
         currentTreeUri = null
         localDirectory = directory
         val children = directory.listFiles() ?: return false
-        files.addAll(children.filter { it.isFile && it.name != "gpivtags.csv" }
+        val items = children.filter { it.isFile && it.name != "gpivtags.csv" }
             .map { FileItem(Uri.fromFile(it), it.name, it.lastModified()) }
-            .sortedByDescending { it.modifiedTime })
+        files.addAll(FileNameOrder.sorted(items, FileItem::name, FileItem::modifiedTime))
         return files.isNotEmpty()
     }
 
