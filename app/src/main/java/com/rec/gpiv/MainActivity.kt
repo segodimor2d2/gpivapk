@@ -8,7 +8,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
-import android.widget.Toast
+import com.rec.gpiv.ui.common.BlackNotice
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +36,19 @@ import com.rec.gpiv.viewmodel.PlayerViewModel
 
 class MainActivity : ComponentActivity() {
 
+    private var notice: BlackNotice? = null
+
+    private fun showNotice(message: String) {
+        if (isFinishing || isDestroyed) return
+        val current = notice ?: BlackNotice(findViewById(android.R.id.content)).also { notice = it }
+        current.show(message)
+    }
+
+    override fun onDestroy() {
+        notice?.dismiss()
+        super.onDestroy()
+    }
+
     private val viewModel: PlayerViewModel by viewModels()
 
     private val openFolderLauncher = registerForActivityResult(
@@ -58,14 +71,14 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) {
         if (hasStorageAccess()) showStorageBrowser(browserDirectory)
-        else Toast.makeText(this, "Ative o acesso a todos os arquivos para navegar pelas pastas.", Toast.LENGTH_LONG).show()
+        else showNotice("Ative o acesso a todos os arquivos para navegar pelas pastas.")
     }
 
     private val storagePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) {
         if (hasStorageAccess()) showStorageBrowser(browserDirectory)
-        else Toast.makeText(this, "O acesso ao armazenamento não foi autorizado.", Toast.LENGTH_LONG).show()
+        else showNotice("O acesso ao armazenamento não foi autorizado.")
     }
 
     private fun openStorageBrowser() {
@@ -99,7 +112,7 @@ class MainActivity : ComponentActivity() {
             }
             if (isFinishing || isDestroyed) return@launch
             if (entries == null) {
-                Toast.makeText(this@MainActivity, "Esta pasta não está acessível.", Toast.LENGTH_LONG).show()
+                showNotice("Esta pasta não está acessível.")
                 return@launch
             }
             browserDirectory = directory
