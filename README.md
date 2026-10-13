@@ -4,13 +4,13 @@ Player de vídeo Android baseado em **Kotlin + Jetpack Compose + libmpv + FFmpeg
 
 O projeto utiliza o `mpv-android` como fonte das bibliotecas nativas e precisa que as dependências nativas sejam preparadas antes da compilação do `gpivapk`.
 
-## Renomeação por AHP
+## Seleção de miniaturas e renomeação
 
-Ao carregar uma pasta, os arquivos são ordenados pelo timestamp `yyyyMMddHHmmss` do nome em ordem decrescente. Sem timestamp válido, a data de modificação é usada em ordem decrescente na mesma lista. Dentro do mesmo timestamp, a sequência é crescente; os demais empates são resolvidos pelo nome. Toque em `#` e confirme em **Continuar** para abrir o popup e comparar as imagens e vídeos da pasta atual. Outros tipos de arquivo são ignorados, sem exclusão. A identificação usa o conteúdo, inclusive para arquivos sem extensão.
+Ao carregar uma pasta, os arquivos são ordenados pelo timestamp `yyyyMMddHHmmss` do nome em ordem decrescente. Sem timestamp válido, a data de modificação é usada em ordem decrescente na mesma lista. Dentro do mesmo timestamp, a sequência é crescente; os demais empates são resolvidos pelo nome. Toque em `#` e confirme em **Continuar** para abrir o popup preto com as miniaturas das imagens e vídeos da pasta atual. Clique nas miniaturas na ordem desejada: cada seleção recebe um número no canto. Clicar novamente remove a seleção e ajusta a numeração. Os botões **Aplicar AHP** e **Renomear na ordem** são habilitados quando a geração termina e há pelo menos um selecionado. O primeiro compara apenas os selecionados, reutilizando as miniaturas; o segundo renomeia diretamente na ordem dos cliques. Arquivos não selecionados permanecem intactos. Outros tipos de arquivo são ignorados, sem exclusão. A identificação usa o conteúdo, inclusive para arquivos sem extensão.
 
-Os thumbnails ficam lado a lado: A à esquerda e B à direita. O slider horizontal começa em `=`: esquerda favorece A, direita favorece B. A intensidade vai de 2 a 9 em cada direção; o centro equivale a 1. Toque ou arraste e solte para salvar e avançar. Todos os pares são avaliados (`n × (n − 1) / 2` comparações). Fechar o popup permite retomar as avaliações enquanto o conjunto de arquivos permanecer igual.
+Os thumbnails ficam lado a lado: A à esquerda e B à direita. O slider horizontal começa em `=`: esquerda favorece A, direita favorece B. A intensidade vai de 2 a 9 em cada direção; o centro equivale a 1. Toque ou arraste e solte para salvar e avançar. Todos os pares são avaliados (`n × (n − 1) / 2` comparações). Para retomar uma avaliação após fechar o popup, selecione os mesmos arquivos na mesma ordem e clique em **Aplicar AHP**.
 
-Ao completar a última comparação, o autovetor principal da matriz recíproca determina a ordem, do mais preferido ao menos preferido. Empates mantêm a ordem inicial da lista de arquivos. O resultado mostra a razão de consistência CR para até 15 arquivos; acima disso, mostra o índice CI. CR acima de 10% é indicado no resultado, sem bloquear a renomeação.
+Ao completar a última comparação, o autovetor principal da matriz recíproca determina a ordem, do mais preferido ao menos preferido. Empates mantêm a ordem de seleção. O resultado mostra a razão de consistência CR para até 15 arquivos; acima disso, mostra o índice CI. CR acima de 10% é indicado no resultado, sem bloquear a renomeação.
 
 Os nomes ficam sem extensão: `.<pasta><Im ou Mv><yyyyMMddHHmmss>_<sequência>`. A data e hora local são as do início da renomeação; a sequência começa em 1010 e aumenta de 4 em 4. Exemplo: `.FériasIm20261013153045_1010`.
 

@@ -11,6 +11,8 @@ data class PlayerUiState(
     val moveTagsStatus: OperationStatus = OperationStatus.IDLE,
     val cutStatus: OperationStatus = OperationStatus.IDLE,
     val thumbnailStatus: OperationStatus = OperationStatus.IDLE,
+    val thumbnailSelection: List<android.net.Uri> = emptyList(),
+    val ahpActive: Boolean = false,
     val ahpValues: List<Int> = emptyList(),
     val ahpReady: Boolean = false,
     val ahpBusy: Boolean = false,

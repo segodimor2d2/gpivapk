@@ -25,6 +25,9 @@ fun PlayerScreen(
     onCloseThumbnails: () -> Unit,
     onCompareThumbnails: (Int) -> Unit,
     onFinishAhp: () -> Unit,
+    onToggleThumbnailSelection: (android.net.Uri) -> Unit,
+    onStartSelectedAhp: () -> Unit,
+    onRenameSelectedThumbnails: () -> Unit,
 
     onPreviousFile: () -> Unit,
     onFirstFile: () -> Unit,
@@ -170,7 +173,8 @@ fun PlayerScreen(
             )
         }
         if (uiState.galleryVisible) {
-            ThumbnailGallery(uiState, onCloseThumbnails, onCompareThumbnails, onFinishAhp)
+            ThumbnailGallery(uiState, onCloseThumbnails, onCompareThumbnails, onFinishAhp,
+                onToggleThumbnailSelection, onStartSelectedAhp, onRenameSelectedThumbnails)
         }
     }
 }

@@ -1,6 +1,13 @@
 package com.rec.gpiv.ui.player
 
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.semantics.selected
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,36 +42,70 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 @Composable
-fun ThumbnailGallery(state: PlayerUiState, onDismiss: () -> Unit, onCompare: (Int) -> Unit, onFinish: () -> Unit) {
-    val pair = if (state.ahpReady) AhpRanking.pair(state.thumbnails.size, state.ahpValues.size) else null
-    val total = state.thumbnails.size.toLong() * (state.thumbnails.size - 1) / 2
+fun ThumbnailGallery(state: PlayerUiState, onDismiss: () -> Unit, onCompare: (Int) -> Unit, onFinish: () -> Unit, onToggleSelection: (android.net.Uri) -> Unit,
+    onStartAhp: () -> Unit, onRenameSelected: () -> Unit) {
+    val selectedEntries = com.rec.gpiv.model.OrderedSelection.entries(state.thumbnails, state.thumbnailSelection, ThumbnailEntry::uri)
+    val pair = if (state.ahpReady && state.ahpActive) AhpRanking.pair(selectedEntries.size, state.ahpValues.size) else null
+    val total = selectedEntries.size.toLong() * (selectedEntries.size - 1) / 2
     Dialog(onDismissRequest = { if (!state.ahpBusy) onDismiss() }, properties = DialogProperties(usePlatformDefaultWidth = false,
         dismissOnBackPress = !state.ahpBusy, dismissOnClickOutside = !state.ahpBusy)) {
         Column(Modifier.fillMaxWidth(0.96f).fillMaxHeight(0.94f).background(Color.Black).padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("AHP • ${state.ahpValues.size} / $total", color = Color.White, modifier = Modifier.weight(1f))
+                Text(if (state.ahpActive) "AHP • ${state.ahpValues.size} / $total" else "Miniaturas • ${state.thumbnailSelection.size} selecionados", color = Color.White, modifier = Modifier.weight(1f))
                 TextButton(onClick = onDismiss, enabled = !state.ahpBusy) { Text("Fechar") }
             }
             state.ahpMessage?.let { Text(it, color = Color.White) }
-            if (pair != null) {
+            if (!state.ahpActive && (state.ahpReady || state.thumbnails.isNotEmpty())) {
+                Text("Toque para selecionar na ordem desejada. Toque novamente para remover.", color = Color.LightGray)
+                LazyVerticalGrid(columns = GridCells.Adaptive(110.dp), modifier = Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(state.thumbnails, key = { it.uri.toString() }) { entry ->
+                        SelectionThumbnail(entry, state.thumbnailSelection.indexOf(entry.uri) + 1,
+                            !state.ahpBusy, { onToggleSelection(entry.uri) })
+                    }
+                }
+                val enabled = state.ahpReady && !state.ahpBusy && selectedEntries.isNotEmpty()
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    TextButton(onClick = onStartAhp, enabled = enabled) { Text("Aplicar AHP") }
+                    TextButton(onClick = onRenameSelected, enabled = enabled) { Text("Renomear na ordem") }
+                }
+            } else if (pair != null) {
                 Text("Qual arquivo você prefere?", color = Color.LightGray)
                 Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Preview(state.thumbnails[pair.first], "A", Modifier.weight(1f).fillMaxHeight())
-                    Preview(state.thumbnails[pair.second], "B", Modifier.weight(1f).fillMaxHeight())
+                    Preview(selectedEntries[pair.first], "A", Modifier.weight(1f).fillMaxHeight())
+                    Preview(selectedEntries[pair.second], "B", Modifier.weight(1f).fillMaxHeight())
                 }
                 key(state.ahpValues.size) {
                     PreferenceSlider(!state.ahpBusy, onCompare)
                 }
             } else {
                 Spacer(Modifier.weight(1f))
-                if (state.ahpReady && state.thumbnails.isNotEmpty()) {
+                if (state.ahpReady && state.ahpActive && selectedEntries.isNotEmpty()) {
                     TextButton(onClick = onFinish, enabled = !state.ahpBusy) {
-                        Text(if (state.thumbnails.size == 1) "Renomear único arquivo" else "Tentar renomear novamente")
+                        Text(if (selectedEntries.size == 1) "Renomear único arquivo" else "Tentar renomear novamente")
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SelectionThumbnail(entry: ThumbnailEntry, number: Int, enabled: Boolean, onClick: () -> Unit) {
+    val preview by produceState<ImageBitmap?>(null, entry.thumbnailPath) {
+        value = withContext(Dispatchers.IO) { entry.thumbnailPath?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() } }
+    }
+    Column(Modifier.semantics { selected = number > 0 }.clickable(enabled = enabled, onClick = onClick)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f).background(Color(0xFF151515))
+            .border(if (number > 0) 2.dp else 0.dp, if (number > 0) Color(0xFF80CBC4) else Color.Transparent),
+            contentAlignment = Alignment.Center) {
+            preview?.let { Image(it, entry.name, Modifier.fillMaxSize(), contentScale = ContentScale.Fit) }
+                ?: Text("Prévia indisponível", color = Color.LightGray, fontSize = 11.sp)
+            if (number > 0) Text(number.toString(), color = Color.Black,
+                modifier = Modifier.align(Alignment.TopEnd).background(Color(0xFF80CBC4)).padding(horizontal = 8.dp, vertical = 4.dp))
+        }
+        Text(entry.name, color = Color.White, maxLines = 2, fontSize = 11.sp)
     }
 }
 

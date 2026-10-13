@@ -115,12 +115,21 @@ class AhpRepository(context: Context) {
     }
 
     fun finish(folder: Uri, entries: List<ThumbnailEntry>, values: List<Int>): Pair<List<Uri>, String> {
-        check(!journal.exists()) { "Há uma renomeação interrompida que precisa ser recuperada." }
         val result = AhpRanking.rank(entries.size, values)
+        val renamed = renameOrdered(folder, entries, result.order)
+        preferences.edit().remove(key(folder, entries)).commit()
+        val consistency = result.consistencyRatio?.let { "Consistência CR: %.1f%%".format(it * 100) }
+            ?: "Índice de consistência: %.4f".format(result.consistencyIndex)
+        return renamed to "$consistency${if ((result.consistencyRatio ?: 0.0) > 0.10) " (avaliações com baixa consistência)" else ""}"
+    }
+
+    fun renameOrdered(folder: Uri, entries: List<ThumbnailEntry>, order: List<Int> = entries.indices.toList()): List<Uri> {
+        require(entries.isNotEmpty() && order.sorted() == entries.indices.toList())
+        check(!journal.exists()) { "Há uma renomeação interrompida que precisa ser recuperada." }
         val timestamp = SimpleDateFormat("yyyyMMddHHmmss", Locale.US).format(Date())
         val folderName = displayName(if (folder.scheme == "file") folder else
             DocumentsContract.buildDocumentUriUsingTree(folder, DocumentsContract.getTreeDocumentId(folder)))
-        val targets = result.order.mapIndexed { index, original ->
+        val targets = order.mapIndexed { index, original ->
             AhpRanking.name(folderName, requireNotNull(entries[original].mediaType), timestamp, index)
         }
         val occupied = if (folder.scheme == "file") File(requireNotNull(folder.path)).list()?.toSet().orEmpty() else {
@@ -153,18 +162,15 @@ class AhpRepository(context: Context) {
         }
         try {
             entries.indices.forEach { move(it, ".ahp-$token-$it") }
-            result.order.forEachIndexed { rank, index -> move(index, targets[rank]) }
+            order.forEachIndexed { rank, index -> move(index, targets[rank]) }
         } catch (e: Exception) {
             try { recover() } catch (rollback: Exception) {
                 throw IllegalStateException("${e.message} Recuperação pendente: ${rollback.message}", e)
             }
             throw e
         }
-        val renamed = result.order.map { Uri.parse(records.getJSONObject(it).getString("current")) }
+        val renamed = order.map { Uri.parse(records.getJSONObject(it).getString("current")) }
         check(journal.delete())
-        preferences.edit().remove(key(folder, entries)).commit()
-        val consistency = result.consistencyRatio?.let { "Consistência CR: %.1f%%".format(it * 100) }
-            ?: "Índice de consistência: %.4f".format(result.consistencyIndex)
-        return renamed to "$consistency${if ((result.consistencyRatio ?: 0.0) > 0.10) " (avaliações com baixa consistência)" else ""}"
+        return renamed
     }
 }

@@ -96,8 +96,8 @@ fun PlayerControlsOverlay(
     if (ahpConfirmationVisible) {
         AlertDialog(
             onDismissRequest = { ahpConfirmationVisible = false },
-            title = { Text("Iniciar avaliação AHP?") },
-            text = { Text("Você vai comparar as imagens e vídeos desta pasta. Ao concluir todas as comparações, os arquivos serão renomeados sem extensão, seguindo a classificação AHP.") },
+            title = { Text("Abrir seleção de miniaturas?") },
+            text = { Text("Selecione imagens e vídeos na ordem desejada. Depois escolha aplicar o AHP ou renomear diretamente na ordem selecionada. Os arquivos selecionados serão renomeados sem extensão.") },
             confirmButton = {
                 TextButton(onClick = {
                     ahpConfirmationVisible = false
