@@ -376,11 +376,6 @@ fun PlayerControlsOverlay(
                             verticalAlignment =
                                 Alignment.CenterVertically
                         ) {
-                              FeedbackButton(
-                                  text = "#",
-                                  status = uiState.thumbnailStatus,
-                                  onClick = { ahpConfirmationVisible = true }
-                              )
 
                               StatusText(
                                   text = "${uiState.fileIndex + 1} / ${uiState.fileCount}",
@@ -883,6 +878,7 @@ fun PlayerControlsOverlay(
                         Alignment.CenterVertically
                 ) {
 
+
                     StatusText(
                         text =
                             "%.2f".format(
@@ -953,6 +949,13 @@ fun PlayerControlsOverlay(
                         Alignment.CenterVertically
                 ) {
 
+                    if (controlSubRowC) {
+                        FeedbackButton(
+                            text = "#",
+                            status = uiState.thumbnailStatus,
+                            onClick = { ahpConfirmationVisible = true }
+                        )
+                    }
 
 
                     StatusText(
