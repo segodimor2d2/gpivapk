@@ -358,10 +358,10 @@ fun PlayerControlsOverlay(
                             verticalAlignment =
                                 Alignment.CenterVertically
                         ) {
-                              StatusText(
+                              FeedbackButton(
                                   text = "#",
-                                  modifier =
-                                      Modifier.clickable { onOpenThumbnails() }
+                                  status = uiState.thumbnailStatus,
+                                  onClick = onOpenThumbnails
                               )
 
                               StatusText(

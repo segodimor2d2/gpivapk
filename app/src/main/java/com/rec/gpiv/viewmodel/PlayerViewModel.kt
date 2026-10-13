@@ -81,38 +81,105 @@ class PlayerViewModel(
     private val thumbnailRepository = ThumbnailRepository(application.contentResolver, application.cacheDir)
     private var galleryJob: Job? = null
 
+    private val ahpRepository = com.rec.gpiv.data.AhpRepository(application)
+    private var ahpFolder: Uri? = null
+
     fun openThumbnailGallery() {
+        if (_uiState.value.ahpBusy) return
         galleryJob?.cancel()
-        val files = fileList.all()
-        val folder = fileList.getTagFolderUri()
-        _uiState.update { it.copy(galleryVisible = true, thumbnails = files.map { file -> ThumbnailEntry(file.uri, file.name) }) }
+        val folder = fileList.getTagFolderUri() ?: return
+        ahpFolder = folder
+        _uiState.update { it.copy(galleryVisible = true, thumbnails = emptyList(), ahpValues = emptyList(),
+            ahpReady = false, ahpMessage = "Identificando imagens e vídeos…") }
+        setOperationStatus(FeedbackOperation.THUMBNAILS, OperationStatus.RUNNING)
         galleryJob = viewModelScope.launch {
-            val persist = withContext(Dispatchers.IO) { thumbnailRepository.prepare(folder) }
-            files.forEachIndexed { index, file ->
-                ensureActive()
-                val preview = withContext(Dispatchers.IO) { thumbnailRepository.thumbnail(file, persist) }
-                _uiState.update {
-                    val entries = it.thumbnails.toMutableList()
-                    entries[index] = entries[index].copy(thumbnailPath = preview?.absolutePath, processed = true)
-                    it.copy(thumbnails = entries)
+            try {
+                withContext(Dispatchers.IO) { ahpRepository.recover() }
+                if (folder.scheme == "file") fileList.loadFromDirectory(java.io.File(requireNotNull(folder.path)))
+                else fileList.loadFromTree(folder)
+                val files = fileList.all().sortedBy { it.uri.toString() }
+                val persist = withContext(Dispatchers.IO) { thumbnailRepository.prepare(folder) }
+                val entries = mutableListOf<ThumbnailEntry>()
+                for (file in files) {
+                    ensureActive()
+                    val type = withContext(Dispatchers.IO) { ahpRepository.mediaType(file.uri) } ?: continue
+                    val preview = withContext(Dispatchers.IO) { thumbnailRepository.thumbnail(file, persist) }
+                    entries += ThumbnailEntry(file.uri, file.name, preview?.absolutePath, true, type, file.modifiedTime)
+                    _uiState.update { it.copy(thumbnails = entries.toList()) }
                 }
+                val values = withContext(Dispatchers.IO) { ahpRepository.read(folder, entries) }
+                _uiState.update { it.copy(ahpReady = true, ahpValues = values,
+                    ahpMessage = if (entries.isEmpty()) "Nenhuma imagem ou vídeo nesta pasta." else null) }
+                setOperationStatus(FeedbackOperation.THUMBNAILS, OperationStatus.SUCCESS)
+                if (entries.size > 1 && com.rec.gpiv.ahp.AhpRanking.pair(entries.size, values.size) == null) finishAhp()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.update { it.copy(ahpMessage = e.message ?: "Falha ao preparar a avaliação.") }
+                setOperationStatus(FeedbackOperation.THUMBNAILS, OperationStatus.ERROR)
             }
         }
     }
 
     fun closeThumbnailGallery() {
+        if (_uiState.value.ahpBusy) return
         galleryJob?.cancel()
-        _uiState.update { it.copy(galleryVisible = false, thumbnails = emptyList()) }
+        setOperationStatus(FeedbackOperation.THUMBNAILS, OperationStatus.IDLE)
+        _uiState.update { it.copy(galleryVisible = false, thumbnails = emptyList(), ahpReady = false) }
     }
 
-    fun selectThumbnail(uri: Uri) {
-        closeThumbnailGallery()
-        load(uri)
+    fun compareThumbnails(value: Int) {
+        val state = _uiState.value
+        if (!state.ahpReady || state.ahpBusy || value !in -8..8) return
+        if (com.rec.gpiv.ahp.AhpRanking.pair(state.thumbnails.size, state.ahpValues.size) == null) return
+        val folder = ahpFolder ?: return
+        val values = state.ahpValues + value
+        _uiState.update { it.copy(ahpBusy = true) }
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { ahpRepository.save(folder, state.thumbnails, values) }
+                _uiState.update { it.copy(ahpValues = values, ahpBusy = false, ahpMessage = null) }
+                if (com.rec.gpiv.ahp.AhpRanking.pair(state.thumbnails.size, values.size) == null) finishAhp()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(ahpBusy = false, ahpMessage = e.message) }
+            }
+        }
+    }
+
+    fun finishAhp() {
+        val state = _uiState.value
+        val folder = ahpFolder ?: return
+        if (!state.ahpReady || state.ahpBusy || state.thumbnails.isEmpty()) return
+        if (com.rec.gpiv.ahp.AhpRanking.pair(state.thumbnails.size, state.ahpValues.size) != null) return
+        _uiState.update { it.copy(ahpBusy = true, ahpMessage = "Renomeando arquivos…") }
+        viewModelScope.launch {
+            try {
+                val (renamed, consistency) = withContext(Dispatchers.IO) {
+                    ahpRepository.finish(folder, state.thumbnails, state.ahpValues)
+                }
+                val cleanupError = withContext(Dispatchers.IO) {
+                    runCatching { thumbnailRepository.cleanup(folder, state.thumbnails) }.exceptionOrNull()
+                }
+                if (fileList.getTagFolderUri() == folder) {
+                    if (folder.scheme == "file") fileList.loadFromDirectory(java.io.File(requireNotNull(folder.path)))
+                    else fileList.loadFromTree(folder)
+                    reloadTags()
+                    load(renamed.first())
+                }
+                _uiState.update { it.copy(ahpBusy = false, ahpReady = false, thumbnails = emptyList(),
+                    ahpMessage = "${renamed.size} arquivos renomeados. $consistency" +
+                        (cleanupError?.let { error -> "\nMiniaturas mantidas: ${error.message}" } ?: "")) }
+                setOperationStatus(FeedbackOperation.THUMBNAILS, OperationStatus.SUCCESS)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(ahpBusy = false, ahpMessage = e.message ?: "Erro ao renomear arquivos.") }
+                setOperationStatus(FeedbackOperation.THUMBNAILS, OperationStatus.ERROR)
+            }
+        }
     }
 
     private val lisTags = mutableListOf<String>()
 
-    private enum class FeedbackOperation { SCREENSHOT_MPV, SCREENSHOT, CUT, MAKE_FOLDERS, MOVE_TAGS }
+    private enum class FeedbackOperation { SCREENSHOT_MPV, SCREENSHOT, CUT, MAKE_FOLDERS, MOVE_TAGS, THUMBNAILS }
     private val feedbackTimers = mutableMapOf<FeedbackOperation, Job>()
 
     private fun setOperationStatus(operation: FeedbackOperation, status: OperationStatus) {
@@ -120,7 +187,7 @@ class PlayerViewModel(
         updateOperationStatus(operation, status)
         if (status == OperationStatus.SUCCESS || status == OperationStatus.ERROR) {
             feedbackTimers[operation] = viewModelScope.launch {
-                delay(if (operation == FeedbackOperation.MAKE_FOLDERS || operation == FeedbackOperation.MOVE_TAGS) 2_00 else 2_00)
+                delay(if (operation == FeedbackOperation.THUMBNAILS) 2_000 else 2_00)
                 updateOperationStatus(operation, OperationStatus.IDLE)
                 feedbackTimers.remove(operation)
             }
@@ -135,6 +202,7 @@ class PlayerViewModel(
                 FeedbackOperation.CUT -> it.copy(cutStatus = status)
                 FeedbackOperation.MAKE_FOLDERS -> it.copy(makeFoldersStatus = status)
                 FeedbackOperation.MOVE_TAGS -> it.copy(moveTagsStatus = status)
+                FeedbackOperation.THUMBNAILS -> it.copy(thumbnailStatus = status)
             }
         }
     }

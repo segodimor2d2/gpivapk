@@ -53,6 +53,19 @@ class ThumbnailRepository(private val resolver: ContentResolver, cacheDir: File)
         }
     }
 
+    fun cleanup(folder: Uri, entries: List<com.rec.gpiv.model.ThumbnailEntry>) {
+        if (folder.scheme == "file") {
+            val directory = File(requireNotNull(folder.path), "gpvlogs/thumbnails")
+            check(!directory.exists() || directory.deleteRecursively()) { "Não foi possível apagar a pasta de thumbnails." }
+        } else {
+            val root = DocumentsContract.buildDocumentUriUsingTree(folder, DocumentsContract.getTreeDocumentId(folder))
+            children(root)["gpvlogs"]?.let { logs ->
+                children(logs)["thumbnails"]?.let { check(DocumentsContract.deleteDocument(resolver, it)) }
+            }
+        }
+        entries.forEach { it.thumbnailPath?.let { path -> File(path).delete() } }
+    }
+
     private fun children(parent: Uri): Map<String, Uri> {
         val result = mutableMapOf<String, Uri>()
         val uri = DocumentsContract.buildChildDocumentsUriUsingTree(parent, DocumentsContract.getDocumentId(parent))

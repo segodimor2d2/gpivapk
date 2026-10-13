@@ -2,7 +2,7 @@ package com.rec.gpiv.model
 
 enum class OperationStatus { IDLE, RUNNING, SUCCESS, ERROR }
 
-data class ThumbnailEntry(val uri: android.net.Uri, val name: String, val thumbnailPath: String? = null, val processed: Boolean = false)
+data class ThumbnailEntry(val uri: android.net.Uri, val name: String, val thumbnailPath: String? = null, val processed: Boolean = false, val mediaType: String? = null, val modifiedTime: Long = 0)
 
 data class PlayerUiState(
     val screenshotMpvStatus: OperationStatus = OperationStatus.IDLE,
@@ -10,6 +10,11 @@ data class PlayerUiState(
     val makeFoldersStatus: OperationStatus = OperationStatus.IDLE,
     val moveTagsStatus: OperationStatus = OperationStatus.IDLE,
     val cutStatus: OperationStatus = OperationStatus.IDLE,
+    val thumbnailStatus: OperationStatus = OperationStatus.IDLE,
+    val ahpValues: List<Int> = emptyList(),
+    val ahpReady: Boolean = false,
+    val ahpBusy: Boolean = false,
+    val ahpMessage: String? = null,
     val galleryVisible: Boolean = false,
     val thumbnails: List<ThumbnailEntry> = emptyList(),
     val playing: Boolean = false,
