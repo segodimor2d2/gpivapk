@@ -87,12 +87,12 @@ private fun PreferenceSlider(enabled: Boolean, onCompare: (Int) -> Unit) {
     var selected by remember { mutableIntStateOf(0) }
     val submit by rememberUpdatedState(onCompare)
     Column(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(Modifier.fillMaxWidth(0.6f).padding(horizontal = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("A 9", color = Color.White)
             Text("=", color = Color.White)
             Text("B 9", color = Color.White)
         }
-        Canvas(Modifier.fillMaxWidth().height(48.dp).semantics {
+        Canvas(Modifier.fillMaxWidth(0.6f).height(48.dp).semantics {
             contentDescription = "Preferência A ou B. Esquerda: A. Centro: igualdade. Direita: B. Solte para salvar."
             progressBarRangeInfo = ProgressBarRangeInfo(-selected.toFloat(), -8f..8f, 15)
             if (enabled) setProgress { value ->
@@ -127,15 +127,11 @@ private fun PreferenceSlider(enabled: Boolean, onCompare: (Int) -> Unit) {
             val y = size.height / 2
             val length = size.width - inset * 2
             drawLine(Color.Gray, Offset(inset, y), Offset(size.width - inset, y), 4.dp.toPx())
-            for (step in -8..8) {
-                val x = inset + (8 - step) / 16f * length
-                drawLine(if (step == 0) Color.White else Color.Gray, Offset(x, y - 8.dp.toPx()), Offset(x, y + 8.dp.toPx()), 2.dp.toPx())
-            }
-            drawCircle(if (enabled) Color(0xFF80CBC4) else Color.Gray, 10.dp.toPx(), Offset(inset + (8 - selected) / 16f * length, y))
+            drawCircle(if (enabled) Color(0xFFFFFFFF) else Color.White, 10.dp.toPx(), Offset(inset + (8 - selected) / 16f * length, y))
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(if (selected == 0) "= Igualdade" else "${if (selected > 0) "A" else "B"} • intensidade ${abs(selected) + 1}", color = Color.White)
-            Text("Toque ou arraste e solte para salvar e avançar.", color = Color.LightGray)
+            Text(if (selected == 0) "0" else "${if (selected > 0) "A" else "B"} • ${abs(selected) + 1}", color = Color.White)
+            Text("toque ou arraste", color = Color.LightGray)
         }
     }
 }
