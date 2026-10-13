@@ -6,6 +6,7 @@ import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rec.gpiv.model.PlayerUiState
+import com.rec.gpiv.model.OperationStatus
 import com.rec.gpiv.data.FolderRepository
 import com.rec.gpiv.player.FileItem
 import com.rec.gpiv.player.FileList
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlin.math.max
 import kotlin.math.roundToLong
 
@@ -74,6 +76,31 @@ class PlayerViewModel(
         _uiState.asStateFlow()
 
     private val lisTags = mutableListOf<String>()
+
+    private enum class FeedbackOperation { SCREENSHOT_MPV, SCREENSHOT, CUT }
+    private val feedbackTimers = mutableMapOf<FeedbackOperation, Job>()
+
+    private fun setOperationStatus(operation: FeedbackOperation, status: OperationStatus) {
+        feedbackTimers.remove(operation)?.cancel()
+        updateOperationStatus(operation, status)
+        if (status == OperationStatus.SUCCESS || status == OperationStatus.ERROR) {
+            feedbackTimers[operation] = viewModelScope.launch {
+                delay(5_00)
+                updateOperationStatus(operation, OperationStatus.IDLE)
+                feedbackTimers.remove(operation)
+            }
+        }
+    }
+
+    private fun updateOperationStatus(operation: FeedbackOperation, status: OperationStatus) {
+        _uiState.update {
+            when (operation) {
+                FeedbackOperation.SCREENSHOT_MPV -> it.copy(screenshotMpvStatus = status)
+                FeedbackOperation.SCREENSHOT -> it.copy(screenshotStatus = status)
+                FeedbackOperation.CUT -> it.copy(cutStatus = status)
+            }
+        }
+    }
 
     private val tagFiles = TagFileManager(
         contentResolver = application.contentResolver,
@@ -526,9 +553,10 @@ class PlayerViewModel(
         currentFileName = { _uiState.value.filename },
         currentFileUri = { fileList.current()?.uri },
         onScreenshotStatus = { mpv, status ->
-            _uiState.update {
-                if (mpv) it.copy(screenshotMpvStatus = status) else it.copy(screenshotStatus = status)
-            }
+            setOperationStatus(
+                if (mpv) FeedbackOperation.SCREENSHOT_MPV else FeedbackOperation.SCREENSHOT,
+                status
+            )
         }
     )
 
@@ -539,7 +567,7 @@ class PlayerViewModel(
         currentTreeUri = { fileList.getTagFolderUri() },
         mediaExport = mediaExport,
         currentFileName = { _uiState.value.filename },
-        onStatus = { status -> _uiState.update { it.copy(cutStatus = status) } }
+        onStatus = { status -> setOperationStatus(FeedbackOperation.CUT, status) }
     )
 
     private val trashManager = FileTrashManager(
