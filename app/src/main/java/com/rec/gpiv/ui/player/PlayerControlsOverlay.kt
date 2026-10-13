@@ -856,21 +856,10 @@ fun PlayerControlsOverlay(
                         Alignment.CenterVertically
                 ) {
 
-
-
                     StatusText(
                         text =
                             "%.2f".format(
                                 uiState.position
-                            ),
-                        modifier = Modifier.clickable { onResetVideoAdjustments() }
-                    )
-
-
-                    StatusText(
-                        text =
-                            "%.2f".format(
-                                uiState.duration
                             ),
                         backgroundColor =
                             if (controlSubRowB) {
@@ -880,6 +869,24 @@ fun PlayerControlsOverlay(
                             },
                         modifier = Modifier.clickable {
                             controlSubRowB = !controlSubRowB
+                        }
+                    )
+
+
+                    StatusText(
+                        text =
+                            "%.2f".format(
+                                uiState.duration
+                            ),
+                        backgroundColor =
+                            if (uiState.playing) {
+                                Color(0x9900994C)
+                            } else {
+                                Color.Transparent
+                            },
+
+                        modifier = Modifier.clickable {
+                            onTogglePlayPause()
                         }
                     )
 
@@ -893,17 +900,16 @@ fun PlayerControlsOverlay(
                             } else {
                                 "0.0%"
                             },
-
                         backgroundColor =
-                            if (uiState.playing) {
+                            if (controlSubRowC) {
                                 Color(0x9900994C)
                             } else {
                                 Color.Transparent
                             },
-
                         modifier = Modifier.clickable {
-                            onTogglePlayPause()
+                            controlSubRowC = !controlSubRowC
                         }
+
                     )
 
 
@@ -975,15 +981,7 @@ fun PlayerControlsOverlay(
 
                     StatusText(
                         text = "()",
-                        backgroundColor =
-                            if (controlSubRowC) {
-                                Color(0x9900994C)
-                            } else {
-                                Color.Transparent
-                            },
-                        modifier = Modifier.clickable {
-                            controlSubRowC = !controlSubRowC
-                        }
+                        modifier = Modifier.clickable { onResetVideoAdjustments() }
                     )
 
 

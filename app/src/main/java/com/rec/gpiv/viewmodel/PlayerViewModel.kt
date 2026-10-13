@@ -15,6 +15,8 @@ import com.rec.gpiv.player.PlayerEvent
 import com.rec.gpiv.player.VideoPlayer
 import com.rec.gpiv.player.FILE_JUMP
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -183,26 +185,39 @@ class PlayerViewModel(
         }
     }
 
-    fun onVideoSelected(uri: Uri) {
-        load(uri)
+    private var incomingFileJob: Job? = null
 
-        folderRepository.findMatchingFolder(uri)?.let { folderUri ->
-            loadFolder(folderUri)
-        }
+    fun onVideoSelected(uri: Uri) = handleIncomingUri(uri)
+
+    fun onLocalFolderSelected(directory: java.io.File, selectedFile: java.io.File? = null) {
+        incomingFileJob?.cancel()
+        fileList.loadFromDirectory(directory)
+        _uiState.update { it.copy(fileTag = null, tags = emptyList(), fileIndex = -1, fileCount = fileList.size()) }
+        if (selectedFile != null) load(Uri.fromFile(selectedFile)) else firstFile()
     }
 
     fun onFolderSelected(uri: Uri) {
+        incomingFileJob?.cancel()
         folderRepository.saveFolder(uri)
         loadFolder(uri)
         firstFile()
     }
 
     fun handleIncomingUri(uri: Uri) {
-        folderRepository.findMatchingFolder(uri)?.let { folderUri ->
-            loadFolder(folderUri)
+        incomingFileJob?.cancel()
+        incomingFileJob = viewModelScope.launch {
+            val localFile = withContext(Dispatchers.IO) { folderRepository.findLocalFile(uri) }
+            // Limpa a pasta anterior para nunca abrir outro arquivo com o mesmo nome.
+            fileList.clear()
+            _uiState.update { it.copy(fileTag = null, tags = emptyList(), fileIndex = -1, fileCount = 0) }
+            if (localFile != null) {
+                fileList.loadFromDirectory(requireNotNull(localFile.parentFile))
+                load(Uri.fromFile(localFile))
+            } else {
+                folderRepository.findMatchingFolder(uri)?.let(::loadFolder)
+                load(uri)
+            }
         }
-
-        load(uri)
     }
 
     private fun observePlayerEvents() {
@@ -312,42 +327,13 @@ class PlayerViewModel(
             fileList
                 .all()
                 .firstOrNull { file ->
-                    try {
-                        DocumentsContract.getDocumentId(file.uri) ==
+                    if (uri.scheme == "file") file.uri == uri else try {
+                        file.uri.authority == uri.authority && DocumentsContract.getDocumentId(file.uri) ==
                             DocumentsContract.getDocumentId(uri)
                     } catch (e: Exception) {
                         false
                     }
                 }
-
-        /*
-         * Se a URI veio de um aplicativo externo, como o
-         * RS Explorer, ela pode não ser uma URI DocumentsContract.
-         *
-         * Nesse caso usamos o nome do arquivo.
-         */
-        if (fileFromList == null) {
-
-            val externalFileName =
-                uri.path
-                    ?.substringAfterLast('/')
-                    ?.takeIf { it.isNotBlank() }
-
-            if (externalFileName != null) {
-
-                println(
-                    "PlayerViewModel: procurando arquivo externo = " +
-                        externalFileName
-                )
-
-                fileFromList =
-                    fileList
-                        .all()
-                        .firstOrNull { file ->
-                            file.name == externalFileName
-                        }
-            }
-        }
 
         /*
          * Se encontramos o arquivo na FileList, usamos a URI SAF
@@ -360,7 +346,7 @@ class PlayerViewModel(
 
         val filename =
             fileFromList?.name
-                ?: tagFiles.getFileName(uri)
+                ?: if (uri.scheme == "file") java.io.File(requireNotNull(uri.path)).name else tagFiles.getFileName(uri)
 
         println(
             "PlayerViewModel: URI recebida = $uri"
@@ -566,6 +552,11 @@ class PlayerViewModel(
     private fun updateCurrentFileState(
         file: FileItem
     ) {
+        if (file.uri.scheme == "file") {
+            _uiState.update { it.copy(fileTag = null) }
+            load(file.uri)
+            return
+        }
 
         val treeUri =
             fileList.getCurrentTreeUri()

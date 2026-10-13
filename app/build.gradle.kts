@@ -46,6 +46,20 @@ android {
         }
     }
 
+    signingConfigs {
+        getByName("debug") {
+            // Mantém a mesma assinatura das instalações existentes, mesmo quando
+            // o SDK usa XDG_CONFIG_HOME para escolher o keystore padrão.
+            storeFile = file(localProperties.getProperty(
+                "GPIV_DEBUG_KEYSTORE",
+                "${System.getProperty("user.home")}/.android/debug.keystore"
+            ))
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             optimization {

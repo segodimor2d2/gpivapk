@@ -88,6 +88,19 @@ class FileTrashManager(
     }
 
     fun moveToTrash(uri: Uri): Boolean {
+        if (uri.scheme == "file") {
+            return runCatching {
+                val source = java.io.File(requireNotNull(uri.path))
+                val trash = java.io.File(source.parentFile, "trash")
+                if (!trash.isDirectory && !trash.mkdirs()) return false
+                var destination = java.io.File(trash, source.name)
+                var suffix = 1
+                while (destination.exists()) {
+                    destination = java.io.File(trash, "${source.name}.${suffix++}")
+                }
+                source.renameTo(destination)
+            }.getOrDefault(false)
+        }
         val trashUri = findTrashUri() ?: return false
         val treeUri = currentTreeUri() ?: return false
 
@@ -118,6 +131,9 @@ class FileTrashManager(
     }
 
     fun deletePermanently(uri: Uri): Boolean {
+        if (uri.scheme == "file") {
+            return runCatching { java.io.File(requireNotNull(uri.path)).delete() }.getOrDefault(false)
+        }
         return try {
             DocumentsContract.deleteDocument(resolver, uri)
         } catch (e: Exception) {

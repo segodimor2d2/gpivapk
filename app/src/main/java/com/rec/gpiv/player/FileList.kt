@@ -399,6 +399,23 @@ class FileList(
         return files.isNotEmpty()
     }
 
+    fun clear() {
+        files.clear()
+        currentIndex = -1
+        currentTreeUri = null
+    }
+
+    fun loadFromDirectory(directory: java.io.File): Boolean {
+        files.clear()
+        currentIndex = -1
+        currentTreeUri = null
+        val children = directory.listFiles() ?: return false
+        files.addAll(children.filter { it.isFile && it.name != "gpivtags.csv" }
+            .map { FileItem(Uri.fromFile(it), it.name, it.lastModified()) }
+            .sortedByDescending { it.modifiedTime })
+        return files.isNotEmpty()
+    }
+
     fun getCurrentTreeUri(): Uri? {
         return currentTreeUri
     }
@@ -406,6 +423,11 @@ class FileList(
     fun setCurrent(
         uri: Uri
     ): Boolean {
+
+        if (uri.scheme == "file") {
+            currentIndex = files.indexOfFirst { it.uri == uri }
+            return currentIndex >= 0
+        }
 
         val targetDocumentId =
             try {
@@ -455,7 +477,7 @@ class FileList(
                     continue
                 }
 
-            if (documentId == targetDocumentId) {
+            if (file.uri.authority == uri.authority && documentId == targetDocumentId) {
 
                 currentIndex = index
 

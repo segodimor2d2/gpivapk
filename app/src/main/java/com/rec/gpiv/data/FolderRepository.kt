@@ -4,6 +4,11 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.provider.DocumentsContract
+import android.provider.MediaStore
+import android.content.ContentUris
+import android.os.Environment
+import android.system.Os
+import java.io.File
 
 /**
  * Persiste as pastas escolhidas pelo usuário e resolve a pasta SAF que
@@ -51,6 +56,65 @@ class FolderRepository(context: Context) {
         return findExternalStorageMatch(uri, folders)
     }
 
+    /** Resolve somente um arquivo real e acessível; nunca procura apenas pelo nome. */
+    fun findLocalFile(uri: Uri): File? {
+        fun accessible(path: String?): File? = runCatching {
+            path?.let(::File)?.canonicalFile?.takeIf {
+                it.isFile && it.canRead() && it.parentFile?.canRead() == true
+            }
+        }.getOrNull()
+
+        if (uri.scheme == "file") return accessible(uri.path)
+        if (uri.scheme != "content") return null
+
+        if (uri.authority == "com.android.externalstorage.documents") {
+            val id = runCatching { DocumentsContract.getDocumentId(uri) }.getOrNull()
+            if (id != null) {
+                val volume = id.substringBefore(':')
+                val root = if (volume == "primary") Environment.getExternalStorageDirectory()
+                    else File("/storage/$volume")
+                accessible(File(root, id.substringAfter(':', "")).path)?.let { return it }
+            }
+        }
+
+        fun queryPath(target: Uri): File? = runCatching {
+            contentResolver.query(target, arrayOf(MediaStore.MediaColumns.DATA), null, null, null)?.use {
+                if (it.moveToFirst()) accessible(it.getString(0)) else null
+            }
+        }.getOrNull()
+
+        queryPath(uri)?.let { return it }
+        if (uri.authority == "com.android.providers.media.documents") {
+            val id = runCatching { DocumentsContract.getDocumentId(uri) }.getOrNull()
+            val number = id?.substringAfter(':')?.toLongOrNull()
+            val collection = when (id?.substringBefore(':')) {
+                "image" -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                "video" -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                "audio" -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                else -> null
+            }
+            if (number != null && collection != null) {
+                queryPath(ContentUris.withAppendedId(collection, number))?.let { return it }
+            }
+        }
+
+        // FileProvider de gerenciadores de arquivos pode não fornecer a coluna DATA.
+        // O descritor aponta para o arquivo local quando o provedor não usa um pipe.
+        runCatching {
+            contentResolver.openFileDescriptor(uri, "r")?.use { descriptor ->
+                accessible(Os.readlink("/proc/self/fd/${descriptor.fd}"))
+            }
+        }.getOrNull()?.let { return it }
+
+        // Alguns gerenciadores enviam o caminho absoluto dentro da URI content.
+        val path = uri.path
+        if (path != null) {
+            val storageIndex = path.indexOf("/storage/")
+            if (storageIndex >= 0) accessible(path.substring(storageIndex))?.let { return it }
+        }
+        return null
+    }
+
     private fun findDocumentsProviderMatch(
         fileUri: Uri,
         folders: List<Uri>
@@ -62,6 +126,7 @@ class FolderRepository(context: Context) {
         }
 
         return folders.firstOrNull { treeUri ->
+            if (treeUri.authority != fileUri.authority) return@firstOrNull false
             val treeDocumentId = try {
                 DocumentsContract.getTreeDocumentId(treeUri)
             } catch (_: Exception) {
