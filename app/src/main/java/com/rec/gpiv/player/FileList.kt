@@ -36,6 +36,7 @@ class FileList(
 
         files.clear()
         currentIndex = -1
+        localDirectory = null
         currentTreeUri = treeUri
 
         println(
@@ -403,18 +404,24 @@ class FileList(
         files.clear()
         currentIndex = -1
         currentTreeUri = null
+        localDirectory = null
     }
 
     fun loadFromDirectory(directory: java.io.File): Boolean {
         files.clear()
         currentIndex = -1
         currentTreeUri = null
+        localDirectory = directory
         val children = directory.listFiles() ?: return false
         files.addAll(children.filter { it.isFile && it.name != "gpivtags.csv" }
             .map { FileItem(Uri.fromFile(it), it.name, it.lastModified()) }
             .sortedByDescending { it.modifiedTime })
         return files.isNotEmpty()
     }
+
+    private var localDirectory: java.io.File? = null
+
+    fun getTagFolderUri(): Uri? = currentTreeUri ?: localDirectory?.let(Uri::fromFile)
 
     fun getCurrentTreeUri(): Uri? {
         return currentTreeUri

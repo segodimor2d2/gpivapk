@@ -5,6 +5,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.util.Log
+import java.io.File
 import com.rec.gpiv.player.FileItem
 
 /** Responsável pelos metadados de tags e operações SAF relacionadas. */
@@ -18,9 +19,79 @@ class TagFileManager(
     private val onFileTagChanged: (String?) -> Unit
 ) {
 
+    private fun localCsv(folderUri: Uri): File {
+        val logs = File(requireNotNull(folderUri.path), "gpvlogs")
+        check(logs.isDirectory || logs.mkdirs()) { "Não foi possível criar gpvlogs" }
+        return File(logs, "gpivtags.csv").also { if (!it.exists()) check(it.createNewFile()) }
+    }
+
+    private fun writeLocalCsv(csv: File, lines: List<String>) {
+        val pending = File(csv.parentFile, "gpivtags.csv.tmp")
+        pending.writeText(lines.joinToString("\n", postfix = if (lines.isEmpty()) "" else "\n"))
+        check(pending.renameTo(csv)) { "Não foi possível gravar tags" }
+    }
+
+    private fun loadLocalTags(folderUri: Uri) {
+        val lines = localCsv(folderUri).readLines()
+        tags.clear()
+        fileTags.clear()
+        lines.forEach { line ->
+            val parts = line.split(',')
+            if (parts.size >= 3 && isValidTag(parts[1].trim())) {
+                val tag = parts[1].trim()
+                fileTags[parts[0]] = tag
+                if (tag !in tags) tags.add(tag)
+            }
+        }
+    }
+
+    private fun moveLocalTags(folderUri: Uri) {
+        try {
+            val root = File(requireNotNull(folderUri.path)).canonicalFile
+            val csv = localCsv(folderUri)
+            val lines = csv.readLines()
+            // Preserve a backup before changing any files.
+            var number = 1
+            var backup: File
+            do { backup = File(csv.parentFile, "gpivtagsbkp_%03d.csv".format(number++)) } while (backup.exists())
+            csv.copyTo(backup)
+            val pending = lines.filter { line ->
+                val parts = line.split(',')
+                if (parts.size < 3 || !isValidTag(parts[1])) return@filter true
+                val uri = Uri.parse(parts[0])
+                if (uri.scheme != "file" || uri.path == null) return@filter true
+                val source = File(requireNotNull(uri.path)).canonicalFile
+                val folder = File(root, parts[1])
+                if (source.parentFile != root || !source.isFile ||
+                    !(folder.isDirectory || folder.mkdir())) return@filter true
+                var target = File(folder, source.name)
+                var suffix = 1
+                while (target.exists()) {
+                    target = File(folder, "${source.nameWithoutExtension}_${suffix++}" +
+                        if (source.extension.isEmpty()) "" else ".${source.extension}")
+                }
+                !source.renameTo(target)
+            }
+            writeLocalCsv(csv, pending)
+            loadLocalTags(folderUri)
+            onFileTagChanged(currentFile()?.uri?.toString()?.let(fileTags::get))
+        } catch (e: Exception) {
+            Log.e("TagFileManager", "Erro ao mover arquivos por tag local", e)
+        }
+    }
+
     fun ensureGpivTagsFile(
         treeUri: Uri
     ) {
+        if (treeUri.scheme == "file") {
+            try {
+                localCsv(treeUri)
+                return
+            } catch (e: Exception) {
+                Log.e("TagFileManager", "Erro nas tags da pasta local", e)
+                return
+            }
+        }
 
         val resolver =
             contentResolver
@@ -210,6 +281,15 @@ class TagFileManager(
     fun loadLisTags(
         treeUri: Uri
     ) {
+        if (treeUri.scheme == "file") {
+            try {
+                loadLocalTags(treeUri)
+                return
+            } catch (e: Exception) {
+                Log.e("TagFileManager", "Erro nas tags da pasta local", e)
+                return
+            }
+        }
 
         val resolver =
             contentResolver
@@ -468,6 +548,15 @@ class TagFileManager(
     private fun makeTagFolders(
         treeUri: Uri
     ) {
+        if (treeUri.scheme == "file") {
+            try {
+                tags.forEach { check(File(requireNotNull(treeUri.path), it).isDirectory || File(requireNotNull(treeUri.path), it).mkdir()) }
+                return
+            } catch (e: Exception) {
+                Log.e("TagFileManager", "Erro nas tags da pasta local", e)
+                return
+            }
+        }
 
         val resolver =
             contentResolver
@@ -637,6 +726,21 @@ class TagFileManager(
         val treeUri =
             currentTreeUri()
                 ?: return
+
+        if (treeUri.scheme == "file") {
+            try {
+                val csv = localCsv(treeUri)
+                val key = currentFile.uri.toString()
+                val lines = csv.readLines().filter { it.substringBefore(',') != key }.toMutableList()
+                if (tag.isNotEmpty()) lines.add("$key,$tag,${currentIndex()}")
+                writeLocalCsv(csv, lines)
+                loadLocalTags(treeUri)
+                onFileTagChanged(tag.ifEmpty { null })
+            } catch (e: Exception) {
+                Log.e("TagFileManager", "Erro ao salvar tag local", e)
+            }
+            return
+        }
 
         val index =
             currentIndex()
@@ -1137,6 +1241,11 @@ class TagFileManager(
                     "nenhuma pasta selecionada"
             )
 
+            return
+        }
+
+        if (treeUri.scheme == "file") {
+            moveLocalTags(treeUri)
             return
         }
 

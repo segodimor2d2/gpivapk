@@ -77,7 +77,7 @@ class PlayerViewModel(
 
     private val tagFiles = TagFileManager(
         contentResolver = application.contentResolver,
-        currentTreeUri = { fileList.getCurrentTreeUri() },
+        currentTreeUri = { fileList.getTagFolderUri() },
         currentFile = { fileList.current() },
         currentIndex = { fileList.currentIndex() },
         tags = lisTags,
@@ -97,6 +97,18 @@ class PlayerViewModel(
     }
 
     fun testMoveTags() = tagFiles.testMoveTags()
+
+    private fun reloadTags() {
+        fileTags.clear()
+        lisTags.clear()
+        if (tagsEnabled) {
+            fileList.getTagFolderUri()?.let {
+                tagFiles.ensureGpivTagsFile(it)
+                tagFiles.loadLisTags(it)
+            }
+        }
+        syncTagsWithUiState()
+    }
 
     private fun syncTagsWithUiState() {
         _uiState.update { it.copy(tags = lisTags.toList()) }
@@ -137,7 +149,7 @@ class PlayerViewModel(
         }
 
         val treeUri =
-            fileList.getCurrentTreeUri()
+            fileList.getTagFolderUri()
                 ?: return
 
         // tagsEnabled=true sempre garante a estrutura SAF antes da leitura.
@@ -193,6 +205,7 @@ class PlayerViewModel(
         incomingFileJob?.cancel()
         fileList.loadFromDirectory(directory)
         _uiState.update { it.copy(fileTag = null, tags = emptyList(), fileIndex = -1, fileCount = fileList.size()) }
+        reloadTags()
         if (selectedFile != null) load(Uri.fromFile(selectedFile)) else firstFile()
     }
 
@@ -212,6 +225,7 @@ class PlayerViewModel(
             _uiState.update { it.copy(fileTag = null, tags = emptyList(), fileIndex = -1, fileCount = 0) }
             if (localFile != null) {
                 fileList.loadFromDirectory(requireNotNull(localFile.parentFile))
+                reloadTags()
                 load(Uri.fromFile(localFile))
             } else {
                 folderRepository.findMatchingFolder(uri)?.let(::loadFolder)
@@ -376,6 +390,7 @@ class PlayerViewModel(
         _uiState.value =
             _uiState.value.copy(
                 filename = filename,
+                fileTag = if (tagsEnabled) fileTags[loadUri.toString()] else null,
                 fileIndex = fileList.currentIndex(),
                 fileCount = fileList.size(),
                 playing = false,
@@ -554,7 +569,7 @@ class PlayerViewModel(
         file: FileItem
     ) {
         if (file.uri.scheme == "file") {
-            _uiState.update { it.copy(fileTag = null) }
+            _uiState.update { it.copy(fileTag = if (tagsEnabled) fileTags[file.uri.toString()] else null) }
             load(file.uri)
             return
         }
