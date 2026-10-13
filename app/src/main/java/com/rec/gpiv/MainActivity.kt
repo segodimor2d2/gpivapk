@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rec.gpiv.ui.player.PlayerScreen
+import com.rec.gpiv.ui.browser.showTerminalFileBrowser
 import com.rec.gpiv.ui.theme.GpivTheme
 import com.rec.gpiv.viewmodel.PlayerViewModel
 
@@ -42,7 +43,6 @@ class MainActivity : ComponentActivity() {
         uri?.let(::persistAndLoadFolder)
     }
 
-    private var browseFiles = false
     private var browserDirectory: File = Environment.getExternalStorageDirectory()
 
     private fun hasStorageAccess(): Boolean =
@@ -67,8 +67,7 @@ class MainActivity : ComponentActivity() {
         else Toast.makeText(this, "O acesso ao armazenamento não foi autorizado.", Toast.LENGTH_LONG).show()
     }
 
-    private fun openStorageBrowser(files: Boolean) {
-        browseFiles = files
+    private fun openStorageBrowser() {
         if (hasStorageAccess()) {
             showStorageBrowser(browserDirectory)
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -94,7 +93,7 @@ class MainActivity : ComponentActivity() {
     private fun showStorageBrowser(directory: File) {
         lifecycleScope.launch {
             val entries = withContext(Dispatchers.IO) {
-                directory.listFiles()?.filter { it.isDirectory || browseFiles }
+                directory.listFiles()?.toList()
                     ?.sortedWith(compareBy<File> { !it.isDirectory }.thenBy { it.name.lowercase() })
             }
             if (isFinishing || isDestroyed) return@launch
@@ -107,24 +106,17 @@ class MainActivity : ComponentActivity() {
                 getExternalFilesDirs(null).mapNotNull { it?.absolutePath?.substringBefore("/Android/") }
                     .map(::File).filter { it != directory && it.isDirectory }
             } else emptyList()
-            val choices = roots + entries
-            val hasParent = directory.parentFile != null && directory.absolutePath != "/storage"
-            val labels = (if (hasParent) listOf("↑ Pasta anterior") else emptyList()) +
-                choices.map { if (it.isDirectory) "📁 ${it.name}" else it.name }
-            AlertDialog.Builder(this@MainActivity)
-                .setTitle(directory.absolutePath)
-                .setItems(labels.toTypedArray()) { _, index ->
-                    if (hasParent && index == 0) showStorageBrowser(requireNotNull(directory.parentFile))
-                    else {
-                        val item = choices[index - if (hasParent) 1 else 0]
-                        if (item.isDirectory) showStorageBrowser(item)
-                        else viewModel.onLocalFolderSelected(directory, item)
-                    }
-                }
-                .setPositiveButton("Abrir esta pasta") { _, _ -> viewModel.onLocalFolderSelected(directory) }
-                .setNeutralButton("Pasta para tags e exportação") { _, _ -> openFolderLauncher.launch(null) }
-                .setNegativeButton("Cancelar", null)
-                .show()
+            showTerminalFileBrowser(
+                context = this@MainActivity,
+                directory = directory,
+                entries = roots + entries,
+                onOpen = { item ->
+                    if (item.isDirectory) showStorageBrowser(item)
+                    else viewModel.onLocalFolderSelected(directory, item)
+                },
+                onSelectFolder = { viewModel.onLocalFolderSelected(directory) },
+                onSelectDocumentTree = { openFolderLauncher.launch(null) }
+            )
         }
     }
 
@@ -142,10 +134,10 @@ class MainActivity : ComponentActivity() {
                         uiState = uiState,
                         mpvNative = viewModel.mpvNative,
                         onOpenVideo = {
-                            openStorageBrowser(files = true)
+                            openStorageBrowser()
                         },
                         onOpenFolder = {
-                            openStorageBrowser(files = false)
+                            openStorageBrowser()
                         },
                         onPreviousFile = viewModel::previousFile,
                         onFirstFile = viewModel::firstFile,
