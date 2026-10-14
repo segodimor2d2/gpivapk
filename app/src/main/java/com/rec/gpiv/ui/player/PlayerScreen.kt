@@ -139,6 +139,7 @@ fun PlayerScreen(
         if (controlsVisible) {
             PlayerControlsOverlay(
                 uiState = uiState,
+                edgeDetectionEnabled = mpvNative.edgeDetectionEnabled,
                 gestureToolState = gestureToolState,
                 onOpenVideo = onOpenVideo,
                 onOpenFolder = onOpenFolder,
@@ -176,8 +177,19 @@ fun PlayerScreen(
                 onToggleSharpness = mpvNative::toggleSharpness,
                 onToggleBlur = mpvNative::toggleBlur,
                 onToggleDeband = mpvNative::toggleDeband,
-                onToggleEdgeDetection = mpvNative::toggleEdgeDetection,
-                onResetVideoAdjustments = onResetVideoAdjustments
+                onToggleEdgeDetection = {
+                    if (gestureToolState.value == GestureTool.EDGE_DETECTION) {
+                        mpvNative.toggleEdgeDetection()
+                        if (!mpvNative.edgeDetectionEnabled) gestureToolState.value = GestureTool.NONE
+                    } else {
+                        if (!mpvNative.edgeDetectionEnabled) mpvNative.toggleEdgeDetection()
+                        if (mpvNative.edgeDetectionEnabled) gestureToolState.value = GestureTool.EDGE_DETECTION
+                    }
+                },
+                onResetVideoAdjustments = {
+                    onResetVideoAdjustments()
+                    gestureToolState.value = GestureTool.NONE
+                }
             )
         }
         if (uiState.galleryVisible) {

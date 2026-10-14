@@ -7,6 +7,7 @@ enum class GestureTool {
     CONTRAST,
     GAMMA,
     SATURATION,
+    EDGE_DETECTION,
     VOLUME,
     SEEK,
     SEEK_PERCENT

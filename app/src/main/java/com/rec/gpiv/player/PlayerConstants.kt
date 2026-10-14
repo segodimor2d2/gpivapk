@@ -19,6 +19,13 @@ const val CONTRAST_PROP = 80.0
 const val GAMMA_PROP = 80.0
 const val SATURATION_PROP = 80.0
 
+// Sensibilidade de bordas: valores maiores detectam mais contornos.
+const val EDGE_DETECTION_DEFAULT = 1.0
+const val EDGE_DETECTION_MIN = 0.25
+const val EDGE_DETECTION_MAX = 5.0
+// Variação ao arrastar uma distância equivalente à altura da área de gestos.
+const val EDGE_DETECTION_PROP = 4.0
+
 const val ZOOM_DOUBLE_TAP_DRAG = 6.0
 
 const val SEEK_GESTURE_SENSITIVITY = 40.0

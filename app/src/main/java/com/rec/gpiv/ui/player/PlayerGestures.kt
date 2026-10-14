@@ -16,6 +16,7 @@ import com.rec.gpiv.player.BRIGHTNESS_PROP
 import com.rec.gpiv.player.CONTRAST_PROP
 import com.rec.gpiv.player.GAMMA_PROP
 import com.rec.gpiv.player.SATURATION_PROP
+import com.rec.gpiv.player.EDGE_DETECTION_PROP
 import com.rec.gpiv.player.SEEK_GESTURE_SENSITIVITY
 import com.rec.gpiv.player.SEEK_SECONDS
 
@@ -143,6 +144,12 @@ fun PlayerGestures(
                                         GestureTool.SATURATION -> {
                                             mpvNative.changeSaturation(
                                                 propAmount * SATURATION_PROP
+                                            )
+                                        }
+
+                                        GestureTool.EDGE_DETECTION -> {
+                                            mpvNative.changeEdgeDetection(
+                                                propAmount * EDGE_DETECTION_PROP
                                             )
                                         }
 

@@ -89,22 +89,46 @@ Java_com_rec_gpiv_player_MpvNative_nativeToggleSharpnessOrBlur(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_rec_gpiv_player_MpvNative_nativeToggleDebandOrEdges(
+Java_com_rec_gpiv_player_MpvNative_nativeToggleDeband(
     JNIEnv* env,
     jobject thiz,
-    jlong handle,
-    jboolean deband
+    jlong handle
 )
 {
     auto* context = reinterpret_cast<MpvContext*>(handle);
     if (!context || !context->mpv) return;
 
-    const char* filter = deband
-        ? "@gpiv-deband:lavfi=[deband]"
-        : "@gpiv-edges:lavfi=[edgedetect]";
+    const char* filter = "@gpiv-deband:lavfi=[deband]";
     const char* command[] = {"vf", "toggle", filter, nullptr};
     int status = mpv_command(context->mpv, command);
     LOGI("JNI: vf toggle %s -> %d (%s)", filter, status, mpv_error_string(status));
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeSetEdgeDetection(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jboolean enabled,
+    jdouble low,
+    jdouble high
+)
+{
+    auto* context = reinterpret_cast<MpvContext*>(handle);
+    if (!context || !context->mpv) return JNI_FALSE;
+
+    // Substituir pelo mesmo rótulo evita acumular filtros durante o arraste.
+    const std::string filter = enabled
+        ? "@gpiv-edges:lavfi=[edgedetect=low=" + std::to_string(low)
+            + ":high=" + std::to_string(high) + "]"
+        : "@gpiv-edges";
+    const char* command[] = {
+        "vf", enabled ? "add" : "remove", filter.c_str(), nullptr
+    };
+    int status = mpv_command(context->mpv, command);
+    LOGI("JNI: vf edges %s -> %d (%s)", filter.c_str(), status, mpv_error_string(status));
+    return status >= 0 ? JNI_TRUE : JNI_FALSE;
 }
 
 extern "C"

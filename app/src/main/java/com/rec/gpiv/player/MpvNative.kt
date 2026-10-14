@@ -3,6 +3,9 @@ package com.rec.gpiv.player
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.view.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import java.io.File
 import java.io.FileOutputStream
 
@@ -15,6 +18,10 @@ class MpvNative {
     }
 
     private var nativeHandle: Long = 0L
+
+    var edgeDetectionEnabled by mutableStateOf(false)
+        private set
+    private var edgeDetectionStrength = EDGE_DETECTION_DEFAULT
 
     private var screenshotDirectory: String? = null
 
@@ -549,19 +556,45 @@ class MpvNative {
 
     fun toggleDeband() {
         checkInitialized()
-        nativeToggleDebandOrEdges(nativeHandle, true)
+        nativeToggleDeband(nativeHandle)
     }
 
     fun toggleEdgeDetection() {
         checkInitialized()
-        nativeToggleDebandOrEdges(nativeHandle, false)
+        setEdgeDetection(!edgeDetectionEnabled, edgeDetectionStrength)
     }
 
-    private external fun nativeToggleDebandOrEdges(handle: Long, deband: Boolean)
+    fun changeEdgeDetection(amount: Double) {
+        checkInitialized()
+        if (!edgeDetectionEnabled) return
+        val strength = (edgeDetectionStrength + amount)
+            .coerceIn(EDGE_DETECTION_MIN, EDGE_DETECTION_MAX)
+        if (strength != edgeDetectionStrength) setEdgeDetection(true, strength)
+    }
+
+    private fun setEdgeDetection(enabled: Boolean, strength: Double): Boolean {
+        // Menores limiares do Canny aumentam a sensibilidade aos contornos.
+        val low = (20.0 / 255.0 / strength).coerceIn(0.0, 1.0)
+        val high = (50.0 / 255.0 / strength).coerceIn(low, 1.0)
+        if (!nativeSetEdgeDetection(nativeHandle, enabled, low, high)) return false
+        edgeDetectionEnabled = enabled
+        edgeDetectionStrength = strength
+        return true
+    }
+
+    private external fun nativeSetEdgeDetection(
+        handle: Long, enabled: Boolean, low: Double, high: Double
+    ): Boolean
+
+    private external fun nativeToggleDeband(handle: Long)
 
     fun resetVideoAdjustments() {
 
         checkInitialized()
+
+        if (!edgeDetectionEnabled || setEdgeDetection(false, edgeDetectionStrength)) {
+            edgeDetectionStrength = EDGE_DETECTION_DEFAULT
+        }
 
         println(
             "MpvNative: resetVideoAdjustments()"
@@ -584,6 +617,8 @@ class MpvNative {
         }
 
         propertyListener = null
+        edgeDetectionEnabled = false
+        edgeDetectionStrength = EDGE_DETECTION_DEFAULT
         booleanPropertyListener = null
         stringPropertyListener = null
         loadingListener = null

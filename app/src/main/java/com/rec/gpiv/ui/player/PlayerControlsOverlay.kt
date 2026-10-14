@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalDensity
 @Composable
 fun PlayerControlsOverlay(
     uiState: PlayerUiState,
+    edgeDetectionEnabled: Boolean,
     gestureToolState: MutableState<GestureTool>,
     onOpenVideo: () -> Unit,
     onOpenFolder: () -> Unit,
@@ -681,6 +682,8 @@ fun PlayerControlsOverlay(
 
                         StatusText(
                             text = "cn",
+                            backgroundColor = if (gestureTool == GestureTool.EDGE_DETECTION &&
+                                edgeDetectionEnabled) Color(0x9900994C) else Color.Transparent,
                             modifier = Modifier
                                 .clickable { onToggleEdgeDetection() }
                         )
