@@ -372,6 +372,8 @@ Java_com_rec_gpiv_player_MpvNative_nativeResetVideoAdjustments(
         "set", "saturation", "0", nullptr
     };
 
+    context->saturationGestureRemainder = 0.0;
+
     mpv_command(context->mpv, brightnessCommand);
     mpv_command(context->mpv, contrastCommand);
     mpv_command(context->mpv, gammaCommand);
@@ -403,27 +405,28 @@ Java_com_rec_gpiv_player_MpvNative_nativeChangeSaturation(
         return;
     }
 
-    std::string value =
-        std::to_string(amount);
+    if (!std::isfinite(amount)) return;
 
-    const char* command[] = {
-        "add",
-        "saturation",
-        value.c_str(),
-        nullptr
-    };
+    int64_t current = 0;
+    int status = mpv_get_property(context->mpv, "saturation", MPV_FORMAT_INT64, &current);
+    if (status < 0) {
+        LOGI("JNI: ler saturation -> %d (%s)", status, mpv_error_string(status));
+        return;
+    }
 
-    int status =
-        mpv_command(
-            context->mpv,
-            command
-        );
+    // A propriedade é inteira: conserva as frações dos pequenos movimentos.
+    const double pending = context->saturationGestureRemainder + amount;
+    const double target = std::clamp(static_cast<double>(current) + pending, -100.0, 100.0);
+    int64_t value = static_cast<int64_t>(std::round(target));
+    if (value == current) {
+        context->saturationGestureRemainder = target - value;
+        return;
+    }
 
-    LOGI(
-        "JNI: saturation %+f -> %d",
-        amount,
-        status
-    );
+    status = mpv_set_property(context->mpv, "saturation", MPV_FORMAT_INT64, &value);
+    if (status >= 0) context->saturationGestureRemainder = target - value;
+    LOGI("JNI: saturation %+f -> %lld, status=%d (%s)", amount,
+        static_cast<long long>(value), status, mpv_error_string(status));
 }
 
 extern "C"

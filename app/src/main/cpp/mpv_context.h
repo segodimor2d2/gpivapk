@@ -27,6 +27,7 @@ struct MpvContext {
     mpv_handle* mpv;
 
     double rotationGestureRemainder = 0.0;
+    double saturationGestureRemainder = 0.0;
 
     mpv_render_context* renderContext;
 

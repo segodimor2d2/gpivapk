@@ -815,15 +815,11 @@ fun PlayerControlsOverlay(
 
                         StatusText(
                             text = "↻",
-                            backgroundColor = if (gestureTool == GestureTool.ROTATION)
-                                Color(0x9900994C) else Color.Transparent,
-                            modifier = Modifier
-                                .clickable {
-                                    gestureTool = if (gestureTool == GestureTool.ROTATION)
-                                        GestureTool.NONE else GestureTool.ROTATION
+                            modifier =
+                                Modifier.clickable {
+                                    onRotate()
                                 }
                         )
-
 
                         StatusText(
                             text = "0",
@@ -914,13 +910,18 @@ fun PlayerControlsOverlay(
                             )
                     ) {
 
+
                         StatusText(
                             text = "↻",
-                            modifier =
-                                Modifier.clickable {
-                                    onRotate()
+                            backgroundColor = if (gestureTool == GestureTool.ROTATION)
+                                Color(0x9900994C) else Color.Transparent,
+                            modifier = Modifier
+                                .clickable {
+                                    gestureTool = if (gestureTool == GestureTool.ROTATION)
+                                        GestureTool.NONE else GestureTool.ROTATION
                                 }
                         )
+
                         CompactButton(
                             text = "<",
                             onClick = {
