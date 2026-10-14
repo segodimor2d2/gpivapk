@@ -535,7 +535,7 @@ class MediaExportManager(
                     check(directory.isDirectory) { "Pasta do corte inacessível" }
                     val dot = originalName.lastIndexOf('.')
                     val baseName = if (dot > 0) originalName.substring(0, dot) else originalName
-                    val extension = if (dot > 0 && dot < originalName.lastIndex) originalName.substring(dot) else ".mov"
+                    val extension = ".mov"
                     var number = 1
                     var destination: File
                     do {
@@ -586,13 +586,10 @@ class MediaExportManager(
                             lastDot
                         )
 
-                    extension =
-                        originalName.substring(
-                            lastDot
-                        )
+                    extension = ".mov"
                 } else {
                     baseName = originalName
-                    extension = ""
+                    extension = ".mov"
                 }
 
                 /*

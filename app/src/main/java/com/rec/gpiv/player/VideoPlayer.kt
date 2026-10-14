@@ -34,7 +34,10 @@ interface VideoPlayer {
 
     fun testCutFrames(
         frameA: Long,
-        frameB: Long
+        frameB: Long,
+        positionA: Double,
+        positionB: Double,
+        copyPackets: Boolean = false
     ): LongArray?
 
     fun screenshot()

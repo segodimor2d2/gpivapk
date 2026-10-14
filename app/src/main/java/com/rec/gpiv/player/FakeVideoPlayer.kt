@@ -73,7 +73,10 @@ class FakeVideoPlayer : VideoPlayer {
 
     override fun testCutFrames(
         frameA: Long,
-        frameB: Long
+        frameB: Long,
+        positionA: Double,
+        positionB: Double,
+        copyPackets: Boolean
     ): LongArray? {
         println(
             "FakeVideoPlayer: testCutFrames frameA=$frameA frameB=$frameB"

@@ -214,7 +214,7 @@ class PlayerViewModel(
 
     private val lisTags = mutableListOf<String>()
 
-    private enum class FeedbackOperation { SCREENSHOT_MPV, SCREENSHOT, CUT, MAKE_FOLDERS, MOVE_TAGS, THUMBNAILS }
+    private enum class FeedbackOperation { SCREENSHOT_MPV, SCREENSHOT, CUT, COPY_CUT, MAKE_FOLDERS, MOVE_TAGS, THUMBNAILS }
     private val feedbackTimers = mutableMapOf<FeedbackOperation, Job>()
 
     private fun setOperationStatus(operation: FeedbackOperation, status: OperationStatus) {
@@ -235,6 +235,7 @@ class PlayerViewModel(
                 FeedbackOperation.SCREENSHOT_MPV -> it.copy(screenshotMpvStatus = status)
                 FeedbackOperation.SCREENSHOT -> it.copy(screenshotStatus = status)
                 FeedbackOperation.CUT -> it.copy(cutStatus = status)
+                FeedbackOperation.COPY_CUT -> it.copy(copyCutStatus = status)
                 FeedbackOperation.MAKE_FOLDERS -> it.copy(makeFoldersStatus = status)
                 FeedbackOperation.MOVE_TAGS -> it.copy(moveTagsStatus = status)
                 FeedbackOperation.THUMBNAILS -> it.copy(thumbnailStatus = status)
@@ -718,7 +719,9 @@ class PlayerViewModel(
         currentTreeUri = { fileList.getTagFolderUri() },
         mediaExport = mediaExport,
         currentFileName = { _uiState.value.filename },
-        onStatus = { status -> setOperationStatus(FeedbackOperation.CUT, status) }
+        onStatus = { copyPackets, status ->
+            setOperationStatus(if (copyPackets) FeedbackOperation.COPY_CUT else FeedbackOperation.CUT, status)
+        }
     )
 
     private val trashManager = FileTrashManager(
@@ -1015,6 +1018,12 @@ class PlayerViewModel(
         clearABMarkers()
         cutController.testCurrentCut(markers)
     }
+    fun testCurrentCopyCut() {
+        val markers = markerController.markersForCut()
+        clearABMarkers()
+        cutController.testCurrentCut(markers, copyPackets = true)
+    }
+
     fun toggleABLoop() {
         if (markerController.markerA() != null && markerController.markerB() != null) {
             markerController.enableLoop()

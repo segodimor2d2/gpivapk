@@ -48,6 +48,7 @@ fun PlayerControlsOverlay(
     onSetMarkerA: () -> Unit,
     onSetMarkerB: () -> Unit,
     onTestCut: () -> Unit,
+    onTestCopyCut: () -> Unit,
     onSeekBackward: (Double) -> Unit,
     onSeekForward: (Double) -> Unit,
     onDisableABLoop: () -> Unit,
@@ -531,10 +532,20 @@ fun PlayerControlsOverlay(
                             )
 
                             FeedbackButton(
+                                text = "CT",
+                                status = uiState.copyCutStatus,
+                                enabled = uiState.cutStatus != OperationStatus.RUNNING,
+                                onClick = onTestCopyCut
+                            )
+
+                            FeedbackButton(
                                 text = "[CUT]",
                                 status = uiState.cutStatus,
+                                enabled = uiState.copyCutStatus != OperationStatus.RUNNING,
                                 onClick = onTestCut
                             )
+
+
 
                         }
 

@@ -16,6 +16,36 @@ Os nomes ficam sem extensão: `.<pasta><Im ou Mv><yyyyMMddHHmmss>_<sequência>`.
 
 A operação verifica colisões e usa nomes temporários com um registro interno de recuperação. Se houver falha, tenta restaurar os nomes originais e conserva as avaliações para nova tentativa. Depois de uma interrupção, abrir o popup tenta recuperar uma renomeação pendente. Ao concluir, a pasta atual é recarregada para aplicar a ordenação por timestamp e abrir o primeiro arquivo da lista reordenada. A pasta `gpvlogs/thumbnails` é removida somente após a renomeação completa; falhas na limpeza aparecem no resultado.
 
+## Corte por frame com [CUT]
+
+O botão **CT** mantém o fluxo anterior: copia os pacotes de vídeo e áudio sem
+recodificar. É mais rápido, preserva o codec e começa no keyframe disponível
+anterior ao marcador A, podendo incluir frames anteriores ao ponto marcado.
+Os dois botões usam os marcadores A/B e exportam para a pasta aberta; cada um
+mostra seu próprio resultado e apenas um corte pode executar por vez.
+
+Marque A e B nos frames desejados e pressione **[CUT]**. O corte usa os tempos de
+apresentação dos marcadores e os frames decodificados, incluindo os frames A e B.
+Não depende de o marcador A ser um keyframe nem calcula o corte pelo FPS médio.
+Marcadores invertidos são ordenados pelo tempo; A e B iguais exportam um frame.
+
+O vídeo é recodificado em **MOV/MJPEG**, com qualidade fixa alta, pois a compilação
+atual do FFmpeg inclui esse encoder. O resultado pode ser maior e o processamento
+mais demorado do que a antiga cópia de pacotes. A saída usa extensão `.mov`.
+O áudio é copiado com a mesma origem de tempo do vídeo para preservar a
+sincronização; seus limites têm a precisão dos pacotes do codec de áudio.
+
+Teste de integração da rotina nativa em Linux, com FFmpeg e suas bibliotecas de
+desenvolvimento instalados:
+
+```bash
+python3 app/src/test/native/test_frame_accurate_cut.py
+```
+
+O teste verifica o conteúdo dos frames inicial/final, timestamps e contagem,
+incluindo B-frames, taxa variável, início/fim do vídeo, frame único, áudio e
+timestamps com origem diferente de zero.
+
 ## Abrir pasta por intent
 
 Envie a ação `com.rec.gpiv.action.OPEN_FOLDER` com a URI da pasta em `Intent.data`.

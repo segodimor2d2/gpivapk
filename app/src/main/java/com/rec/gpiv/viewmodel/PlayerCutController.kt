@@ -17,20 +17,20 @@ class PlayerCutController(
     private val currentTreeUri: () -> android.net.Uri?,
     private val mediaExport: MediaExportManager,
     private val currentFileName: () -> String?,
-    private val onStatus: (OperationStatus) -> Unit = {}
+    private val onStatus: (Boolean, OperationStatus) -> Unit = { _, _ -> }
 ) {
 
     private var lastCutFrameInfo: CutFrameInfo? = null
 
     private var running = false
 
-    fun testCurrentCut(markers: Pair<FrameMarker, FrameMarker>?) {
+    fun testCurrentCut(markers: Pair<FrameMarker, FrameMarker>?, copyPackets: Boolean = false) {
         if (running) return
         val folder = currentTreeUri()
         val originalName = currentFileName() ?: "video"
-        onStatus(OperationStatus.RUNNING)
-        if (markers == null || folder == null || markers.first.frame == markers.second.frame) {
-            onStatus(OperationStatus.ERROR)
+        onStatus(copyPackets, OperationStatus.RUNNING)
+        if (markers == null || folder == null || markers.first.position > markers.second.position) {
+            onStatus(copyPackets, OperationStatus.ERROR)
             return
         }
         running = true
@@ -40,19 +40,22 @@ class PlayerCutController(
                     val cutFile = File(cacheDir, "frameA.mov")
                     // A failed native cut must never export a previous result.
                     if (cutFile.exists() && !cutFile.delete()) return@withContext false
-                    val result = player.testCutFrames(markers.first.frame, markers.second.frame)
+                    val result = player.testCutFrames(
+                        markers.first.frame, markers.second.frame,
+                        markers.first.position, markers.second.position, copyPackets
+                    )
                     if (result == null || result.size < 6 || !cutFile.isFile || cutFile.length() == 0L) {
                         return@withContext false
                     }
                     lastCutFrameInfo = CutFrameInfo(result[0], result[1], result[2], result[3], result[4], result[5])
                     mediaExport.copyCutVideoToTree(cutFile, folder, originalName)
                 }
-                onStatus(if (success) OperationStatus.SUCCESS else OperationStatus.ERROR)
+                onStatus(copyPackets, if (success) OperationStatus.SUCCESS else OperationStatus.ERROR)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 println("PlayerViewModel: erro no corte: ${e.message}")
-                onStatus(OperationStatus.ERROR)
+                onStatus(copyPackets, OperationStatus.ERROR)
             } finally {
                 running = false
             }

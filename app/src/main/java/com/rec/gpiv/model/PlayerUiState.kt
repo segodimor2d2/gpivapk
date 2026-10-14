@@ -10,6 +10,7 @@ data class PlayerUiState(
     val makeFoldersStatus: OperationStatus = OperationStatus.IDLE,
     val moveTagsStatus: OperationStatus = OperationStatus.IDLE,
     val cutStatus: OperationStatus = OperationStatus.IDLE,
+    val copyCutStatus: OperationStatus = OperationStatus.IDLE,
     val thumbnailStatus: OperationStatus = OperationStatus.IDLE,
     val thumbnailSelection: List<android.net.Uri> = emptyList(),
     val ahpActive: Boolean = false,

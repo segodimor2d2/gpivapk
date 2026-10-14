@@ -130,7 +130,10 @@ class MpvPlayer(
 
     override fun testCutFrames(
         frameA: Long,
-        frameB: Long
+        frameB: Long,
+        positionA: Double,
+        positionB: Double,
+        copyPackets: Boolean
     ): LongArray? {
 
         val uri = currentUri
@@ -147,11 +150,16 @@ class MpvPlayer(
 
         if (cutPfd != null) {
 
-            val result = native.testCutFrames(
-                fd = cutPfd.fd,
-                frameA = frameA,
-                frameB = frameB
-            )
+            val result = cutPfd.use {
+                native.testCutFrames(
+                    fd = it.fd,
+                    frameA = frameA,
+                    frameB = frameB,
+                    positionA = positionA,
+                    positionB = positionB,
+                    copyPackets = copyPackets
+                )
+            }
 
             if (result != null && result.size >= 6) {
 
@@ -168,9 +176,6 @@ class MpvPlayer(
                     "MpvPlayer: testCutFrames sem resultado"
                 )
             }
-
-            cutPfd.close()
-
             return result
 
         } else {

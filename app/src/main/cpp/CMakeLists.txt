@@ -71,6 +71,8 @@ add_library(
     mpv_native.cpp
     mpv_native_ffmpeg_keyframe.cpp
     mpv_native_ffmpeg_cut.cpp
+    mpv_native_ffmpeg_copy_cut.cpp
+    frame_accurate_cut.cpp
     mpv_native_ffmpeg_probe.cpp
     mpv_native_controls.cpp
     mpv_native_playback.cpp
@@ -131,6 +133,10 @@ add_library(
     SHARED
     IMPORTED
 )
+
+add_library(swscale SHARED IMPORTED)
+set_target_properties(swscale PROPERTIES IMPORTED_LOCATION
+    "${CMAKE_CURRENT_LIST_DIR}/../jniLibs/arm64-v8a/libswscale.so")
 
 set_target_properties(
     avcodec
@@ -203,6 +209,7 @@ target_link_libraries(
     mpv
     avcodec
     avformat
+    swscale
     avutil
     ${log-lib}
     ${android-lib}

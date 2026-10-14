@@ -183,6 +183,7 @@ class MainActivity : ComponentActivity() {
                         onDeleteFile = viewModel::deleteFile,
                         onTagsEnabledChange = viewModel::setTagsEnabled,
                         onTestCut = viewModel::testCurrentCut,
+                        onTestCopyCut = viewModel::testCurrentCopyCut,
                         onDisableABLoop = viewModel::disableABLoop,
                         onScreenshot = viewModel::screenshot,
                         onSetScreenshotMethod = viewModel::setScreenshotMethod,

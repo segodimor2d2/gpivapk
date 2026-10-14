@@ -263,14 +263,20 @@ class MpvNative {
     fun testCutFrames(
         fd: Int,
         frameA: Long,
-        frameB: Long
+        frameB: Long,
+        positionA: Double,
+        positionB: Double,
+        copyPackets: Boolean
     ): LongArray? {
         checkInitialized()
 
+        if (copyPackets) return nativeTestCopyCutFrames(fd, frameA, frameB)
         return nativeTestCutFrames(
             fd,
             frameA,
-            frameB
+            frameB,
+            positionA,
+            positionB
         )
     }
 
@@ -732,10 +738,14 @@ class MpvNative {
         uri: String
     )
 
+    private external fun nativeTestCopyCutFrames(fd: Int, frameA: Long, frameB: Long): LongArray?
+
     private external fun nativeTestCutFrames(
         fd: Int,
         frameA: Long,
-        frameB: Long
+        frameB: Long,
+        positionA: Double,
+        positionB: Double
     ): LongArray?
 
     private external fun nativeFindPreviousKeyframeFrame(

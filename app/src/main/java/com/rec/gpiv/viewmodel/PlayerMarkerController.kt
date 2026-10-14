@@ -24,7 +24,7 @@ class PlayerMarkerController(
     fun markersForCut(): Pair<FrameMarker, FrameMarker>? {
         val a = markerA ?: return null
         val b = markerB ?: return null
-        return if (a.frame <= b.frame) a to b else b to a
+        return if (a.position <= b.position) a to b else b to a
     }
 
     fun startPlayback() {
