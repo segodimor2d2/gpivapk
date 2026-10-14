@@ -509,6 +509,13 @@ class MpvNative {
         )
     }
 
+    fun toggleNegative() {
+        checkInitialized()
+        nativeToggleNegative(nativeHandle)
+    }
+
+    private external fun nativeToggleNegative(handle: Long)
+
     fun resetVideoAdjustments() {
 
         checkInitialized()

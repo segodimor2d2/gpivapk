@@ -169,6 +169,7 @@ fun PlayerScreen(
                 onVolumeDown = onVolumeDown,
                 onVolumeUp = onVolumeUp,
                 onMute = onMute,
+                onToggleNegative = mpvNative::toggleNegative,
                 onResetVideoAdjustments = onResetVideoAdjustments
             )
         }

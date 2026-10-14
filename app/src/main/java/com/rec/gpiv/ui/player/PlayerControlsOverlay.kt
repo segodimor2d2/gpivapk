@@ -63,6 +63,7 @@ fun PlayerControlsOverlay(
     onVolumeDown: () -> Unit,
     onVolumeUp: () -> Unit,
     onMute: () -> Unit,
+    onToggleNegative: () -> Unit,
     onResetVideoAdjustments: () -> Unit
 ) {
     var gestureTool by gestureToolState
@@ -631,7 +632,7 @@ fun PlayerControlsOverlay(
                         StatusText(
                             text = "ng",
                             modifier = Modifier
-                                .clickable { }
+                                .clickable { onToggleNegative() }
                         )
 
                         StatusText(

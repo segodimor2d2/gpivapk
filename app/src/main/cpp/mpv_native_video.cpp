@@ -12,6 +12,25 @@
 
 extern "C"
 JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeToggleNegative(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle
+)
+{
+    auto* context = reinterpret_cast<MpvContext*>(handle);
+    if (!context || !context->mpv) return;
+
+    // O rótulo permite alternar só este filtro, preservando os demais.
+    const char* command[] = {
+        "vf", "toggle", "@gpiv-negative:lavfi=[negate]", nullptr
+    };
+    int status = mpv_command(context->mpv, command);
+    LOGI("JNI: vf toggle negative -> %d (%s)", status, mpv_error_string(status));
+}
+
+extern "C"
+JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeChangeZoom(
     JNIEnv* env,
     jobject thiz,
