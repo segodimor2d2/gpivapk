@@ -69,6 +69,8 @@ fun PlayerControlsOverlay(
     onToggleNoiseReduction: () -> Unit,
     onToggleSharpness: () -> Unit,
     onToggleBlur: () -> Unit,
+    onToggleDeband: () -> Unit,
+    onToggleEdgeDetection: () -> Unit,
     onResetVideoAdjustments: () -> Unit
 ) {
     var gestureTool by gestureToolState
@@ -672,9 +674,15 @@ fun PlayerControlsOverlay(
                         )
 
                         StatusText(
-                            text = "fq",
+                            text = "lv",
                             modifier = Modifier
-                                .clickable { }
+                                .clickable { onToggleDeband() }
+                        )
+
+                        StatusText(
+                            text = "cn",
+                            modifier = Modifier
+                                .clickable { onToggleEdgeDetection() }
                         )
 
                     }

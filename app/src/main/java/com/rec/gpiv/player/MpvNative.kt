@@ -547,6 +547,18 @@ class MpvNative {
 
     private external fun nativeToggleSharpnessOrBlur(handle: Long, sharpen: Boolean)
 
+    fun toggleDeband() {
+        checkInitialized()
+        nativeToggleDebandOrEdges(nativeHandle, true)
+    }
+
+    fun toggleEdgeDetection() {
+        checkInitialized()
+        nativeToggleDebandOrEdges(nativeHandle, false)
+    }
+
+    private external fun nativeToggleDebandOrEdges(handle: Long, deband: Boolean)
+
     fun resetVideoAdjustments() {
 
         checkInitialized()

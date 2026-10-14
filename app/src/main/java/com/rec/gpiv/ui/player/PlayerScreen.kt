@@ -175,6 +175,8 @@ fun PlayerScreen(
                 onToggleNoiseReduction = mpvNative::toggleNoiseReduction,
                 onToggleSharpness = mpvNative::toggleSharpness,
                 onToggleBlur = mpvNative::toggleBlur,
+                onToggleDeband = mpvNative::toggleDeband,
+                onToggleEdgeDetection = mpvNative::toggleEdgeDetection,
                 onResetVideoAdjustments = onResetVideoAdjustments
             )
         }
