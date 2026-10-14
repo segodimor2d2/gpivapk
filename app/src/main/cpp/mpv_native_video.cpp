@@ -31,6 +31,26 @@ Java_com_rec_gpiv_player_MpvNative_nativeToggleNegative(
 
 extern "C"
 JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeToggleMirror(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jboolean vertical
+)
+{
+    auto* context = reinterpret_cast<MpvContext*>(handle);
+    if (!context || !context->mpv) return;
+
+    const char* filter = vertical
+        ? "@gpiv-mirror-vertical:lavfi=[vflip]"
+        : "@gpiv-mirror-horizontal:lavfi=[hflip]";
+    const char* command[] = {"vf", "toggle", filter, nullptr};
+    int status = mpv_command(context->mpv, command);
+    LOGI("JNI: vf toggle %s -> %d (%s)", filter, status, mpv_error_string(status));
+}
+
+extern "C"
+JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeChangeZoom(
     JNIEnv* env,
     jobject thiz,

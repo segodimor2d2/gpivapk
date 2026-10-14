@@ -516,6 +516,18 @@ class MpvNative {
 
     private external fun nativeToggleNegative(handle: Long)
 
+    fun toggleVerticalMirror() {
+        checkInitialized()
+        nativeToggleMirror(nativeHandle, true)
+    }
+
+    fun toggleHorizontalMirror() {
+        checkInitialized()
+        nativeToggleMirror(nativeHandle, false)
+    }
+
+    private external fun nativeToggleMirror(handle: Long, vertical: Boolean)
+
     fun resetVideoAdjustments() {
 
         checkInitialized()

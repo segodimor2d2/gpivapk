@@ -64,6 +64,8 @@ fun PlayerControlsOverlay(
     onVolumeUp: () -> Unit,
     onMute: () -> Unit,
     onToggleNegative: () -> Unit,
+    onToggleVerticalMirror: () -> Unit,
+    onToggleHorizontalMirror: () -> Unit,
     onResetVideoAdjustments: () -> Unit
 ) {
     var gestureTool by gestureToolState
@@ -638,13 +640,13 @@ fun PlayerControlsOverlay(
                         StatusText(
                             text = "mh",
                             modifier = Modifier
-                                .clickable { }
+                                .clickable { onToggleHorizontalMirror() }
                         )
 
                         StatusText(
                             text = "mv",
                             modifier = Modifier
-                                .clickable { }
+                                .clickable { onToggleVerticalMirror() }
                         )
 
                     }

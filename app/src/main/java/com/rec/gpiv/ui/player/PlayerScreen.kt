@@ -170,6 +170,8 @@ fun PlayerScreen(
                 onVolumeUp = onVolumeUp,
                 onMute = onMute,
                 onToggleNegative = mpvNative::toggleNegative,
+                onToggleVerticalMirror = mpvNative::toggleVerticalMirror,
+                onToggleHorizontalMirror = mpvNative::toggleHorizontalMirror,
                 onResetVideoAdjustments = onResetVideoAdjustments
             )
         }
