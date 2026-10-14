@@ -619,6 +619,34 @@ fun PlayerControlsOverlay(
                             onClick = onVolumeUp
                         )
                     }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement =
+                            Arrangement.spacedBy(
+                                10.dp,
+                                Alignment.CenterHorizontally
+                            )
+                    ) {
+
+                        StatusText(
+                            text = "ng",
+                            modifier = Modifier
+                                .clickable { }
+                        )
+
+                        StatusText(
+                            text = "mh",
+                            modifier = Modifier
+                                .clickable { }
+                        )
+
+                        StatusText(
+                            text = "mv",
+                            modifier = Modifier
+                                .clickable { }
+                        )
+
+                    }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),

@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
+import android.provider.DocumentsContract
 import com.rec.gpiv.ui.common.BlackNotice
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -209,9 +210,64 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleIncomingIntent(intent: Intent?) {
-        if (intent?.action == Intent.ACTION_VIEW) {
-            intent.data?.let(viewModel::handleIncomingUri)
+        if (intent == null) return
+        val uri = intent.data ?: return
+        when (intent.action) {
+            ACTION_OPEN_FOLDER -> openIncomingFolder(uri, intent.flags)
+            Intent.ACTION_VIEW -> {
+                val isFolder = uri.scheme == "file" && uri.path?.let { File(it).isDirectory } == true ||
+                    uri.scheme == "content" && (DocumentsContract.isTreeUri(uri) ||
+                        intent.type == DocumentsContract.Document.MIME_TYPE_DIR ||
+                        intent.type == "resource/folder" || intent.type == "inode/directory")
+                if (isFolder) openIncomingFolder(uri, intent.flags)
+                else viewModel.handleIncomingUri(uri)
+            }
         }
+    }
+
+    private fun openIncomingFolder(uri: Uri, intentFlags: Int) {
+        val localFolder = when {
+            uri.scheme == "file" -> uri.path?.let(::File)
+            uri.scheme == "content" && uri.authority == "com.android.externalstorage.documents" -> {
+                val id = runCatching {
+                    if (uri.pathSegments.contains("document")) DocumentsContract.getDocumentId(uri)
+                    else DocumentsContract.getTreeDocumentId(uri)
+                }.getOrNull()
+                id?.let {
+                    val volume = it.substringBefore(':')
+                    val root = if (volume == "primary") Environment.getExternalStorageDirectory()
+                        else File("/storage/$volume")
+                    File(root, it.substringAfter(':', ""))
+                }
+            }
+            else -> null
+        }
+        if (localFolder?.isDirectory == true && localFolder.canRead()) {
+            browserDirectory = localFolder
+            viewModel.onLocalFolderSelected(localFolder)
+            return
+        }
+        if (uri.scheme != "content" || !DocumentsContract.isTreeUri(uri)) {
+            showNotice("Pasta inacessível. Envie uma URI file:// acessível ou uma URI de árvore SAF com permissão de leitura.")
+            return
+        }
+        val flags = intentFlags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or
+            Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        if (intentFlags and Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION != 0 && flags != 0) {
+            // Uma concessão temporária também permite abrir a pasta nesta sessão.
+            runCatching { contentResolver.takePersistableUriPermission(uri, flags) }
+        }
+        runCatching {
+            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                uri, DocumentsContract.getTreeDocumentId(uri)
+            )
+            requireNotNull(contentResolver.query(childrenUri,
+                arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID), null, null, null)) {
+                "Pasta inacessível"
+            }.use { /* Verifica o acesso antes de substituir a pasta atual. */ }
+            viewModel.onFolderSelected(uri)
+        }
+            .onFailure { showNotice("Não foi possível abrir a pasta: ${it.message}") }
     }
 
     private fun persistAndLoadFolder(uri: Uri) {
@@ -224,5 +280,9 @@ class MainActivity : ComponentActivity() {
         }.onFailure { error ->
             println("MainActivity: erro ao selecionar pasta: ${error.message}")
         }
+    }
+
+    companion object {
+        const val ACTION_OPEN_FOLDER = "com.rec.gpiv.action.OPEN_FOLDER"
     }
 }

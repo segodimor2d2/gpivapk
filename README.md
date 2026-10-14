@@ -16,6 +16,38 @@ Os nomes ficam sem extensão: `.<pasta><Im ou Mv><yyyyMMddHHmmss>_<sequência>`.
 
 A operação verifica colisões e usa nomes temporários com um registro interno de recuperação. Se houver falha, tenta restaurar os nomes originais e conserva as avaliações para nova tentativa. Depois de uma interrupção, abrir o popup tenta recuperar uma renomeação pendente. Ao concluir, a pasta atual é recarregada para aplicar a ordenação por timestamp e abrir o primeiro arquivo da lista reordenada. A pasta `gpvlogs/thumbnails` é removida somente após a renomeação completa; falhas na limpeza aparecem no resultado.
 
+## Abrir pasta por intent
+
+Envie a ação `com.rec.gpiv.action.OPEN_FOLDER` com a URI da pasta em `Intent.data`.
+O GPIV carrega os arquivos da pasta e abre o primeiro na ordenação habitual.
+Exemplo via ADB (o aplicativo precisa ter acesso ao armazenamento):
+
+```bash
+adb shell am start -a com.rec.gpiv.action.OPEN_FOLDER -d 'file:///storage/emulated/0/Movies' -p com.rec.gpiv
+```
+
+De outro aplicativo, use uma URI de árvore SAF obtida com `ACTION_OPEN_DOCUMENT_TREE`:
+
+```kotlin
+val intent = Intent("com.rec.gpiv.action.OPEN_FOLDER").apply {
+    setPackage("com.rec.gpiv")
+    data = folderUri
+    clipData = ClipData.newRawUri("Pasta", folderUri)
+    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+}
+startActivity(intent)
+```
+
+Se o aplicativo remetente tiver as permissões correspondentes, também pode enviar
+`FLAG_GRANT_WRITE_URI_PERMISSION` e `FLAG_GRANT_PERSISTABLE_URI_PERMISSION`.
+A ausência de permissão persistente não impede o uso da concessão temporária.
+URIs `file://` exigem acesso direto à pasta; entre aplicativos Android, prefira SAF.
+`ACTION_VIEW` também reconhece pastas locais, árvores SAF e os tipos
+`vnd.android.document/directory`, `resource/folder` e `inode/directory`.
+Uma URI de documento de pasta do provedor de armazenamento externo pode ser
+aberta quando o GPIV tem acesso direto ao caminho local; para outros provedores,
+envie a URI de árvore SAF.
+
 ## 1. Requisitos
 
 Sistema Linux, recomendado Arch Linux.
