@@ -34,6 +34,10 @@ import androidx.compose.ui.platform.LocalDensity
 fun PlayerControlsOverlay(
     uiState: PlayerUiState,
     edgeDetectionEnabled: Boolean,
+    noiseReductionEnabled: Boolean,
+    sharpnessEnabled: Boolean,
+    blurEnabled: Boolean,
+    debandEnabled: Boolean,
     gestureToolState: MutableState<GestureTool>,
     onOpenVideo: () -> Unit,
     onOpenFolder: () -> Unit,
@@ -658,24 +662,32 @@ fun PlayerControlsOverlay(
 
                         StatusText(
                             text = "gr",
+                            backgroundColor = if (gestureTool == GestureTool.NOISE_REDUCTION &&
+                                noiseReductionEnabled) Color(0x9900994C) else Color.Transparent,
                             modifier = Modifier
                                 .clickable { onToggleNoiseReduction() }
                         )
 
                         StatusText(
                             text = "ni",
+                            backgroundColor = if (gestureTool == GestureTool.SHARPNESS &&
+                                sharpnessEnabled) Color(0x9900994C) else Color.Transparent,
                             modifier = Modifier
                                 .clickable { onToggleSharpness() }
                         )
 
                         StatusText(
                             text = "df",
+                            backgroundColor = if (gestureTool == GestureTool.BLUR &&
+                                blurEnabled) Color(0x9900994C) else Color.Transparent,
                             modifier = Modifier
                                 .clickable { onToggleBlur() }
                         )
 
                         StatusText(
                             text = "lv",
+                            backgroundColor = if (gestureTool == GestureTool.DEBAND &&
+                                debandEnabled) Color(0x9900994C) else Color.Transparent,
                             modifier = Modifier
                                 .clickable { onToggleDeband() }
                         )

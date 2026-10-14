@@ -86,6 +86,16 @@ fun PlayerScreen(
         mutableStateOf(GestureTool.NONE)
     }
 
+    fun selectFilter(tool: GestureTool, isEnabled: () -> Boolean, toggle: () -> Unit) {
+        if (gestureToolState.value == tool) {
+            toggle()
+            if (!isEnabled()) gestureToolState.value = GestureTool.NONE
+        } else {
+            if (!isEnabled()) toggle()
+            if (isEnabled()) gestureToolState.value = tool
+        }
+    }
+
     /*
      * --------------------------------------------------------
      * TELA INTEIRA
@@ -140,6 +150,10 @@ fun PlayerScreen(
             PlayerControlsOverlay(
                 uiState = uiState,
                 edgeDetectionEnabled = mpvNative.edgeDetectionEnabled,
+                noiseReductionEnabled = mpvNative.noiseReductionEnabled,
+                sharpnessEnabled = mpvNative.sharpnessEnabled,
+                blurEnabled = mpvNative.blurEnabled,
+                debandEnabled = mpvNative.debandEnabled,
                 gestureToolState = gestureToolState,
                 onOpenVideo = onOpenVideo,
                 onOpenFolder = onOpenFolder,
@@ -173,18 +187,25 @@ fun PlayerScreen(
                 onToggleNegative = mpvNative::toggleNegative,
                 onToggleVerticalMirror = mpvNative::toggleVerticalMirror,
                 onToggleHorizontalMirror = mpvNative::toggleHorizontalMirror,
-                onToggleNoiseReduction = mpvNative::toggleNoiseReduction,
-                onToggleSharpness = mpvNative::toggleSharpness,
-                onToggleBlur = mpvNative::toggleBlur,
-                onToggleDeband = mpvNative::toggleDeband,
+                onToggleNoiseReduction = {
+                    selectFilter(GestureTool.NOISE_REDUCTION,
+                        { mpvNative.noiseReductionEnabled }, mpvNative::toggleNoiseReduction)
+                },
+                onToggleSharpness = {
+                    selectFilter(GestureTool.SHARPNESS,
+                        { mpvNative.sharpnessEnabled }, mpvNative::toggleSharpness)
+                },
+                onToggleBlur = {
+                    selectFilter(GestureTool.BLUR,
+                        { mpvNative.blurEnabled }, mpvNative::toggleBlur)
+                },
+                onToggleDeband = {
+                    selectFilter(GestureTool.DEBAND,
+                        { mpvNative.debandEnabled }, mpvNative::toggleDeband)
+                },
                 onToggleEdgeDetection = {
-                    if (gestureToolState.value == GestureTool.EDGE_DETECTION) {
-                        mpvNative.toggleEdgeDetection()
-                        if (!mpvNative.edgeDetectionEnabled) gestureToolState.value = GestureTool.NONE
-                    } else {
-                        if (!mpvNative.edgeDetectionEnabled) mpvNative.toggleEdgeDetection()
-                        if (mpvNative.edgeDetectionEnabled) gestureToolState.value = GestureTool.EDGE_DETECTION
-                    }
+                    selectFilter(GestureTool.EDGE_DETECTION,
+                        { mpvNative.edgeDetectionEnabled }, mpvNative::toggleEdgeDetection)
                 },
                 onResetVideoAdjustments = {
                     onResetVideoAdjustments()

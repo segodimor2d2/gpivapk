@@ -535,29 +535,66 @@ class MpvNative {
 
     private external fun nativeToggleMirror(handle: Long, vertical: Boolean)
 
-    fun toggleNoiseReduction() {
-        checkInitialized()
-        nativeToggleNoiseReduction(nativeHandle)
+    private inner class AdjustableFilter(
+        private val id: Int,
+        private val default: Double,
+        private val min: Double,
+        private val max: Double
+    ) {
+        var enabled by mutableStateOf(false)
+            private set
+        private var strength = default
+
+        private fun apply(active: Boolean, value: Double): Boolean {
+            checkInitialized()
+            if (!nativeSetAdjustableFilter(nativeHandle, id, active, value)) return false
+            enabled = active
+            strength = value
+            return true
+        }
+
+        fun toggle() { apply(!enabled, strength) }
+
+        fun change(amount: Double) {
+            if (!enabled) return
+            val value = (strength + amount).coerceIn(min, max)
+            if (value != strength) apply(true, value)
+        }
+
+        fun reset() {
+            if (!enabled || apply(false, strength)) clear()
+        }
+
+        fun clear() {
+            enabled = false
+            strength = default
+        }
     }
 
-    private external fun nativeToggleNoiseReduction(handle: Long)
+    private val noiseReduction = AdjustableFilter(0, NOISE_REDUCTION_DEFAULT,
+        NOISE_REDUCTION_MIN, NOISE_REDUCTION_MAX)
+    private val sharpness = AdjustableFilter(1, SHARPNESS_DEFAULT, SHARPNESS_MIN, SHARPNESS_MAX)
+    private val blur = AdjustableFilter(2, BLUR_DEFAULT, BLUR_MIN, BLUR_MAX)
+    private val deband = AdjustableFilter(3, DEBAND_DEFAULT, DEBAND_MIN, DEBAND_MAX)
+    private val adjustableFilters = listOf(noiseReduction, sharpness, blur, deband)
 
-    fun toggleSharpness() {
-        checkInitialized()
-        nativeToggleSharpnessOrBlur(nativeHandle, true)
-    }
+    val noiseReductionEnabled get() = noiseReduction.enabled
+    val sharpnessEnabled get() = sharpness.enabled
+    val blurEnabled get() = blur.enabled
+    val debandEnabled get() = deband.enabled
 
-    fun toggleBlur() {
-        checkInitialized()
-        nativeToggleSharpnessOrBlur(nativeHandle, false)
-    }
+    fun toggleNoiseReduction() = noiseReduction.toggle()
+    fun changeNoiseReduction(amount: Double) = noiseReduction.change(amount)
+    fun toggleSharpness() = sharpness.toggle()
+    fun changeSharpness(amount: Double) = sharpness.change(amount)
+    fun toggleBlur() = blur.toggle()
+    fun changeBlur(amount: Double) = blur.change(amount)
+    fun toggleDeband() = deband.toggle()
+    fun changeDeband(amount: Double) = deband.change(amount)
 
-    private external fun nativeToggleSharpnessOrBlur(handle: Long, sharpen: Boolean)
-
-    fun toggleDeband() {
-        checkInitialized()
-        nativeToggleDeband(nativeHandle)
-    }
+    private external fun nativeSetAdjustableFilter(
+        handle: Long, id: Int, enabled: Boolean, strength: Double
+    ): Boolean
 
     fun toggleEdgeDetection() {
         checkInitialized()
@@ -586,8 +623,6 @@ class MpvNative {
         handle: Long, enabled: Boolean, low: Double, high: Double
     ): Boolean
 
-    private external fun nativeToggleDeband(handle: Long)
-
     fun resetVideoAdjustments() {
 
         checkInitialized()
@@ -595,6 +630,7 @@ class MpvNative {
         if (!edgeDetectionEnabled || setEdgeDetection(false, edgeDetectionStrength)) {
             edgeDetectionStrength = EDGE_DETECTION_DEFAULT
         }
+        adjustableFilters.forEach { it.reset() }
 
         println(
             "MpvNative: resetVideoAdjustments()"
@@ -619,6 +655,7 @@ class MpvNative {
         propertyListener = null
         edgeDetectionEnabled = false
         edgeDetectionStrength = EDGE_DETECTION_DEFAULT
+        adjustableFilters.forEach { it.clear() }
         booleanPropertyListener = null
         stringPropertyListener = null
         loadingListener = null

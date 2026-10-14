@@ -17,6 +17,10 @@ import com.rec.gpiv.player.CONTRAST_PROP
 import com.rec.gpiv.player.GAMMA_PROP
 import com.rec.gpiv.player.SATURATION_PROP
 import com.rec.gpiv.player.EDGE_DETECTION_PROP
+import com.rec.gpiv.player.NOISE_REDUCTION_PROP
+import com.rec.gpiv.player.SHARPNESS_PROP
+import com.rec.gpiv.player.BLUR_PROP
+import com.rec.gpiv.player.DEBAND_PROP
 import com.rec.gpiv.player.SEEK_GESTURE_SENSITIVITY
 import com.rec.gpiv.player.SEEK_SECONDS
 
@@ -152,6 +156,15 @@ fun PlayerGestures(
                                                 propAmount * EDGE_DETECTION_PROP
                                             )
                                         }
+
+                                        GestureTool.NOISE_REDUCTION ->
+                                            mpvNative.changeNoiseReduction(propAmount * NOISE_REDUCTION_PROP)
+                                        GestureTool.SHARPNESS ->
+                                            mpvNative.changeSharpness(propAmount * SHARPNESS_PROP)
+                                        GestureTool.BLUR ->
+                                            mpvNative.changeBlur(propAmount * BLUR_PROP)
+                                        GestureTool.DEBAND ->
+                                            mpvNative.changeDeband(propAmount * DEBAND_PROP)
 
                                         GestureTool.SEEK -> {
                                             seekAccumulator +=

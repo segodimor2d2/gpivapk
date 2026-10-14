@@ -50,58 +50,52 @@ Java_com_rec_gpiv_player_MpvNative_nativeToggleMirror(
 }
 
 extern "C"
-JNIEXPORT void JNICALL
-Java_com_rec_gpiv_player_MpvNative_nativeToggleNoiseReduction(
-    JNIEnv* env,
-    jobject thiz,
-    jlong handle
-)
-{
-    auto* context = reinterpret_cast<MpvContext*>(handle);
-    if (!context || !context->mpv) return;
-
-    const char* command[] = {
-        "vf", "toggle", "@gpiv-noise-reduction:lavfi=[hqdn3d]", nullptr
-    };
-    int status = mpv_command(context->mpv, command);
-    LOGI("JNI: vf toggle noise reduction -> %d (%s)", status, mpv_error_string(status));
-}
-
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_rec_gpiv_player_MpvNative_nativeToggleSharpnessOrBlur(
+JNIEXPORT jboolean JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeSetAdjustableFilter(
     JNIEnv* env,
     jobject thiz,
     jlong handle,
-    jboolean sharpen
+    jint id,
+    jboolean enabled,
+    jdouble strength
 )
 {
     auto* context = reinterpret_cast<MpvContext*>(handle);
-    if (!context || !context->mpv) return;
+    if (!context || !context->mpv) return JNI_FALSE;
 
-    const char* filter = sharpen
-        ? "@gpiv-sharpness:lavfi=[unsharp]"
-        : "@gpiv-blur:lavfi=[gblur=sigma=2]";
-    const char* command[] = {"vf", "toggle", filter, nullptr};
+    std::string label;
+    std::string graph;
+    const std::string value = std::to_string(strength);
+    switch (id) {
+        case 0:
+            label = "@gpiv-noise-reduction";
+            // Mantém a proporção padrão entre redução espacial, cromática e temporal.
+            graph = "hqdn3d=" + value + ":" + std::to_string(strength * 0.75)
+                + ":" + std::to_string(strength * 1.5)
+                + ":" + std::to_string(strength * 1.125);
+            break;
+        case 1:
+            label = "@gpiv-sharpness";
+            graph = "unsharp=luma_amount=" + value;
+            break;
+        case 2:
+            label = "@gpiv-blur";
+            graph = "gblur=sigma=" + value;
+            break;
+        case 3:
+            label = "@gpiv-deband";
+            graph = "deband=1thr=" + value + ":2thr=" + value
+                + ":3thr=" + value + ":4thr=" + value;
+            break;
+        default:
+            return JNI_FALSE;
+    }
+    // Atualiza somente o filtro com este rótulo, sem acumular instâncias.
+    const std::string filter = enabled ? label + ":lavfi=[" + graph + "]" : label;
+    const char* command[] = {"vf", enabled ? "add" : "remove", filter.c_str(), nullptr};
     int status = mpv_command(context->mpv, command);
-    LOGI("JNI: vf toggle %s -> %d (%s)", filter, status, mpv_error_string(status));
-}
-
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_rec_gpiv_player_MpvNative_nativeToggleDeband(
-    JNIEnv* env,
-    jobject thiz,
-    jlong handle
-)
-{
-    auto* context = reinterpret_cast<MpvContext*>(handle);
-    if (!context || !context->mpv) return;
-
-    const char* filter = "@gpiv-deband:lavfi=[deband]";
-    const char* command[] = {"vf", "toggle", filter, nullptr};
-    int status = mpv_command(context->mpv, command);
-    LOGI("JNI: vf toggle %s -> %d (%s)", filter, status, mpv_error_string(status));
+    LOGI("JNI: vf %s -> %d (%s)", filter.c_str(), status, mpv_error_string(status));
+    return status >= 0 ? JNI_TRUE : JNI_FALSE;
 }
 
 extern "C"

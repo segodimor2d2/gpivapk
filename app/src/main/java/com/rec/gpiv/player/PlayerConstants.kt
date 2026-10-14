@@ -26,6 +26,27 @@ const val EDGE_DETECTION_MAX = 5.0
 // Variação ao arrastar uma distância equivalente à altura da área de gestos.
 const val EDGE_DETECTION_PROP = 4.0
 
+// DEFAULT = valor inicial; MIN/MAX = limites; PROP = sensibilidade do arraste.
+const val NOISE_REDUCTION_DEFAULT = 4.0
+const val NOISE_REDUCTION_MIN = 0.1
+const val NOISE_REDUCTION_MAX = 12.0
+const val NOISE_REDUCTION_PROP = 8.0
+
+const val SHARPNESS_DEFAULT = 1.0
+const val SHARPNESS_MIN = 0.0
+const val SHARPNESS_MAX = 5.0
+const val SHARPNESS_PROP = 4.0
+
+const val BLUR_DEFAULT = 2.0
+const val BLUR_MIN = 0.0
+const val BLUR_MAX = 20.0
+const val BLUR_PROP = 10.0
+
+const val DEBAND_DEFAULT = 0.02
+const val DEBAND_MIN = 0.00003
+const val DEBAND_MAX = 0.15
+const val DEBAND_PROP = 0.1
+
 const val ZOOM_DOUBLE_TAP_DRAG = 6.0
 
 const val SEEK_GESTURE_SENSITIVITY = 40.0
