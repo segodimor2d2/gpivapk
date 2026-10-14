@@ -49,4 +49,7 @@ const val DEBAND_PROP = 0.1
 
 const val ZOOM_DOUBLE_TAP_DRAG = 6.0
 
+// Graus de rotação ao arrastar uma distância equivalente à altura da área de gestos.
+const val ROTATION_PROP = 180.0
+
 const val SEEK_GESTURE_SENSITIVITY = 40.0

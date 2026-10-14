@@ -460,6 +460,13 @@ class MpvNative {
         nativeRotateClockwise(nativeHandle)
     }
 
+    fun changeRotation(amount: Double) {
+        checkInitialized()
+        nativeChangeRotation(nativeHandle, amount)
+    }
+
+    private external fun nativeChangeRotation(handle: Long, amount: Double)
+
     fun changeBrightness(amount: Double) {
 
         checkInitialized()

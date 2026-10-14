@@ -12,6 +12,7 @@ enum class GestureTool {
     SHARPNESS,
     BLUR,
     DEBAND,
+    ROTATION,
     VOLUME,
     SEEK,
     SEEK_PERCENT

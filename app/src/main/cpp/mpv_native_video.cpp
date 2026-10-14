@@ -5,6 +5,7 @@
 
 #include <string>
 #include <algorithm>
+#include <cmath>
 
 #define LOG_TAG "GPIV_NATIVE"
 
@@ -194,6 +195,8 @@ Java_com_rec_gpiv_player_MpvNative_nativeResetView(
         return;
     }
 
+    context->rotationGestureRemainder = 0.0;
+
     const char* zoomCommand[] = {
         "set", "video-zoom", "0", nullptr
     };
@@ -219,6 +222,35 @@ Java_com_rec_gpiv_player_MpvNative_nativeResetView(
 
 extern "C"
 JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeChangeRotation(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jdouble amount
+)
+{
+    auto* context = reinterpret_cast<MpvContext*>(handle);
+    if (!context || !context->mpv || !std::isfinite(amount)) return;
+
+    const double pending = context->rotationGestureRemainder + amount;
+    const auto delta = static_cast<int64_t>(pending);
+    if (delta == 0) {
+        context->rotationGestureRemainder = pending;
+        return;
+    }
+
+    // Consulta o valor atual para continuar a partir da rotação feita por ↻.
+    int64_t current = 0;
+    if (mpv_get_property(context->mpv, "video-rotate", MPV_FORMAT_INT64, &current) < 0) return;
+    int64_t rotation = ((current + delta) % 360 + 360) % 360;
+    int status = mpv_set_property(context->mpv, "video-rotate", MPV_FORMAT_INT64, &rotation);
+    if (status >= 0) context->rotationGestureRemainder = pending - delta;
+    LOGI("JNI: rotation %lld -> %d (%s)", static_cast<long long>(rotation),
+        status, mpv_error_string(status));
+}
+
+extern "C"
+JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeRotateClockwise(
     JNIEnv* env,
     jobject thiz,
@@ -236,6 +268,8 @@ Java_com_rec_gpiv_player_MpvNative_nativeRotateClockwise(
 
         return;
     }
+
+    context->rotationGestureRemainder = 0.0;
 
     const char* command[] = {
         "cycle-values",

@@ -21,6 +21,7 @@ import com.rec.gpiv.player.NOISE_REDUCTION_PROP
 import com.rec.gpiv.player.SHARPNESS_PROP
 import com.rec.gpiv.player.BLUR_PROP
 import com.rec.gpiv.player.DEBAND_PROP
+import com.rec.gpiv.player.ROTATION_PROP
 import com.rec.gpiv.player.SEEK_GESTURE_SENSITIVITY
 import com.rec.gpiv.player.SEEK_SECONDS
 
@@ -165,6 +166,8 @@ fun PlayerGestures(
                                             mpvNative.changeBlur(propAmount * BLUR_PROP)
                                         GestureTool.DEBAND ->
                                             mpvNative.changeDeband(propAmount * DEBAND_PROP)
+                                        GestureTool.ROTATION ->
+                                            mpvNative.changeRotation(propAmount * ROTATION_PROP)
 
                                         GestureTool.SEEK -> {
                                             seekAccumulator +=

@@ -610,7 +610,6 @@ fun PlayerControlsOverlay(
                             )
                     ) {
 
-
                         CompactButton(
                             text = "vol ${uiState.volume}",
                             onClick = onMute
@@ -626,7 +625,10 @@ fun PlayerControlsOverlay(
                             text = "+",
                             onClick = onVolumeUp
                         )
+
                     }
+
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement =
@@ -636,6 +638,14 @@ fun PlayerControlsOverlay(
                             )
                     ) {
 
+
+
+                        StatusText(
+                            text = "br",
+                            backgroundColor = if (gestureTool == GestureTool.EDGE_DETECTION) Color(0x9900994C) else Color.Transparent,
+                            modifier = Modifier
+                                .clickable { onToggleEdgeDetection() }
+                        )
 
                         StatusText(
                             text = "ng",
@@ -654,41 +664,46 @@ fun PlayerControlsOverlay(
                             modifier = Modifier
                                 .clickable { onToggleVerticalMirror() }
                         )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement =
+                            Arrangement.spacedBy(
+                                10.dp,
+                                Alignment.CenterHorizontally
+                            )
+                    ) {
+
+
 
                         StatusText(
-                            text = "gr",
+                            text = "noi",
                             backgroundColor = if (gestureTool == GestureTool.NOISE_REDUCTION) Color(0x9900994C) else Color.Transparent,
                             modifier = Modifier
                                 .clickable { onToggleNoiseReduction() }
                         )
 
                         StatusText(
-                            text = "ni",
+                            text = "nit",
                             backgroundColor = if (gestureTool == GestureTool.SHARPNESS) Color(0x9900994C) else Color.Transparent,
                             modifier = Modifier
                                 .clickable { onToggleSharpness() }
                         )
 
                         StatusText(
-                            text = "df",
+                            text = "blr",
                             backgroundColor = if (gestureTool == GestureTool.BLUR) Color(0x9900994C) else Color.Transparent,
                             modifier = Modifier
                                 .clickable { onToggleBlur() }
                         )
 
                         StatusText(
-                            text = "lv",
+                            text = "sav",
                             backgroundColor = if (gestureTool == GestureTool.DEBAND) Color(0x9900994C) else Color.Transparent,
                             modifier = Modifier
                                 .clickable { onToggleDeband() }
                         )
 
-                        StatusText(
-                            text = "cn",
-                            backgroundColor = if (gestureTool == GestureTool.EDGE_DETECTION) Color(0x9900994C) else Color.Transparent,
-                            modifier = Modifier
-                                .clickable { onToggleEdgeDetection() }
-                        )
 
                     }
 
@@ -794,6 +809,18 @@ fun PlayerControlsOverlay(
                                         } else {
                                             GestureTool.SATURATION
                                         }
+                                }
+                        )
+
+
+                        StatusText(
+                            text = "↻",
+                            backgroundColor = if (gestureTool == GestureTool.ROTATION)
+                                Color(0x9900994C) else Color.Transparent,
+                            modifier = Modifier
+                                .clickable {
+                                    gestureTool = if (gestureTool == GestureTool.ROTATION)
+                                        GestureTool.NONE else GestureTool.ROTATION
                                 }
                         )
 
