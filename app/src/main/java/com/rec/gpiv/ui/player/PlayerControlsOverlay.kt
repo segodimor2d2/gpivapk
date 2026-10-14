@@ -66,6 +66,9 @@ fun PlayerControlsOverlay(
     onToggleNegative: () -> Unit,
     onToggleVerticalMirror: () -> Unit,
     onToggleHorizontalMirror: () -> Unit,
+    onToggleNoiseReduction: () -> Unit,
+    onToggleSharpness: () -> Unit,
+    onToggleBlur: () -> Unit,
     onResetVideoAdjustments: () -> Unit
 ) {
     var gestureTool by gestureToolState
@@ -631,6 +634,7 @@ fun PlayerControlsOverlay(
                             )
                     ) {
 
+
                         StatusText(
                             text = "ng",
                             modifier = Modifier
@@ -647,6 +651,30 @@ fun PlayerControlsOverlay(
                             text = "mv",
                             modifier = Modifier
                                 .clickable { onToggleVerticalMirror() }
+                        )
+
+                        StatusText(
+                            text = "gr",
+                            modifier = Modifier
+                                .clickable { onToggleNoiseReduction() }
+                        )
+
+                        StatusText(
+                            text = "ni",
+                            modifier = Modifier
+                                .clickable { onToggleSharpness() }
+                        )
+
+                        StatusText(
+                            text = "df",
+                            modifier = Modifier
+                                .clickable { onToggleBlur() }
+                        )
+
+                        StatusText(
+                            text = "fq",
+                            modifier = Modifier
+                                .clickable { }
                         )
 
                     }

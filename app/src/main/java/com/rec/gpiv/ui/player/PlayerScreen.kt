@@ -172,6 +172,9 @@ fun PlayerScreen(
                 onToggleNegative = mpvNative::toggleNegative,
                 onToggleVerticalMirror = mpvNative::toggleVerticalMirror,
                 onToggleHorizontalMirror = mpvNative::toggleHorizontalMirror,
+                onToggleNoiseReduction = mpvNative::toggleNoiseReduction,
+                onToggleSharpness = mpvNative::toggleSharpness,
+                onToggleBlur = mpvNative::toggleBlur,
                 onResetVideoAdjustments = onResetVideoAdjustments
             )
         }

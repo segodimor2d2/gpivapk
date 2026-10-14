@@ -51,6 +51,44 @@ Java_com_rec_gpiv_player_MpvNative_nativeToggleMirror(
 
 extern "C"
 JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeToggleNoiseReduction(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle
+)
+{
+    auto* context = reinterpret_cast<MpvContext*>(handle);
+    if (!context || !context->mpv) return;
+
+    const char* command[] = {
+        "vf", "toggle", "@gpiv-noise-reduction:lavfi=[hqdn3d]", nullptr
+    };
+    int status = mpv_command(context->mpv, command);
+    LOGI("JNI: vf toggle noise reduction -> %d (%s)", status, mpv_error_string(status));
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rec_gpiv_player_MpvNative_nativeToggleSharpnessOrBlur(
+    JNIEnv* env,
+    jobject thiz,
+    jlong handle,
+    jboolean sharpen
+)
+{
+    auto* context = reinterpret_cast<MpvContext*>(handle);
+    if (!context || !context->mpv) return;
+
+    const char* filter = sharpen
+        ? "@gpiv-sharpness:lavfi=[unsharp]"
+        : "@gpiv-blur:lavfi=[gblur=sigma=2]";
+    const char* command[] = {"vf", "toggle", filter, nullptr};
+    int status = mpv_command(context->mpv, command);
+    LOGI("JNI: vf toggle %s -> %d (%s)", filter, status, mpv_error_string(status));
+}
+
+extern "C"
+JNIEXPORT void JNICALL
 Java_com_rec_gpiv_player_MpvNative_nativeChangeZoom(
     JNIEnv* env,
     jobject thiz,

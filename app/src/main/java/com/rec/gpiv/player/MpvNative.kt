@@ -528,6 +528,25 @@ class MpvNative {
 
     private external fun nativeToggleMirror(handle: Long, vertical: Boolean)
 
+    fun toggleNoiseReduction() {
+        checkInitialized()
+        nativeToggleNoiseReduction(nativeHandle)
+    }
+
+    private external fun nativeToggleNoiseReduction(handle: Long)
+
+    fun toggleSharpness() {
+        checkInitialized()
+        nativeToggleSharpnessOrBlur(nativeHandle, true)
+    }
+
+    fun toggleBlur() {
+        checkInitialized()
+        nativeToggleSharpnessOrBlur(nativeHandle, false)
+    }
+
+    private external fun nativeToggleSharpnessOrBlur(handle: Long, sharpen: Boolean)
+
     fun resetVideoAdjustments() {
 
         checkInitialized()
