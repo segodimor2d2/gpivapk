@@ -553,12 +553,9 @@ class MpvNative {
             return true
         }
 
-        fun toggle() { apply(!enabled, strength) }
-
         fun change(amount: Double) {
-            if (!enabled) return
             val value = (strength + amount).coerceIn(min, max)
-            if (value != strength) apply(true, value)
+            if (value != strength) apply(value > 0.0, value)
         }
 
         fun reset() {
@@ -583,36 +580,26 @@ class MpvNative {
     val blurEnabled get() = blur.enabled
     val debandEnabled get() = deband.enabled
 
-    fun toggleNoiseReduction() = noiseReduction.toggle()
     fun changeNoiseReduction(amount: Double) = noiseReduction.change(amount)
-    fun toggleSharpness() = sharpness.toggle()
     fun changeSharpness(amount: Double) = sharpness.change(amount)
-    fun toggleBlur() = blur.toggle()
     fun changeBlur(amount: Double) = blur.change(amount)
-    fun toggleDeband() = deband.toggle()
     fun changeDeband(amount: Double) = deband.change(amount)
 
     private external fun nativeSetAdjustableFilter(
         handle: Long, id: Int, enabled: Boolean, strength: Double
     ): Boolean
 
-    fun toggleEdgeDetection() {
-        checkInitialized()
-        setEdgeDetection(!edgeDetectionEnabled, edgeDetectionStrength)
-    }
-
     fun changeEdgeDetection(amount: Double) {
         checkInitialized()
-        if (!edgeDetectionEnabled) return
         val strength = (edgeDetectionStrength + amount)
             .coerceIn(EDGE_DETECTION_MIN, EDGE_DETECTION_MAX)
-        if (strength != edgeDetectionStrength) setEdgeDetection(true, strength)
+        if (strength != edgeDetectionStrength) setEdgeDetection(strength > 0.0, strength)
     }
 
     private fun setEdgeDetection(enabled: Boolean, strength: Double): Boolean {
         // Menores limiares do Canny aumentam a sensibilidade aos contornos.
-        val low = (20.0 / 255.0 / strength).coerceIn(0.0, 1.0)
-        val high = (50.0 / 255.0 / strength).coerceIn(low, 1.0)
+        val low = (20.0 / 255.0 / (1.0 + strength)).coerceIn(0.0, 1.0)
+        val high = (50.0 / 255.0 / (1.0 + strength)).coerceIn(low, 1.0)
         if (!nativeSetEdgeDetection(nativeHandle, enabled, low, high)) return false
         edgeDetectionEnabled = enabled
         edgeDetectionStrength = strength

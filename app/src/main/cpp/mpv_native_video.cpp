@@ -4,6 +4,7 @@
 #include "mpv_context.h"
 
 #include <string>
+#include <algorithm>
 
 #define LOG_TAG "GPIV_NATIVE"
 
@@ -84,8 +85,12 @@ Java_com_rec_gpiv_player_MpvNative_nativeSetAdjustableFilter(
             break;
         case 3:
             label = "@gpiv-deband";
-            graph = "deband=1thr=" + value + ":2thr=" + value
-                + ":3thr=" + value + ":4thr=" + value;
+            {
+                // Zero remove o filtro; o FFmpeg exige este mínimo quando ativo.
+                const std::string threshold = std::to_string(std::max(0.00003, strength));
+                graph = "deband=1thr=" + threshold + ":2thr=" + threshold
+                    + ":3thr=" + threshold + ":4thr=" + threshold;
+            }
             break;
         default:
             return JNI_FALSE;

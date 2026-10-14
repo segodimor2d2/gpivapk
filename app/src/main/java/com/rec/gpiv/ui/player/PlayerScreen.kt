@@ -86,14 +86,8 @@ fun PlayerScreen(
         mutableStateOf(GestureTool.NONE)
     }
 
-    fun selectFilter(tool: GestureTool, isEnabled: () -> Boolean, toggle: () -> Unit) {
-        if (gestureToolState.value == tool) {
-            toggle()
-            if (!isEnabled()) gestureToolState.value = GestureTool.NONE
-        } else {
-            if (!isEnabled()) toggle()
-            if (isEnabled()) gestureToolState.value = tool
-        }
+    fun selectFilter(tool: GestureTool) {
+        gestureToolState.value = if (gestureToolState.value == tool) GestureTool.NONE else tool
     }
 
     /*
@@ -149,11 +143,6 @@ fun PlayerScreen(
         if (controlsVisible) {
             PlayerControlsOverlay(
                 uiState = uiState,
-                edgeDetectionEnabled = mpvNative.edgeDetectionEnabled,
-                noiseReductionEnabled = mpvNative.noiseReductionEnabled,
-                sharpnessEnabled = mpvNative.sharpnessEnabled,
-                blurEnabled = mpvNative.blurEnabled,
-                debandEnabled = mpvNative.debandEnabled,
                 gestureToolState = gestureToolState,
                 onOpenVideo = onOpenVideo,
                 onOpenFolder = onOpenFolder,
@@ -188,24 +177,19 @@ fun PlayerScreen(
                 onToggleVerticalMirror = mpvNative::toggleVerticalMirror,
                 onToggleHorizontalMirror = mpvNative::toggleHorizontalMirror,
                 onToggleNoiseReduction = {
-                    selectFilter(GestureTool.NOISE_REDUCTION,
-                        { mpvNative.noiseReductionEnabled }, mpvNative::toggleNoiseReduction)
+                    selectFilter(GestureTool.NOISE_REDUCTION)
                 },
                 onToggleSharpness = {
-                    selectFilter(GestureTool.SHARPNESS,
-                        { mpvNative.sharpnessEnabled }, mpvNative::toggleSharpness)
+                    selectFilter(GestureTool.SHARPNESS)
                 },
                 onToggleBlur = {
-                    selectFilter(GestureTool.BLUR,
-                        { mpvNative.blurEnabled }, mpvNative::toggleBlur)
+                    selectFilter(GestureTool.BLUR)
                 },
                 onToggleDeband = {
-                    selectFilter(GestureTool.DEBAND,
-                        { mpvNative.debandEnabled }, mpvNative::toggleDeband)
+                    selectFilter(GestureTool.DEBAND)
                 },
                 onToggleEdgeDetection = {
-                    selectFilter(GestureTool.EDGE_DETECTION,
-                        { mpvNative.edgeDetectionEnabled }, mpvNative::toggleEdgeDetection)
+                    selectFilter(GestureTool.EDGE_DETECTION)
                 },
                 onResetVideoAdjustments = {
                     onResetVideoAdjustments()
