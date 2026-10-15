@@ -80,6 +80,7 @@ fun PlayerControlsOverlay(
     var controlSubRowC by remember { mutableStateOf(false) }
     var controlSubRowD by remember { mutableStateOf(false) }
     var nextFileAfterTag by remember { mutableStateOf(false) }
+    var taggedFileIndex by remember { mutableStateOf<Int?>(null) }
     var texto by remember { mutableStateOf("") }
     val tagFocusRequester = remember { FocusRequester() }
     var ahpConfirmationVisible by remember { mutableStateOf(false) }
@@ -88,6 +89,30 @@ fun PlayerControlsOverlay(
 
     LaunchedEffect(controlSubRowD) {
         if (controlSubRowD) tagFocusRequester.requestFocus()
+    }
+
+    LaunchedEffect(uiState.fileIndex, uiState.tagsEnabled, nextFileAfterTag, taggedFileIndex) {
+        if (!uiState.tagsEnabled || !nextFileAfterTag) {
+            taggedFileIndex = null
+            if (!uiState.tagsEnabled) controlSubRowD = false
+        } else if (taggedFileIndex != null && uiState.fileIndex != taggedFileIndex) {
+            taggedFileIndex = null
+            controlSubRowD = true
+        }
+    }
+
+    fun saveTag(tag: String) {
+        onSaveFileTag(tag)
+        texto = ""
+        controlSubRowD = false
+        if (nextFileAfterTag) {
+            taggedFileIndex = if (uiState.fileIndex < uiState.fileCount - 1) {
+                uiState.fileIndex
+            } else {
+                null
+            }
+            onNextFile()
+        }
     }
 
     val textMeasurer = rememberTextMeasurer()
@@ -222,10 +247,7 @@ fun PlayerControlsOverlay(
 
                             keyboardActions = KeyboardActions(
                                 onDone = {
-                                    onSaveFileTag(texto)
-                                    texto = ""
-                                    controlSubRowD = false
-                                    if (nextFileAfterTag) onNextFile()
+                                    saveTag(texto)
                                 }
                             ),
 
@@ -269,11 +291,7 @@ fun PlayerControlsOverlay(
                                         Color.Black.copy(alpha = 0.6f)
                                     )
                                     .clickable {
-                                        texto = tag
-                                        onSaveFileTag(tag)
-                                        texto = ""
-                                        controlSubRowD = false
-                                        if (nextFileAfterTag) onNextFile()
+                                        saveTag(tag)
                                     }
                                     .padding(
                                         horizontal = 12.dp,
@@ -451,7 +469,12 @@ fun PlayerControlsOverlay(
 
                                   StatusText(
                                       text = "tgX",
-                                      modifier = Modifier.clickable { }
+                                      modifier = Modifier.clickable {
+                                          nextFileAfterTag = false
+                                          taggedFileIndex = null
+                                          controlSubRowD = false
+                                          texto = ""
+                                      }
                                   )
 
                               }
