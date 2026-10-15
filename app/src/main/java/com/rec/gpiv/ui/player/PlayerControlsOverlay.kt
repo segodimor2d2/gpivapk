@@ -26,9 +26,9 @@ import com.rec.gpiv.player.SEEK_FRAMES_PLUS
 import com.rec.gpiv.player.SEEK_SECONDS
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.rememberTextMeasurer
 import com.rec.gpiv.model.OperationStatus
-import androidx.compose.ui.platform.LocalDensity
 
 @Composable
 fun PlayerControlsOverlay(
@@ -83,12 +83,14 @@ fun PlayerControlsOverlay(
     var taggedFileIndex by remember { mutableStateOf<Int?>(null) }
     var texto by remember { mutableStateOf("") }
     val tagFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     var ahpConfirmationVisible by remember { mutableStateOf(false) }
     var deletePopupVisible by remember { mutableStateOf(false) }
     var deletePermanent by remember { mutableStateOf(false) }
 
     LaunchedEffect(controlSubRowD) {
-        if (controlSubRowD) tagFocusRequester.requestFocus()
+        if (!controlSubRowD) keyboardController?.hide()
     }
 
     LaunchedEffect(uiState.fileIndex, uiState.tagsEnabled, nextFileAfterTag, taggedFileIndex) {
@@ -242,6 +244,7 @@ fun PlayerControlsOverlay(
                                 .focusRequester(tagFocusRequester),
 
                             keyboardOptions = KeyboardOptions(
+                                showKeyboardOnFocus = false,
                                 imeAction = ImeAction.Done
                             ),
 
@@ -273,6 +276,69 @@ fun PlayerControlsOverlay(
                 ) {
 
 
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        StatusText(
+                            text = "+",
+                            modifier = Modifier.clickable {
+                                onNextFile()
+                            }
+                        )
+
+                        StatusText(
+                            text = "-",
+                            modifier = Modifier.clickable {
+                                onPreviousFile()
+                            }
+                        )
+
+                        StatusText(
+                            text =
+                                "%.2f".format(
+                                    uiState.duration
+                                ),
+                            backgroundColor =
+                                if (uiState.playing) {
+                                    Color(0x9900994C)
+                                } else {
+                                    Color.Transparent
+                                },
+
+                            modifier = Modifier.clickable {
+                                onTogglePlayPause()
+                            }
+                        )
+
+                        StatusText(
+                            text = "kb",
+                            backgroundColor = if (keyboardVisible) {
+                                Color(0x9900994C)
+                            } else {
+                                Color.Transparent
+                            },
+                            modifier = Modifier.clickable {
+                                if (keyboardVisible) {
+                                    keyboardController?.hide()
+                                } else {
+                                    tagFocusRequester.requestFocus()
+                                    keyboardController?.show()
+                                }
+                            }
+                        )
+
+                        StatusText(
+                            text = "tx",
+                            modifier = Modifier.clickable {
+                                nextFileAfterTag = false
+                                taggedFileIndex = null
+                                controlSubRowD = false
+                                texto = ""
+                            }
+                        )
+
+                    }
 
                     FlowRow(
                         modifier = Modifier
@@ -468,7 +534,7 @@ fun PlayerControlsOverlay(
                                   )
 
                                   StatusText(
-                                      text = "tgX",
+                                      text = "tx",
                                       modifier = Modifier.clickable {
                                           nextFileAfterTag = false
                                           taggedFileIndex = null
@@ -501,12 +567,12 @@ fun PlayerControlsOverlay(
                             )
 
                             CompactButton(
-                                text = "A",
+                                text = "S",
                                 onClick = onFirstFile
                             )
 
                             CompactButton(
-                                text = "Z",
+                                text = "E",
                                 onClick = onLastFile
                             )
                         }
@@ -845,9 +911,12 @@ fun PlayerControlsOverlay(
 
                         StatusText(
                             text = "↻",
-                            modifier =
-                                Modifier.clickable {
-                                    onRotate()
+                            backgroundColor = if (gestureTool == GestureTool.ROTATION)
+                                Color(0x9900994C) else Color.Transparent,
+                            modifier = Modifier
+                                .clickable {
+                                    gestureTool = if (gestureTool == GestureTool.ROTATION)
+                                        GestureTool.NONE else GestureTool.ROTATION
                                 }
                         )
 
@@ -971,16 +1040,6 @@ fun PlayerControlsOverlay(
                     ) {
 
 
-                        StatusText(
-                            text = "↻",
-                            backgroundColor = if (gestureTool == GestureTool.ROTATION)
-                                Color(0x9900994C) else Color.Transparent,
-                            modifier = Modifier
-                                .clickable {
-                                    gestureTool = if (gestureTool == GestureTool.ROTATION)
-                                        GestureTool.NONE else GestureTool.ROTATION
-                                }
-                        )
 
                         CompactButton(
                             text = "<",
@@ -994,24 +1053,6 @@ fun PlayerControlsOverlay(
                             onClick = {
                                 onFrameForward(SEEK_FRAMES)
                             }
-                        )
-                        StatusText(
-                            text = "Z",
-                            backgroundColor =
-                                if (gestureTool == GestureTool.ZOOM) {
-                                    Color(0x9900994C)
-                                } else {
-                                    Color.Transparent
-                                },
-                            modifier = Modifier
-                                .clickable {
-                                    gestureTool =
-                                        if (gestureTool == GestureTool.ZOOM) {
-                                            GestureTool.NONE
-                                        } else {
-                                            GestureTool.ZOOM
-                                        }
-                                }
                         )
 
                     }
@@ -1165,6 +1206,33 @@ fun PlayerControlsOverlay(
                                         GestureTool.NONE
                                     } else {
                                         GestureTool.SEEK
+                                    }
+                            }
+                    )
+
+                    StatusText(
+                        text = "↻",
+                        modifier =
+                            Modifier.clickable {
+                                onRotate()
+                            }
+                    )
+
+                    StatusText(
+                        text = "Z",
+                        backgroundColor =
+                            if (gestureTool == GestureTool.ZOOM) {
+                                Color(0x9900994C)
+                            } else {
+                                Color.Transparent
+                            },
+                        modifier = Modifier
+                            .clickable {
+                                gestureTool =
+                                    if (gestureTool == GestureTool.ZOOM) {
+                                        GestureTool.NONE
+                                    } else {
+                                        GestureTool.ZOOM
                                     }
                             }
                     )
