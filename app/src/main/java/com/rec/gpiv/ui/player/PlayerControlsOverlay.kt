@@ -79,6 +79,7 @@ fun PlayerControlsOverlay(
     var controlSubRowB by remember { mutableStateOf(false) }
     var controlSubRowC by remember { mutableStateOf(false) }
     var controlSubRowD by remember { mutableStateOf(false) }
+    var nextFileAfterTag by remember { mutableStateOf(false) }
     var texto by remember { mutableStateOf("") }
     val tagFocusRequester = remember { FocusRequester() }
     var ahpConfirmationVisible by remember { mutableStateOf(false) }
@@ -224,6 +225,7 @@ fun PlayerControlsOverlay(
                                     onSaveFileTag(texto)
                                     texto = ""
                                     controlSubRowD = false
+                                    if (nextFileAfterTag) onNextFile()
                                 }
                             ),
 
@@ -271,6 +273,7 @@ fun PlayerControlsOverlay(
                                         onSaveFileTag(tag)
                                         texto = ""
                                         controlSubRowD = false
+                                        if (nextFileAfterTag) onNextFile()
                                     }
                                     .padding(
                                         horizontal = 12.dp,
@@ -447,17 +450,10 @@ fun PlayerControlsOverlay(
                                   )
 
                                   StatusText(
-                                      text = "+tg",
-                                      backgroundColor =
-                                          if (controlSubRowD) {
-                                              Color(0x9900994C)
-                                          } else {
-                                              Color.Transparent
-                                          },
-                                      modifier = Modifier.clickable(enabled = !uiState.movingTaggedFiles) {
-                                          controlSubRowD = !controlSubRowD
-                                      }
+                                      text = "tgX",
+                                      modifier = Modifier.clickable { }
                                   )
+
                               }
                         }
 
@@ -859,6 +855,21 @@ fun PlayerControlsOverlay(
                             )
                     ) {
 
+                        if (uiState.tagsEnabled) {
+
+                            StatusText(
+                                text = "+tg",
+                                backgroundColor =
+                                    if (controlSubRowD) {
+                                        Color(0x9900994C)
+                                    } else {
+                                        Color.Transparent
+                                    },
+                                modifier = Modifier.clickable(enabled = !uiState.movingTaggedFiles) {
+                                    controlSubRowD = !controlSubRowD
+                                }
+                            )
+                        }
 
                         CompactButton(
                             text = "+",
@@ -869,6 +880,21 @@ fun PlayerControlsOverlay(
                             text = "-",
                             onClick = onPreviousFile
                         )
+                        if (uiState.tagsEnabled) {
+
+                            StatusText(
+                                text = "t>",
+                                backgroundColor =
+                                    if (nextFileAfterTag) {
+                                        Color(0x9900994C)
+                                    } else {
+                                        Color.Transparent
+                                    },
+                                modifier = Modifier.clickable {
+                                    nextFileAfterTag = !nextFileAfterTag
+                                }
+                            )
+                        }
 
 
                     }
