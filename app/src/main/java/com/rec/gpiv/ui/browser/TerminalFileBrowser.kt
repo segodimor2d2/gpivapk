@@ -1,6 +1,7 @@
 package com.rec.gpiv.ui.browser
 
-import android.app.Dialog
+import androidx.activity.ComponentDialog
+import androidx.activity.OnBackPressedCallback
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
@@ -17,6 +18,16 @@ import android.widget.TextView
 import com.rec.gpiv.R
 import java.io.File
 
+class TerminalFileBrowserDialog(context: Context) : ComponentDialog(context, R.style.Theme_Gpiv_FileBrowser) {
+    var navigateBack: () -> Unit = {}
+
+    init {
+        onBackPressedDispatcher.addCallback(object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() = navigateBack()
+        })
+    }
+}
+
 /** Lista compacta em colunas, com diretórios marcados por uma barra final. */
 fun showTerminalFileBrowser(
     context: Context,
@@ -24,15 +35,17 @@ fun showTerminalFileBrowser(
     entries: List<File>,
     onOpen: (File) -> Unit,
     onSelectFolder: () -> Unit,
-    onSelectDocumentTree: () -> Unit
-) {
+    onSelectDocumentTree: () -> Unit,
+    existingDialog: TerminalFileBrowserDialog? = null
+): TerminalFileBrowserDialog {
     val density = context.resources.displayMetrics.density
     fun dp(value: Int) = (value * density).toInt()
     val parent = directory.parentFile?.takeIf { directory.absolutePath != "/storage" }
     val files = listOfNotNull(parent) + entries
     val labels = (if (parent != null) listOf("../") else emptyList()) +
         entries.map { it.name + if (it.isDirectory) "/" else "" }
-    val dialog = Dialog(context, R.style.Theme_Gpiv_FileBrowser)
+    val dialog = existingDialog ?: TerminalFileBrowserDialog(context)
+    dialog.navigateBack = { parent?.let(onOpen) }
     val title = TextView(dialog.context).apply {
         text = directory.absolutePath
         typeface = Typeface.MONOSPACE
@@ -79,7 +92,7 @@ fun showTerminalFileBrowser(
                 }
         }
         setOnItemClickListener { _, _, position, _ ->
-            dialog.dismiss()
+            if (!files[position].isDirectory) dialog.dismiss()
             onOpen(files[position])
         }
         setOnItemLongClickListener { _, _, position, _ ->
@@ -114,7 +127,7 @@ fun showTerminalFileBrowser(
         setBackgroundColor(Color.BLACK)
         setPadding(dp(6), dp(4), dp(6), dp(4))
     }
-    fun action(label: String, onClick: () -> Unit) {
+    fun action(label: String, dismiss: Boolean = true, onClick: () -> Unit) {
         footer.addView(Button(dialog.context).apply {
             text = label
             isAllCaps = false
@@ -124,15 +137,15 @@ fun showTerminalFileBrowser(
             setPadding(dp(4), dp(8), dp(4), dp(8))
             minHeight = dp(48)
             setOnClickListener {
-                dialog.dismiss()
+                if (dismiss) dialog.dismiss()
                 onClick()
             }
         }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
     }
-    action("Tags e exportação", onSelectDocumentTree)
-    parent?.let { pastaPai -> action("../") { onOpen(pastaPai) } }
+    action("Tags e exportação", onClick = onSelectDocumentTree)
+    parent?.let { pastaPai -> action("../", dismiss = false) { onOpen(pastaPai) } }
     action("Cancelar") {}
-    action("Abrir esta pasta", onSelectFolder)
+    action("Abrir esta pasta", onClick = onSelectFolder)
     val layout = LinearLayout(dialog.context).apply {
         orientation = LinearLayout.VERTICAL
         setBackgroundColor(Color.BLACK)
@@ -152,4 +165,5 @@ fun showTerminalFileBrowser(
         // Mantém pelo menos duas colunas; telas maiores comportam mais nomes.
         grid.numColumns = ((grid.width - grid.paddingLeft - grid.paddingRight) / dp(160)).coerceIn(2, 5)
     }
+    return dialog
 }

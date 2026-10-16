@@ -32,12 +32,14 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rec.gpiv.ui.player.PlayerScreen
 import com.rec.gpiv.ui.browser.showTerminalFileBrowser
+import com.rec.gpiv.ui.browser.TerminalFileBrowserDialog
 import com.rec.gpiv.ui.theme.GpivTheme
 import com.rec.gpiv.viewmodel.PlayerViewModel
 
 class MainActivity : ComponentActivity() {
 
     private var notice: BlackNotice? = null
+    private var browserDialog: TerminalFileBrowserDialog? = null
 
     private fun showNotice(message: String) {
         if (isFinishing || isDestroyed) return
@@ -46,6 +48,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        browserDialog?.dismiss()
+        browserDialog = null
         notice?.dismiss()
         super.onDestroy()
     }
@@ -121,7 +125,7 @@ class MainActivity : ComponentActivity() {
                 getExternalFilesDirs(null).mapNotNull { it?.absolutePath?.substringBefore("/Android/") }
                     .map(::File).filter { it != directory && it.isDirectory }
             } else emptyList()
-            showTerminalFileBrowser(
+            browserDialog = showTerminalFileBrowser(
                 context = this@MainActivity,
                 directory = directory,
                 entries = roots + entries,
@@ -130,7 +134,8 @@ class MainActivity : ComponentActivity() {
                     else viewModel.onLocalFolderSelected(directory, item)
                 },
                 onSelectFolder = { viewModel.onLocalFolderSelected(directory) },
-                onSelectDocumentTree = { openFolderLauncher.launch(null) }
+                onSelectDocumentTree = { openFolderLauncher.launch(null) },
+                existingDialog = browserDialog?.takeIf { it.isShowing }
             )
         }
     }
