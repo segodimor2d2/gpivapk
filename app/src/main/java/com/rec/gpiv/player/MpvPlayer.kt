@@ -133,7 +133,8 @@ class MpvPlayer(
         frameB: Long,
         positionA: Double,
         positionB: Double,
-        copyPackets: Boolean
+        copyPackets: Boolean,
+        crop: com.rec.gpiv.model.CropRegion?
     ): LongArray? {
 
         val uri = currentUri
@@ -157,7 +158,8 @@ class MpvPlayer(
                     frameB = frameB,
                     positionA = positionA,
                     positionB = positionB,
-                    copyPackets = copyPackets
+                    copyPackets = copyPackets,
+                    crop = crop
                 )
             }
 

@@ -76,7 +76,8 @@ class FakeVideoPlayer : VideoPlayer {
         frameB: Long,
         positionA: Double,
         positionB: Double,
-        copyPackets: Boolean
+        copyPackets: Boolean,
+        crop: com.rec.gpiv.model.CropRegion?
     ): LongArray? {
         println(
             "FakeVideoPlayer: testCutFrames frameA=$frameA frameB=$frameB"

@@ -1013,10 +1013,10 @@ class PlayerViewModel(
         )
     }
 
-    fun testCurrentCut() {
+    fun testCurrentCut(crop: com.rec.gpiv.model.CropRegion? = null) {
         val markers = markerController.markersForCut()
         clearABMarkers()
-        cutController.testCurrentCut(markers)
+        cutController.testCurrentCut(markers, crop = crop)
     }
     fun testCurrentCopyCut() {
         val markers = markerController.markersForCut()
@@ -1104,7 +1104,7 @@ class PlayerViewModel(
         }
     }
 
-    fun screenshot() = mediaExport.screenshot()
+    fun screenshot(crop: com.rec.gpiv.model.CropRegion? = null) = mediaExport.screenshot(crop)
 
     fun setScreenshotMethod(method: String) =
         mediaExport.setScreenshotMethod(method)

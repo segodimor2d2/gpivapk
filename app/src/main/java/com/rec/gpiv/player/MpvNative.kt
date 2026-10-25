@@ -266,7 +266,8 @@ class MpvNative {
         frameB: Long,
         positionA: Double,
         positionB: Double,
-        copyPackets: Boolean
+        copyPackets: Boolean,
+        crop: com.rec.gpiv.model.CropRegion?
     ): LongArray? {
         checkInitialized()
 
@@ -276,7 +277,9 @@ class MpvNative {
             frameA,
             frameB,
             positionA,
-            positionB
+            positionB,
+            nativeHandle,
+            crop?.toArray()
         )
     }
 
@@ -745,7 +748,9 @@ class MpvNative {
         frameA: Long,
         frameB: Long,
         positionA: Double,
-        positionB: Double
+        positionB: Double,
+        handle: Long,
+        crop: DoubleArray?
     ): LongArray?
 
     private external fun nativeFindPreviousKeyframeFrame(

@@ -5,10 +5,12 @@
 #include <cstdlib>
 #include <exception>
 int main(int argc, char** argv) {
-    if (argc != 5) return 2;
+    if (argc != 5 && argc != 9) return 2;
     int fd = open(argv[1], O_RDONLY);
     try {
-        auto r = cutFrameAccurately(fd, argv[2], atof(argv[3]), atof(argv[4]));
+        VideoCrop crop;
+        if (argc == 9) crop = {atof(argv[5]), atof(argv[6]), atof(argv[7]), atof(argv[8])};
+        auto r = cutFrameAccurately(fd, argv[2], atof(argv[3]), atof(argv[4]), crop);
         printf("%lld %lld %d %d\n", (long long)r.startPts, (long long)r.endPts, r.timeBaseNum, r.timeBaseDen);
         close(fd);
         return 0;

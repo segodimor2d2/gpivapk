@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.rec.gpiv.model.CropRegion
 import com.rec.gpiv.model.PlayerUiState
 import com.rec.gpiv.player.MpvNative
 
@@ -41,7 +42,7 @@ fun PlayerScreen(
     onFrameForward: (Int) -> Unit,
     onSetMarkerA: () -> Unit,
     onSetMarkerB: () -> Unit,
-    onTestCut: () -> Unit,
+    onTestCut: (CropRegion?) -> Unit,
     onTestCopyCut: () -> Unit,
     onSeekBackward: (Double) -> Unit,
     onSeekForward: (Double) -> Unit,
@@ -53,7 +54,7 @@ fun PlayerScreen(
     onTestMoveTags: () -> Unit,
     onDeleteFile: (Boolean) -> Unit,
 
-    onScreenshot: () -> Unit,
+    onScreenshot: (CropRegion?) -> Unit,
     onSetScreenshotMethod: (String) -> Unit,
 
     onRotate: () -> Unit,
@@ -78,6 +79,8 @@ fun PlayerScreen(
      * false = painel escondido
      * true  = painel visível
      */
+
+    var crop by remember(uiState.filename, uiState.fileIndex) { mutableStateOf<CropRegion?>(null) }
 
     var controlsVisible by remember {
         mutableStateOf(true)
@@ -141,6 +144,10 @@ fun PlayerScreen(
             onSeekTo = onSeekTo,
         )
 
+        crop?.let { region ->
+            CropSelectionOverlay(region = region, onChange = { crop = it })
+        }
+
         if (controlsVisible) {
             PlayerControlsOverlay(
                 uiState = uiState,
@@ -158,7 +165,7 @@ fun PlayerScreen(
                 onFrameForward = onFrameForward,
                 onSetMarkerA = onSetMarkerA,
                 onSetMarkerB = onSetMarkerB,
-                onTestCut = onTestCut,
+                onTestCut = { onTestCut(crop) },
                 onTestCopyCut = onTestCopyCut,
                 onSeekBackward = onSeekBackward,
                 onSeekForward = onSeekForward,
@@ -168,7 +175,7 @@ fun PlayerScreen(
                 onTagsEnabledChange = onTagsEnabledChange,
                 onTestMoveTags = onTestMoveTags,
                 onDeleteFile = onDeleteFile,
-                onScreenshot = onScreenshot,
+                onScreenshot = { onScreenshot(crop) },
                 onSetScreenshotMethod = onSetScreenshotMethod,
                 onRotate = onRotate,
                 onTogglePlayPause = onTogglePlayPause,
@@ -192,6 +199,10 @@ fun PlayerScreen(
                 },
                 onToggleEdgeDetection = {
                     selectFilter(GestureTool.EDGE_DETECTION)
+                },
+                cropEnabled = crop != null,
+                onToggleCrop = {
+                    crop = if (crop == null) CropRegion(0.2f, 0.2f, 0.8f, 0.7f) else null
                 },
                 onResetVideoAdjustments = {
                     onResetVideoAdjustments()

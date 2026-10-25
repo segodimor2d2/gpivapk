@@ -24,7 +24,7 @@ class PlayerCutController(
 
     private var running = false
 
-    fun testCurrentCut(markers: Pair<FrameMarker, FrameMarker>?, copyPackets: Boolean = false) {
+    fun testCurrentCut(markers: Pair<FrameMarker, FrameMarker>?, copyPackets: Boolean = false, crop: com.rec.gpiv.model.CropRegion? = null) {
         if (running) return
         val folder = currentTreeUri()
         val originalName = currentFileName() ?: "video"
@@ -42,7 +42,7 @@ class PlayerCutController(
                     if (cutFile.exists() && !cutFile.delete()) return@withContext false
                     val result = player.testCutFrames(
                         markers.first.frame, markers.second.frame,
-                        markers.first.position, markers.second.position, copyPackets
+                        markers.first.position, markers.second.position, copyPackets, crop
                     )
                     if (result == null || result.size < 6 || !cutFile.isFile || cutFile.length() == 0L) {
                         return@withContext false

@@ -114,7 +114,7 @@ struct CutSession {
 }
 
 AccurateCutResult cutFrameAccurately(int fd, const std::string& outputPath,
-                                   double positionA, double positionB) {
+                                   double positionA, double positionB, const VideoCrop& crop) {
     if (fd < 0 || !std::isfinite(positionA) || !std::isfinite(positionB) ||
         positionA < 0 || positionB < positionA) throw std::runtime_error("Invalid cut markers");
     CutSession s;
@@ -182,8 +182,18 @@ AccurateCutResult cutFrameAccurately(int fd, const std::string& outputPath,
     if (!mjpeg) throw std::runtime_error("MJPEG encoder unavailable");
     s.encoder = avcodec_alloc_context3(mjpeg);
     if (!s.encoder) throw std::bad_alloc();
-    s.encoder->width = s.decoder->width;
-    s.encoder->height = s.decoder->height;
+    if (!std::isfinite(crop.left) || !std::isfinite(crop.top) ||
+        !std::isfinite(crop.right) || !std::isfinite(crop.bottom) ||
+        crop.left < 0 || crop.top < 0 || crop.right > 1 || crop.bottom > 1 ||
+        crop.left >= crop.right || crop.top >= crop.bottom)
+        throw std::runtime_error("Invalid video crop");
+    // Align the origin with chroma samples; keep the full image when no crop is set.
+    const int cropX = static_cast<int>(crop.left * s.decoder->width) / 2 * 2;
+    const int cropY = static_cast<int>(crop.top * s.decoder->height) / 2 * 2;
+    const int cropRight = std::clamp(static_cast<int>(std::ceil(crop.right * s.decoder->width)), cropX + 1, s.decoder->width);
+    const int cropBottom = std::clamp(static_cast<int>(std::ceil(crop.bottom * s.decoder->height)), cropY + 1, s.decoder->height);
+    s.encoder->width = cropRight - cropX;
+    s.encoder->height = cropBottom - cropY;
     s.encoder->pix_fmt = AV_PIX_FMT_YUVJ420P;
     s.encoder->time_base = timeBase;
     s.encoder->framerate = fps;
@@ -247,8 +257,13 @@ AccurateCutResult cutFrameAccurately(int fd, const std::string& outputPath,
         if (pts == AV_NOPTS_VALUE) throw std::runtime_error("Frame without PTS during cut");
         if (pts > end) { videoDone = true; return false; }
         if (pts < start) return true;
-        if (frame->width != s.encoder->width || frame->height != s.encoder->height)
+        if (frame->width != s.decoder->width || frame->height != s.decoder->height)
             throw std::runtime_error("Video dimensions changed during cut");
+        frame->crop_left = cropX;
+        frame->crop_top = cropY;
+        frame->crop_right = frame->width - cropRight;
+        frame->crop_bottom = frame->height - cropBottom;
+        check(av_frame_apply_cropping(frame, AV_FRAME_CROP_UNALIGNED), "crop video frame");
         if (!s.scaler || s.sourceFormat != frame->format) {
             sws_freeContext(s.scaler);
             s.sourceFormat = static_cast<AVPixelFormat>(frame->format);

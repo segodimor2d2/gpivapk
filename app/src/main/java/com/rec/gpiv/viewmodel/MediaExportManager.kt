@@ -34,7 +34,7 @@ class MediaExportManager(
 
     private var screenshotRunning = false
 
-    fun screenshot() {
+    fun screenshot(crop: com.rec.gpiv.model.CropRegion? = null) {
         if (screenshotRunning) return
         val method = screenshotMethod
         val mpv = method == ScreenshotMethod.MPV
@@ -61,8 +61,11 @@ class MediaExportManager(
                 val success = withContext(Dispatchers.IO) {
                     val screenshotFile = waitForNewScreenshot(cacheDir, existingFiles)
                     if (screenshotFile == null) false
-                    else if (localDirectory != null) copyScreenshotToDirectory(screenshotFile, localDirectory, originalName)
-                    else copyScreenshotToTree(screenshotFile, requireNotNull(treeUri), originalName)
+                    else {
+                        if (!mpv && crop != null) cropScreenshot(screenshotFile, crop)
+                        if (localDirectory != null) copyScreenshotToDirectory(screenshotFile, localDirectory, originalName)
+                        else copyScreenshotToTree(screenshotFile, requireNotNull(treeUri), originalName)
+                    }
                 }
                 onScreenshotStatus(mpv, if (success) OperationStatus.SUCCESS else OperationStatus.ERROR)
             } catch (e: CancellationException) {
@@ -74,6 +77,20 @@ class MediaExportManager(
                 screenshotRunning = false
             }
         }
+    }
+
+    private fun cropScreenshot(file: File, crop: com.rec.gpiv.model.CropRegion) {
+        val bitmap = requireNotNull(android.graphics.BitmapFactory.decodeFile(file.path))
+        try {
+            val left = (crop.left * bitmap.width).toInt().coerceIn(0, bitmap.width - 1)
+            val top = (crop.top * bitmap.height).toInt().coerceIn(0, bitmap.height - 1)
+            val right = (crop.right * bitmap.width).toInt().coerceIn(left + 1, bitmap.width)
+            val bottom = (crop.bottom * bitmap.height).toInt().coerceIn(top + 1, bitmap.height)
+            val selected = android.graphics.Bitmap.createBitmap(bitmap, left, top, right - left, bottom - top)
+            try {
+                file.outputStream().use { check(selected.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it)) }
+            } finally { if (selected !== bitmap) selected.recycle() }
+        } finally { bitmap.recycle() }
     }
 
     private suspend fun copyScreenshotToDirectory(

@@ -37,7 +37,8 @@ interface VideoPlayer {
         frameB: Long,
         positionA: Double,
         positionB: Double,
-        copyPackets: Boolean = false
+        copyPackets: Boolean = false,
+        crop: com.rec.gpiv.model.CropRegion? = null
     ): LongArray?
 
     fun screenshot()

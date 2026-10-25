@@ -72,7 +72,9 @@ fun PlayerControlsOverlay(
     onToggleBlur: () -> Unit,
     onToggleDeband: () -> Unit,
     onToggleEdgeDetection: () -> Unit,
-    onResetVideoAdjustments: () -> Unit
+    onResetVideoAdjustments: () -> Unit,
+    cropEnabled: Boolean,
+    onToggleCrop: () -> Unit
 ) {
     var gestureTool by gestureToolState
     var controlSubRowA by remember { mutableStateOf(false) }
@@ -1242,6 +1244,15 @@ fun PlayerControlsOverlay(
                         modifier = Modifier.clickable { onResetVideoAdjustments() }
                     )
 
+                    if (controlSubRowB) {
+
+                        StatusText(
+                            text = "//",
+                            backgroundColor = if (cropEnabled) Color(0x9900994C) else Color.Transparent,
+                            modifier = Modifier.clickable { onToggleCrop() }
+                        )
+                    }
+
 
                 }
 
@@ -1271,7 +1282,7 @@ private fun FeedbackButton(
         OperationStatus.ERROR -> Color(0xFFB3261E)
     }
     CompactButton(
-        text = if (status == OperationStatus.RUNNING) "$text..." else text,
+        text = if (status == OperationStatus.RUNNING) "$text" else text,
         containerColor = color,
         enabled = enabled && status != OperationStatus.RUNNING,
         onClick = onClick

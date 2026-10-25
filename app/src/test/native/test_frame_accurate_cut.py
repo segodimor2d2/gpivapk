@@ -77,6 +77,20 @@ def main():
         check_cut(runner, cfr, tmp/'eof.mov', 103, 119, True)
         check_cut(runner, cfr, tmp/'start.mov', 0, 11, True)
         check_cut(runner, cfr, tmp/'single.mov', 17, 17, True)
+        cropped = tmp/'cropped.mov'
+        run(runner, cfr, cropped, 17 / 30, 43 / 30, 0.25, 0.25, 0.75, 0.75)
+        cut = probe(cropped)
+        assert cut['streams'][0]['width'] == 80 and cut['streams'][0]['height'] == 48
+        assert len(cut['frames']) == 27
+        # Compare decoded pixels to the same source rectangle (allow MJPEG loss).
+        expected = run('ffmpeg', '-v', 'error', '-i', cfr, '-vf',
+                       "select='eq(n,17)',crop=80:48:40:24", '-frames:v', '1',
+                       '-pix_fmt', 'rgb24', '-f', 'rawvideo', '-')
+        actual = run('ffmpeg', '-v', 'error', '-i', cropped, '-frames:v', '1',
+                     '-pix_fmt', 'rgb24', '-f', 'rawvideo', '-')
+        assert len(expected) == len(actual) == 80 * 48 * 3
+        assert sum(abs(a-b) for a, b in zip(expected, actual)) / len(actual) < 12
+        print('PASS crop: selected source pixels, dimensions and frame count')
         vfr = tmp/'vfr.mp4'
         run('ffmpeg', '-v', 'error', '-y', '-i', cfr, '-an', '-vf',
             "select='not(eq(mod(n,5),0))'", '-fps_mode', 'vfr', '-c:v', 'libx264',
