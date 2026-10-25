@@ -178,15 +178,13 @@ fun PlayerControlsOverlay(
                 ) {
 
 
-                    if (uiState.tagsEnabled) {
-                        StatusText(
-                            text = "del",
-                            modifier = Modifier.clickable {
-                                deletePermanent = false
-                                deletePopupVisible = true
-                            }
-                        )
-                    }
+                    StatusText(
+                        text = "X",
+                        modifier = Modifier.clickable {
+                            deletePermanent = false
+                            deletePopupVisible = true
+                        }
+                    )
 
                     StatusText(
                         text = "${uiState.fileIndex + 1} / ${uiState.fileCount}",
@@ -599,13 +597,20 @@ fun PlayerControlsOverlay(
                         ) {
 
                             FeedbackButton(
-                                text = "SS MPV",
+                                text = "SS",
                                 status = uiState.screenshotMpvStatus,
                                 enabled = uiState.screenshotStatus != OperationStatus.RUNNING,
                                 onClick = {
                                   onSetScreenshotMethod("MPV")
                                   onScreenshot()
                                 }
+                            )
+
+                            FeedbackButton(
+                                text = "CT",
+                                status = uiState.copyCutStatus,
+                                enabled = uiState.cutStatus != OperationStatus.RUNNING,
+                                onClick = onTestCopyCut
                             )
 
                             FeedbackButton(
@@ -619,20 +624,18 @@ fun PlayerControlsOverlay(
                             )
 
                             FeedbackButton(
-                                text = "CT",
-                                status = uiState.copyCutStatus,
-                                enabled = uiState.cutStatus != OperationStatus.RUNNING,
-                                onClick = onTestCopyCut
-                            )
-
-                            FeedbackButton(
                                 text = "[CUT]",
                                 status = uiState.cutStatus,
                                 enabled = uiState.copyCutStatus != OperationStatus.RUNNING,
                                 onClick = onTestCut
+
                             )
 
-
+                            StatusText(
+                                text = "//",
+                                backgroundColor = if (cropEnabled) Color(0x9900994C) else Color.Transparent,
+                                modifier = Modifier.clickable { onToggleCrop() }
+                            )
 
                         }
 
@@ -1244,14 +1247,6 @@ fun PlayerControlsOverlay(
                         modifier = Modifier.clickable { onResetVideoAdjustments() }
                     )
 
-                    if (controlSubRowB) {
-
-                        StatusText(
-                            text = "//",
-                            backgroundColor = if (cropEnabled) Color(0x9900994C) else Color.Transparent,
-                            modifier = Modifier.clickable { onToggleCrop() }
-                        )
-                    }
 
 
                 }
