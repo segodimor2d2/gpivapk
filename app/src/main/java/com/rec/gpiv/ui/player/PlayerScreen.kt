@@ -22,6 +22,7 @@ fun PlayerScreen(
 
     onOpenVideo: () -> Unit,
     onOpenFolder: () -> Unit,
+    onRefreshFiles: () -> Unit,
     onOpenThumbnails: () -> Unit,
     onCloseThumbnails: () -> Unit,
     onCompareThumbnails: (Int) -> Unit,
@@ -144,6 +145,10 @@ fun PlayerScreen(
             onSeekTo = onSeekTo,
         )
 
+        if (uiState.filename == null) {
+            Box(Modifier.fillMaxSize().background(Color.Black))
+        }
+
         crop?.let { region ->
             CropSelectionOverlay(region = region, onChange = { crop = it })
         }
@@ -154,6 +159,7 @@ fun PlayerScreen(
                 gestureToolState = gestureToolState,
                 onOpenVideo = onOpenVideo,
                 onOpenFolder = onOpenFolder,
+                onRefreshFiles = onRefreshFiles,
                 onOpenThumbnails = onOpenThumbnails,
                 onPreviousFile = onPreviousFile,
                 onFirstFile = onFirstFile,

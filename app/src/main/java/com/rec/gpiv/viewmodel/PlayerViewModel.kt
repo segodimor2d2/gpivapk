@@ -434,6 +434,42 @@ class PlayerViewModel(
         if (selectedFile != null) load(Uri.fromFile(selectedFile)) else firstFile()
     }
 
+    fun refreshFiles() {
+        val folder = fileList.getTagFolderUri() ?: return
+        incomingFileJob?.cancel()
+        val currentUri = selectedUri
+        if (folder.scheme == "file") {
+            fileList.loadFromDirectory(java.io.File(requireNotNull(folder.path)))
+        } else {
+            fileList.loadFromTree(folder)
+        }
+        reloadTags()
+        if (currentUri != null && fileList.setCurrent(currentUri)) {
+            val current = requireNotNull(fileList.current())
+            _uiState.update { it.copy(
+                filename = current.name,
+                fileIndex = fileList.currentIndex(),
+                fileCount = fileList.size(),
+                fileTag = if (tagsEnabled) tagFiles.readFileTag(folder, current.uri) else null
+            ) }
+        } else {
+            firstFile()
+        }
+    }
+
+    private fun clearCurrentFile() {
+        player.pause()
+        selectedUri = null
+        pendingUri = null
+        markerController.clear()
+        _uiState.update { it.copy(
+            filename = null, fileTag = null, fileIndex = -1, fileCount = 0,
+            playing = false, loading = false, position = 0.0, duration = 0.0,
+            currentFrame = 0L, previousKeyframeFrame = null,
+            markerASet = false, markerBSet = false
+        ) }
+    }
+
     fun onFolderSelected(uri: Uri) {
         incomingFileJob?.cancel()
         folderRepository.saveFolder(uri)
@@ -464,6 +500,7 @@ class PlayerViewModel(
         viewModelScope.launch {
 
             player.events.collect { event ->
+                if (selectedUri == null) return@collect
 
                 when (event) {
 
@@ -530,6 +567,7 @@ class PlayerViewModel(
                          * o nome real obtido pelo SAF.
                          */
                         if (
+                            selectedUri != null &&
                             fileList.size() == 0 &&
                             !pickerVideoLoaded
                         ) {
@@ -885,6 +923,7 @@ class PlayerViewModel(
             println(
                 "PlayerViewModel: lista vazia"
             )
+            clearCurrentFile()
             return
         }
 

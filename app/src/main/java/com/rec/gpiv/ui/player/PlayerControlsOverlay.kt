@@ -36,6 +36,7 @@ fun PlayerControlsOverlay(
     gestureToolState: MutableState<GestureTool>,
     onOpenVideo: () -> Unit,
     onOpenFolder: () -> Unit,
+    onRefreshFiles: () -> Unit,
     onOpenThumbnails: () -> Unit,
     onPreviousFile: () -> Unit,
     onFirstFile: () -> Unit,
@@ -186,9 +187,11 @@ fun PlayerControlsOverlay(
                         }
                     )
 
-                    StatusText(
-                        text = "${uiState.fileIndex + 1} / ${uiState.fileCount}",
-                    )
+                    if (controlSubRowB) {
+                        StatusText(
+                            text = "${uiState.fileIndex + 1} / ${uiState.fileCount}",
+                        )
+                    }
 
                     StatusText(
                         text = "${uiState.filename ?: "+ + + +"}",
@@ -502,6 +505,12 @@ fun PlayerControlsOverlay(
                                       Modifier.clickable {
                                           onOpenFolder()
                                       }
+                              )
+
+                              StatusText(
+                                  text = "@",
+                                  modifier =
+                                      Modifier.clickable { onRefreshFiles() }
                               )
 
                         }
@@ -1276,11 +1285,13 @@ private fun FeedbackButton(
         OperationStatus.SUCCESS -> Color(0xFF00994C)
         OperationStatus.ERROR -> Color(0xFFB3261E)
     }
-    CompactButton(
-        text = if (status == OperationStatus.RUNNING) "$text" else text,
-        containerColor = color,
-        enabled = enabled && status != OperationStatus.RUNNING,
-        onClick = onClick
+    StatusText(
+        text = text,
+        backgroundColor = color,
+        modifier = Modifier.clickable(
+            enabled = enabled && status != OperationStatus.RUNNING,
+            onClick = onClick
+        )
     )
 }
 
