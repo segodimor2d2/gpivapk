@@ -182,6 +182,10 @@ fun PlayerControlsOverlay(
 
                     StatusText(
                         text = "${uiState.fileIndex + 1} / ${uiState.fileCount}",
+                        modifier = Modifier.clickable {
+                            deletePermanent = false
+                            deletePopupVisible = true
+                        }
                     )
 
                     StatusText(
@@ -202,16 +206,11 @@ fun PlayerControlsOverlay(
 
                     StatusText(
                         text = "${uiState.fileTag}",
+                        modifier =
+                            Modifier.clickable {
+                                onRefreshFiles()
+                            }
                     )
-
-                    StatusText(
-                        text = "X",
-                        modifier = Modifier.clickable {
-                            deletePermanent = false
-                            deletePopupVisible = true
-                        }
-                    )
-
 
                 }
 
@@ -504,12 +503,6 @@ fun PlayerControlsOverlay(
                                       Modifier.clickable {
                                           onOpenFolder()
                                       }
-                              )
-
-                              StatusText(
-                                  text = "@",
-                                  modifier =
-                                      Modifier.clickable { onRefreshFiles() }
                               )
 
                         }
