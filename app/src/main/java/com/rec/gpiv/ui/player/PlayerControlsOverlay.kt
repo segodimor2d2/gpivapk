@@ -179,19 +179,10 @@ fun PlayerControlsOverlay(
                 ) {
 
 
-                    StatusText(
-                        text = "X",
-                        modifier = Modifier.clickable {
-                            deletePermanent = false
-                            deletePopupVisible = true
-                        }
-                    )
 
-                    if (controlSubRowB) {
-                        StatusText(
-                            text = "${uiState.fileIndex + 1} / ${uiState.fileCount}",
-                        )
-                    }
+                    StatusText(
+                        text = "${uiState.fileIndex + 1} / ${uiState.fileCount}",
+                    )
 
                     StatusText(
                         text = "${uiState.filename ?: "+ + + +"}",
@@ -211,6 +202,14 @@ fun PlayerControlsOverlay(
 
                     StatusText(
                         text = "${uiState.fileTag}",
+                    )
+
+                    StatusText(
+                        text = "X",
+                        modifier = Modifier.clickable {
+                            deletePermanent = false
+                            deletePopupVisible = true
+                        }
                     )
 
 
