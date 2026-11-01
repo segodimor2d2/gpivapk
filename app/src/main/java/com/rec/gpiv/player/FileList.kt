@@ -406,19 +406,23 @@ class FileList(
         localDirectory = null
     }
 
-    fun loadFromDirectory(directory: java.io.File): Boolean {
+    fun loadFromDirectory(
+        directory: java.io.File,
+        includeSubfolders: Boolean = directory == localDirectory && localIncludesSubfolders
+    ): Boolean {
         files.clear()
         currentIndex = -1
         currentTreeUri = null
         localDirectory = directory
-        val children = directory.listFiles() ?: return false
-        val items = children.filter { it.isFile && it.name != "gpivtags.csv" }
+        localIncludesSubfolders = includeSubfolders
+        val items = LocalFolderFiles.list(directory, includeSubfolders)
             .map { FileItem(Uri.fromFile(it), it.name, it.lastModified()) }
         files.addAll(FileNameOrder.sorted(items, FileItem::name, FileItem::modifiedTime))
         return files.isNotEmpty()
     }
 
     private var localDirectory: java.io.File? = null
+    private var localIncludesSubfolders = false
 
     fun getTagFolderUri(): Uri? = currentTreeUri ?: localDirectory?.let(Uri::fromFile)
 

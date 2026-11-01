@@ -428,9 +428,13 @@ class PlayerViewModel(
 
     fun onVideoSelected(uri: Uri) = handleIncomingUri(uri)
 
-    fun onLocalFolderSelected(directory: java.io.File, selectedFile: java.io.File? = null) {
+    fun onLocalFolderSelected(
+        directory: java.io.File,
+        selectedFile: java.io.File? = null,
+        includeSubfolders: Boolean = false
+    ) {
         incomingFileJob?.cancel()
-        fileList.loadFromDirectory(directory)
+        fileList.loadFromDirectory(directory, includeSubfolders)
         _uiState.update { it.copy(fileTag = null, tags = emptyList(), fileIndex = -1, fileCount = fileList.size()) }
         reloadTags()
         if (selectedFile != null) load(Uri.fromFile(selectedFile)) else firstFile()

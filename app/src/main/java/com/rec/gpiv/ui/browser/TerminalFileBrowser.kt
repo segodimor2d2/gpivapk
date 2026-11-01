@@ -35,6 +35,7 @@ fun showTerminalFileBrowser(
     entries: List<File>,
     onOpen: (File) -> Unit,
     onSelectFolder: () -> Unit,
+    onSelectFolderWithSubfolders: () -> Unit,
     onSelectDocumentTree: () -> Unit,
     existingDialog: TerminalFileBrowserDialog? = null
 ): TerminalFileBrowserDialog {
@@ -127,8 +128,19 @@ fun showTerminalFileBrowser(
         setBackgroundColor(Color.BLACK)
         setPadding(dp(6), dp(4), dp(6), dp(4))
     }
-    fun action(label: String, dismiss: Boolean = true, onClick: () -> Unit) {
-        footer.addView(Button(dialog.context).apply {
+    val folderActions = LinearLayout(dialog.context).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        setBackgroundColor(Color.BLACK)
+        setPadding(dp(6), dp(4), dp(6), dp(4))
+    }
+    fun action(
+        label: String,
+        dismiss: Boolean = true,
+        row: LinearLayout = footer,
+        onClick: () -> Unit
+    ) {
+        row.addView(Button(dialog.context).apply {
             text = label
             isAllCaps = false
             textSize = 12f
@@ -145,7 +157,8 @@ fun showTerminalFileBrowser(
     action("Tags e exportação", onClick = onSelectDocumentTree)
     parent?.let { pastaPai -> action("../", dismiss = false) { onOpen(pastaPai) } }
     action("Cancelar") {}
-    action("Abrir esta pasta", onClick = onSelectFolder)
+    action("Abrir esta pasta", row = folderActions, onClick = onSelectFolder)
+    action("Pasta + subpastas (1 nível)", row = folderActions, onClick = onSelectFolderWithSubfolders)
     val layout = LinearLayout(dialog.context).apply {
         orientation = LinearLayout.VERTICAL
         setBackgroundColor(Color.BLACK)
@@ -153,6 +166,7 @@ fun showTerminalFileBrowser(
         addView(title, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         addView(container, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
         addView(footer, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        addView(folderActions, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
     }
     dialog.setContentView(layout)
     dialog.show()

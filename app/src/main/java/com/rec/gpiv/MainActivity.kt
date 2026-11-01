@@ -167,6 +167,9 @@ class MainActivity : ComponentActivity() {
                     else viewModel.onLocalFolderSelected(directory, item)
                 },
                 onSelectFolder = { viewModel.onLocalFolderSelected(directory) },
+                onSelectFolderWithSubfolders = {
+                    viewModel.onLocalFolderSelected(directory, includeSubfolders = true)
+                },
                 onSelectDocumentTree = { openFolderLauncher.launch(null) },
                 existingDialog = browserDialog?.takeIf { it.isShowing }
             )
