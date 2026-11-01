@@ -3,6 +3,7 @@ package com.rec.gpiv
 import android.Manifest
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -11,6 +12,7 @@ import android.provider.Settings
 import android.provider.DocumentsContract
 import com.rec.gpiv.ui.common.BlackNotice
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -45,6 +47,37 @@ class MainActivity : ComponentActivity() {
         if (isFinishing || isDestroyed) return
         val current = notice ?: BlackNotice(findViewById(android.R.id.content)).also { notice = it }
         current.show(message)
+    }
+
+    private fun shareCurrentFile() {
+        val currentUri = viewModel.currentFileUri()
+        if (currentUri == null) {
+            showNotice("Abra um arquivo para compartilhar.")
+            return
+        }
+
+        try {
+            val shareUri = if (currentUri.scheme == "file") {
+                FileProvider.getUriForFile(
+                    this,
+                    "$packageName.fileprovider",
+                    File(requireNotNull(currentUri.path))
+                )
+            } else {
+                currentUri
+            }
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = contentResolver.getType(shareUri) ?: "application/octet-stream"
+                putExtra(Intent.EXTRA_STREAM, shareUri)
+                clipData = ClipData.newRawUri("Arquivo", shareUri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(shareIntent, "Compartilhar arquivo"))
+        } catch (_: ActivityNotFoundException) {
+            showNotice("Nenhum aplicativo disponível para compartilhar o arquivo.")
+        } catch (_: Exception) {
+            showNotice("Não foi possível compartilhar o arquivo atual.")
+        }
     }
 
     override fun onDestroy() {
@@ -166,6 +199,7 @@ class MainActivity : ComponentActivity() {
                             openStorageBrowser()
                         },
                         onRefreshFiles = viewModel::refreshFiles,
+                        onShareFile = ::shareCurrentFile,
                         onOpenThumbnails = viewModel::openThumbnailGallery,
                         onCloseThumbnails = viewModel::closeThumbnailGallery,
                         onCompareThumbnails = viewModel::compareThumbnails,

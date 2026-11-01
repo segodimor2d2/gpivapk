@@ -68,6 +68,8 @@ class PlayerViewModel(
 
     private var selectedUri: Uri? = null
 
+    fun currentFileUri(): Uri? = selectedUri
+
     private var surfaceReady = false
 
     private var pendingUri: Uri? = null

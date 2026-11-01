@@ -37,6 +37,7 @@ fun PlayerControlsOverlay(
     onOpenVideo: () -> Unit,
     onOpenFolder: () -> Unit,
     onRefreshFiles: () -> Unit,
+    onShareFile: () -> Unit,
     onOpenThumbnails: () -> Unit,
     onPreviousFile: () -> Unit,
     onFirstFile: () -> Unit,
@@ -197,19 +198,17 @@ fun PlayerControlsOverlay(
                     )
 
                     StatusText(
-                        text = "&&&",
-                        modifier =
-                            Modifier.clickable {
-                                onOpenFolder()
-                            }
-                    )
-
-                    StatusText(
                         text = "${uiState.fileTag}",
                         modifier =
                             Modifier.clickable {
                                 onRefreshFiles()
                             }
+                    )
+
+                    StatusText(
+                        text = "@",
+                        modifier =
+                            Modifier.clickable(onClick = onShareFile)
                     )
 
                 }
@@ -494,14 +493,6 @@ fun PlayerControlsOverlay(
                                   modifier = Modifier
                                       .clickable {
                                           onOpenVideo()
-                                      }
-                              )
-
-                              StatusText(
-                                  text = "&&&",
-                                  modifier =
-                                      Modifier.clickable {
-                                          onOpenFolder()
                                       }
                               )
 
