@@ -72,6 +72,7 @@ add_library(
     mpv_native_ffmpeg_keyframe.cpp
     mpv_native_ffmpeg_cut.cpp
     mpv_native_ffmpeg_copy_cut.cpp
+    keyframe_copy_cut.cpp
     frame_accurate_cut.cpp
     mpv_native_ffmpeg_probe.cpp
     mpv_native_controls.cpp

@@ -271,7 +271,7 @@ class MpvNative {
     ): LongArray? {
         checkInitialized()
 
-        if (copyPackets) return nativeTestCopyCutFrames(fd, frameA, frameB)
+        if (copyPackets) return nativeTestCopyCutFrames(fd, frameA, frameB, positionA, positionB)
         return nativeTestCutFrames(
             fd,
             frameA,
@@ -741,7 +741,9 @@ class MpvNative {
         uri: String
     )
 
-    private external fun nativeTestCopyCutFrames(fd: Int, frameA: Long, frameB: Long): LongArray?
+    private external fun nativeTestCopyCutFrames(
+        fd: Int, frameA: Long, frameB: Long, positionA: Double, positionB: Double
+    ): LongArray?
 
     private external fun nativeTestCutFrames(
         fd: Int,

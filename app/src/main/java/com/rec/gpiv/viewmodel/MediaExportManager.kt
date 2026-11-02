@@ -541,6 +541,13 @@ class MediaExportManager(
             try {
 
                 val resolver = contentResolver
+                val lastDot = originalName.lastIndexOf('.')
+                val baseName = if (lastDot > 0 && lastDot < originalName.length - 1) {
+                    originalName.substring(0, lastDot)
+                } else {
+                    originalName
+                }
+                val extension = if (originalName.startsWith(".")) "" else ".mov"
 
                 /*
                  * ------------------------------------------------
@@ -550,9 +557,6 @@ class MediaExportManager(
                 if (treeUri.scheme == "file") {
                     val directory = File(requireNotNull(treeUri.path))
                     check(directory.isDirectory) { "Pasta do corte inacessível" }
-                    val dot = originalName.lastIndexOf('.')
-                    val baseName = if (dot > 0) originalName.substring(0, dot) else originalName
-                    val extension = ".mov"
                     var number = 1
                     var destination: File
                     do {
@@ -580,34 +584,6 @@ class MediaExportManager(
                         treeUri,
                         treeDocumentId
                     )
-
-                /*
-                 * ------------------------------------------------
-                 * NOME DO VÍDEO ORIGINAL
-                 * ------------------------------------------------
-                 */
-
-                val lastDot =
-                    originalName.lastIndexOf(".")
-
-                val baseName: String
-                val extension: String
-
-                if (
-                    lastDot > 0 &&
-                    lastDot < originalName.length - 1
-                ) {
-                    baseName =
-                        originalName.substring(
-                            0,
-                            lastDot
-                        )
-
-                    extension = ".mov"
-                } else {
-                    baseName = originalName
-                    extension = ".mov"
-                }
 
                 /*
                  * ------------------------------------------------
