@@ -25,6 +25,8 @@ import com.rec.gpiv.player.SEEK_FRAMES
 import com.rec.gpiv.player.SEEK_FRAMES_PLUS
 import com.rec.gpiv.player.SEEK_SECONDS
 import androidx.compose.foundation.layout.FlowRow
+import android.text.format.Formatter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -78,6 +80,7 @@ fun PlayerControlsOverlay(
     cropEnabled: Boolean,
     onToggleCrop: () -> Unit
 ) {
+    val context = LocalContext.current
     var gestureTool by gestureToolState
     var controlSubRowA by remember { mutableStateOf(false) }
     var controlSubRowB by remember { mutableStateOf(false) }
@@ -206,7 +209,7 @@ fun PlayerControlsOverlay(
                     )
 
                     StatusText(
-                        text = "@",
+                        text = uiState.fileSizeBytes?.let { Formatter.formatFileSize(context, it) } ?: "—",
                         modifier =
                             Modifier.clickable(onClick = onShareFile)
                     )

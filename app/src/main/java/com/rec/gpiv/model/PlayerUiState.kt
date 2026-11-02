@@ -22,6 +22,7 @@ data class PlayerUiState(
     val thumbnails: List<ThumbnailEntry> = emptyList(),
     val playing: Boolean = false,
     val filename: String? = null,
+    val fileSizeBytes: Long? = null,
     val fileTag: String? = null,
     val tagsEnabled: Boolean = false,
     val tags: List<String> = emptyList(),

@@ -70,6 +70,32 @@ class PlayerViewModel(
 
     fun currentFileUri(): Uri? = selectedUri
 
+    private var fileSizeJob: Job? = null
+
+    private fun updateFileSize(uri: Uri) {
+        fileSizeJob?.cancel()
+        _uiState.update { it.copy(fileSizeBytes = null) }
+        fileSizeJob = viewModelScope.launch {
+            val size = withContext(Dispatchers.IO) {
+                runCatching {
+                    if (uri.scheme == "file") {
+                        java.io.File(requireNotNull(uri.path)).takeIf { it.isFile }?.length()
+                    } else {
+                        getApplication<Application>().contentResolver.query(
+                            uri, arrayOf(OpenableColumns.SIZE), null, null, null
+                        )?.use { cursor ->
+                            val index = cursor.getColumnIndex(OpenableColumns.SIZE)
+                            if (cursor.moveToFirst() && index >= 0 && !cursor.isNull(index)) {
+                                cursor.getLong(index).takeIf { it >= 0 }
+                            } else null
+                        }
+                    }
+                }.getOrNull()
+            }
+            if (selectedUri == uri) _uiState.update { it.copy(fileSizeBytes = size) }
+        }
+    }
+
     private var surfaceReady = false
 
     private var pendingUri: Uri? = null
@@ -452,6 +478,7 @@ class PlayerViewModel(
         reloadTags()
         if (currentUri != null && fileList.setCurrent(currentUri)) {
             val current = requireNotNull(fileList.current())
+            updateFileSize(current.uri)
             _uiState.update { it.copy(
                 filename = current.name,
                 fileIndex = fileList.currentIndex(),
@@ -469,7 +496,7 @@ class PlayerViewModel(
         pendingUri = null
         markerController.clear()
         _uiState.update { it.copy(
-            filename = null, fileTag = null, fileIndex = -1, fileCount = 0,
+            filename = null, fileSizeBytes = null, fileTag = null, fileIndex = -1, fileCount = 0,
             playing = false, loading = false, position = 0.0, duration = 0.0,
             currentFrame = 0L, previousKeyframeFrame = null,
             markerASet = false, markerBSet = false
@@ -645,6 +672,7 @@ class PlayerViewModel(
 
         selectedUri =
             loadUri
+        updateFileSize(loadUri)
 
         pickerVideoLoaded =
             true
@@ -801,6 +829,7 @@ class PlayerViewModel(
             } else {
                 _uiState.value = _uiState.value.copy(
                     filename = "Nenhum arquivo",
+                    fileSizeBytes = null,
                     fileTag = null,
                     playing = false,
                     loading = false,
@@ -831,6 +860,7 @@ class PlayerViewModel(
         } else {
             _uiState.value = _uiState.value.copy(
                 filename = "Nenhum arquivo",
+                    fileSizeBytes = null,
                 fileTag = null,
                 playing = false,
                 loading = false,
@@ -859,6 +889,7 @@ class PlayerViewModel(
 
         selectedUri =
             file.uri
+        updateFileSize(file.uri)
 
         val fileTag =
             if (tagsEnabled) {
