@@ -203,15 +203,15 @@ fun PlayerControlsOverlay(
                     StatusText(
                         text = "${uiState.fileTag}",
                         modifier =
-                            Modifier.clickable {
-                                onRefreshFiles()
-                            }
+                            Modifier.clickable(onClick = onShareFile)
                     )
 
                     StatusText(
                         text = uiState.fileSizeBytes?.let { Formatter.formatFileSize(context, it) } ?: "—",
                         modifier =
-                            Modifier.clickable(onClick = onShareFile)
+                            Modifier.clickable {
+                                onRefreshFiles()
+                            }
                     )
 
                 }
@@ -758,7 +758,10 @@ fun PlayerControlsOverlay(
                         StatusText(
                             text = "mv",
                             modifier = Modifier
-                                .clickable { onToggleVerticalMirror() }
+                                .clickable {
+                                    onToggleVerticalMirror()
+                                    onRefreshFiles()
+                                }
                         )
                     }
                     Row(

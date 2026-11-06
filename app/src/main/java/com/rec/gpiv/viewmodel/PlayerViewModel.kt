@@ -340,6 +340,9 @@ class PlayerViewModel(
                         )
                     }
                 }
+                if (move && fileList.getTagFolderUri() == folder) {
+                    refreshFiles()
+                }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
