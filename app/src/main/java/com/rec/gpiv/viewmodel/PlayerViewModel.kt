@@ -813,6 +813,33 @@ class PlayerViewModel(
     private fun moveToTrash(uri: Uri): Boolean =
         trashManager.moveToTrash(uri)
 
+    suspend fun moveCurrentFile(uri: Uri, directory: java.io.File): String {
+        if (selectedUri != uri) return "O arquivo aberto mudou. Selecione o destino novamente."
+        val result = withContext(Dispatchers.IO) {
+            runCatching {
+                val source = folderRepository.findLocalFile(uri)
+                    ?: error("Não foi possível acessar o arquivo local.")
+                com.rec.gpiv.data.LocalFileMover.move(source, directory)
+            }
+        }
+        val destination = result.getOrElse {
+            return "Não foi possível mover: ${it.message}"
+        }
+        fileTags.remove(uri.toString())
+        if (selectedUri == uri) {
+            player.pause()
+            val next = fileList.remove(uri)
+            selectedUri = null
+            pendingUri = null
+            markerController.clear()
+            if (next != null) updateCurrentFileState(next)
+            else clearCurrentFile()
+        } else {
+            fileList.remove(uri)
+        }
+        return "Movido para ${destination.absolutePath}"
+    }
+
     fun deleteFile(permanent: Boolean): Boolean {
         val uri = selectedUri ?: return false
 

@@ -40,6 +40,7 @@ fun PlayerControlsOverlay(
     onOpenFolder: () -> Unit,
     onRefreshFiles: () -> Unit,
     onShareFile: () -> Unit,
+    onMoveFile: () -> Unit,
     onOpenThumbnails: () -> Unit,
     onPreviousFile: () -> Unit,
     onFirstFile: () -> Unit,
@@ -202,16 +203,12 @@ fun PlayerControlsOverlay(
 
                     StatusText(
                         text = "${uiState.fileTag}",
-                        modifier =
-                            Modifier.clickable(onClick = onShareFile)
+                        modifier = Modifier.clickable { onMoveFile() }
                     )
 
                     StatusText(
                         text = uiState.fileSizeBytes?.let { Formatter.formatFileSize(context, it) } ?: "—",
-                        modifier =
-                            Modifier.clickable {
-                                onRefreshFiles()
-                            }
+                        modifier = Modifier.clickable(onClick = onShareFile)
                     )
 
                 }
@@ -1161,6 +1158,10 @@ fun PlayerControlsOverlay(
                         )
                     }
 
+                    StatusText(
+                        text = ">",
+                        modifier = Modifier.clickable { onRefreshFiles() }
+                    )
 
                     StatusText(
                         text = "ff",
@@ -1244,6 +1245,7 @@ fun PlayerControlsOverlay(
                         text = "()",
                         modifier = Modifier.clickable { onResetVideoAdjustments() }
                     )
+
 
 
 

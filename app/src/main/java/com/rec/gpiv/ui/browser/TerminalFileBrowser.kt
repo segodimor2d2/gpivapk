@@ -37,6 +37,7 @@ fun showTerminalFileBrowser(
     onSelectFolder: () -> Unit,
     onSelectFolderWithSubfolders: () -> Unit,
     onSelectDocumentTree: () -> Unit,
+    onPickFile: (() -> Unit)? = null,
     existingDialog: TerminalFileBrowserDialog? = null
 ): TerminalFileBrowserDialog {
     val density = context.resources.displayMetrics.density
@@ -158,6 +159,7 @@ fun showTerminalFileBrowser(
     parent?.let { pastaPai -> action("../", dismiss = false) { onOpen(pastaPai) } }
     action("Cancelar") {}
     action("Abrir esta pasta", row = folderActions, onClick = onSelectFolder)
+    onPickFile?.let { action("Pegar", row = folderActions, onClick = it) }
     action("Pasta + subpastas (1 nível)", row = folderActions, onClick = onSelectFolderWithSubfolders)
     val layout = LinearLayout(dialog.context).apply {
         orientation = LinearLayout.VERTICAL

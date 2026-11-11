@@ -95,6 +95,8 @@ class MainActivity : ComponentActivity() {
         uri?.let(::persistAndLoadFolder)
     }
 
+    private var moveSource: Uri? = null
+
     private var browserDirectory: File = Environment.getExternalStorageDirectory()
 
     private fun hasStorageAccess(): Boolean =
@@ -119,7 +121,12 @@ class MainActivity : ComponentActivity() {
         else showNotice("O acesso ao armazenamento não foi autorizado.")
     }
 
-    private fun openStorageBrowser() {
+    private fun openStorageBrowser(forMove: Boolean = false) {
+        moveSource = if (forMove) viewModel.currentFileUri() else null
+        if (forMove && moveSource == null) {
+            showNotice("Abra um arquivo para mover.")
+            return
+        }
         if (hasStorageAccess()) {
             showStorageBrowser(browserDirectory)
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -161,7 +168,7 @@ class MainActivity : ComponentActivity() {
             browserDialog = showTerminalFileBrowser(
                 context = this@MainActivity,
                 directory = directory,
-                entries = roots + entries,
+                entries = roots + if (moveSource != null) entries.filter { it.isDirectory } else entries,
                 onOpen = { item ->
                     if (item.isDirectory) showStorageBrowser(item)
                     else viewModel.onLocalFolderSelected(directory, item)
@@ -171,6 +178,16 @@ class MainActivity : ComponentActivity() {
                     viewModel.onLocalFolderSelected(directory, includeSubfolders = true)
                 },
                 onSelectDocumentTree = { openFolderLauncher.launch(null) },
+                onPickFile = moveSource?.let { source ->
+                    {
+                        moveSource = null
+                        lifecycleScope.launch {
+                            val message = viewModel.moveCurrentFile(source, directory)
+                            showNotice(message)
+                        }
+                        Unit
+                    }
+                },
                 existingDialog = browserDialog?.takeIf { it.isShowing }
             )
         }
@@ -203,6 +220,7 @@ class MainActivity : ComponentActivity() {
                         },
                         onRefreshFiles = viewModel::refreshFiles,
                         onShareFile = ::shareCurrentFile,
+                        onMoveFile = { openStorageBrowser(forMove = true) },
                         onOpenThumbnails = viewModel::openThumbnailGallery,
                         onCloseThumbnails = viewModel::closeThumbnailGallery,
                         onCompareThumbnails = viewModel::compareThumbnails,
