@@ -203,7 +203,7 @@ fun PlayerControlsOverlay(
 
                     StatusText(
                         text = "${uiState.fileTag}",
-                        modifier = Modifier.clickable { onMoveFile() }
+                        modifier = Modifier.clickable { onRefreshFiles() }
                     )
 
                     StatusText(
@@ -1160,7 +1160,7 @@ fun PlayerControlsOverlay(
 
                     StatusText(
                         text = ">",
-                        modifier = Modifier.clickable { onRefreshFiles() }
+                        modifier = Modifier.clickable { onMoveFile() }
                     )
 
                     StatusText(
