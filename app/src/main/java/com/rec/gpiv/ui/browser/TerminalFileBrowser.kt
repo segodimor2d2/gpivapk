@@ -36,6 +36,7 @@ fun showTerminalFileBrowser(
     onOpen: (File) -> Unit,
     onSelectFolder: () -> Unit,
     onSelectFolderWithSubfolders: () -> Unit,
+    onSelectFolderWithThreeFilesPerSubfolder: () -> Unit,
     onSelectDocumentTree: () -> Unit,
     onPickFile: (() -> Unit)? = null,
     existingDialog: TerminalFileBrowserDialog? = null
@@ -131,7 +132,7 @@ fun showTerminalFileBrowser(
     }
     val folderActions = LinearLayout(dialog.context).apply {
         orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER_VERTICAL
+        gravity = Gravity.CENTER
         setBackgroundColor(Color.BLACK)
         setPadding(dp(6), dp(4), dp(6), dp(4))
     }
@@ -148,19 +149,24 @@ fun showTerminalFileBrowser(
             setTextColor(Color.WHITE)
             setBackgroundColor(Color.TRANSPARENT)
             setPadding(dp(4), dp(8), dp(4), dp(8))
+            minWidth = dp(40)
+            minimumWidth = dp(40)
             minHeight = dp(48)
             setOnClickListener {
                 if (dismiss) dialog.dismiss()
                 onClick()
             }
-        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
     }
-    action("Tags e exportação", onClick = onSelectDocumentTree)
-    parent?.let { pastaPai -> action("../", dismiss = false) { onOpen(pastaPai) } }
-    action("Cancelar") {}
-    action("Abrir esta pasta", row = folderActions, onClick = onSelectFolder)
-    onPickFile?.let { action("Pegar", row = folderActions, onClick = it) }
-    action("Pasta + subpastas (1 nível)", row = folderActions, onClick = onSelectFolderWithSubfolders)
+
+    action("tgs", row = folderActions, onClick = onSelectDocumentTree)
+    parent?.let { pastaPai -> action("../", row = folderActions, dismiss = false) { onOpen(pastaPai) } }
+    action("x", row = folderActions) {}
+    action("o", row = folderActions, onClick = onSelectFolder)
+    onPickFile?.let { action("v", row = folderActions, onClick = it) }
+    action("o+", row = folderActions, onClick = onSelectFolderWithSubfolders)
+    action("o+3", row = folderActions, onClick = onSelectFolderWithThreeFilesPerSubfolder)
+
     val layout = LinearLayout(dialog.context).apply {
         orientation = LinearLayout.VERTICAL
         setBackgroundColor(Color.BLACK)

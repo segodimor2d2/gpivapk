@@ -408,14 +408,16 @@ class FileList(
 
     fun loadFromDirectory(
         directory: java.io.File,
-        includeSubfolders: Boolean = directory == localDirectory && localIncludesSubfolders
+        includeSubfolders: Boolean = directory == localDirectory && localIncludesSubfolders,
+        maxFilesPerSubfolder: Int? = if (directory == localDirectory) localMaxFilesPerSubfolder else null
     ): Boolean {
         files.clear()
         currentIndex = -1
         currentTreeUri = null
         localDirectory = directory
         localIncludesSubfolders = includeSubfolders
-        val items = LocalFolderFiles.list(directory, includeSubfolders)
+        localMaxFilesPerSubfolder = maxFilesPerSubfolder
+        val items = LocalFolderFiles.list(directory, includeSubfolders, maxFilesPerSubfolder)
             .map { FileItem(Uri.fromFile(it), it.name, it.lastModified()) }
         files.addAll(FileNameOrder.sorted(items, FileItem::name, FileItem::modifiedTime))
         return files.isNotEmpty()
@@ -423,6 +425,7 @@ class FileList(
 
     private var localDirectory: java.io.File? = null
     private var localIncludesSubfolders = false
+    private var localMaxFilesPerSubfolder: Int? = null
 
     fun getTagFolderUri(): Uri? = currentTreeUri ?: localDirectory?.let(Uri::fromFile)
 

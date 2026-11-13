@@ -178,6 +178,9 @@ class MainActivity : ComponentActivity() {
                     viewModel.onLocalFolderSelected(directory, includeSubfolders = true)
                 },
                 onSelectDocumentTree = { openFolderLauncher.launch(null) },
+                onSelectFolderWithThreeFilesPerSubfolder = {
+                    viewModel.onLocalFolderSelected(directory, includeSubfolders = true, maxFilesPerSubfolder = 3)
+                },
                 onPickFile = moveSource?.let { source ->
                     {
                         moveSource = null

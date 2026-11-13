@@ -460,10 +460,11 @@ class PlayerViewModel(
     fun onLocalFolderSelected(
         directory: java.io.File,
         selectedFile: java.io.File? = null,
-        includeSubfolders: Boolean = false
+        includeSubfolders: Boolean = false,
+        maxFilesPerSubfolder: Int? = null
     ) {
         incomingFileJob?.cancel()
-        fileList.loadFromDirectory(directory, includeSubfolders)
+        fileList.loadFromDirectory(directory, includeSubfolders, maxFilesPerSubfolder)
         _uiState.update { it.copy(fileTag = null, tags = emptyList(), fileIndex = -1, fileCount = fileList.size()) }
         reloadTags()
         if (selectedFile != null) load(Uri.fromFile(selectedFile)) else firstFile()

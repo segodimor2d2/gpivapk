@@ -9,6 +9,30 @@ import org.junit.rules.TemporaryFolder
 class LocalFolderFilesTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
 
+    @Test fun limitsEachImmediateSubfolderInPlayerOrder() {
+        val root = temporaryFolder.root
+        temporaryFolder.newFile("root.jpg")
+        for (folder in listOf("child", "sibling")) {
+            temporaryFolder.newFolder(folder)
+            temporaryFolder.newFile("$folder/gpivtags.csv")
+            temporaryFolder.newFolder(folder, "deeper")
+            temporaryFolder.newFile("$folder/deeper/excluded.jpg")
+            for (day in 1..5) {
+                temporaryFolder.newFile("$folder/2026010${day}120000.jpg")
+            }
+        }
+        temporaryFolder.newFolder("small")
+        temporaryFolder.newFile("small/only.jpg")
+
+        val paths = LocalFolderFiles.list(root, true, 3).map { it.relativeTo(root).path }.toSet()
+
+        assertEquals(setOf("root.jpg", "small/only.jpg") +
+            listOf("child", "sibling").flatMap { folder ->
+                (3..5).map { day -> "$folder/2026010${day}120000.jpg" }
+            }, paths)
+        assertEquals(12, LocalFolderFiles.list(root, true).size)
+    }
+
     @Test fun includesOnlyImmediateSubfoldersAndKeepsDuplicateNames() {
         val root = temporaryFolder.root
         temporaryFolder.newFile("same.jpg")
