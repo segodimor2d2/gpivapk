@@ -748,6 +748,11 @@ class FileList(
      * ========================================================
      */
 
+    fun replace(oldUri: Uri, newUri: Uri, name: String) {
+        val index = files.indexOfFirst { it.uri == oldUri }
+        if (index >= 0) files[index] = files[index].copy(uri = newUri, name = name)
+    }
+
     fun all(): List<FileItem> {
 
         return files.toList()

@@ -70,6 +70,75 @@ class PlayerViewModel(
 
     fun currentFileUri(): Uri? = selectedUri
 
+    private var renamingFile = false
+    private val hiddenExtensions = getApplication<Application>()
+        .getSharedPreferences("hidden_file_extensions", android.content.Context.MODE_PRIVATE)
+
+    fun toggleCurrentFileHidden() {
+        val uri = selectedUri ?: return
+        val name = _uiState.value.filename ?: return
+        if (renamingFile) return
+        renamingFile = true
+        viewModelScope.launch {
+            try {
+                val (newUri, newName) = withContext(Dispatchers.IO) {
+                    val hidden = name.startsWith(".")
+                    val extension = if (!hidden) {
+                        com.rec.gpiv.player.HiddenFileName.extension(name)
+                    } else hiddenExtensions.getString(uri.toString(), null) ?: detectFileExtension(uri)
+                    val targetName = com.rec.gpiv.player.HiddenFileName.toggle(name, extension)
+                    check(fileList.all().none { it.uri != uri && it.name == targetName &&
+                        displayFilePath(it.uri) == displayFilePath(uri) }) { "Já existe um arquivo com esse nome." }
+                    val result = if (uri.scheme == "file") {
+                        val source = java.io.File(requireNotNull(uri.path))
+                        val target = java.io.File(source.parentFile, targetName)
+                        check(!target.exists()) { "Já existe um arquivo com esse nome." }
+                        check(source.renameTo(target)) { "Não foi possível renomear o arquivo." }
+                        Uri.fromFile(target)
+                    } else requireNotNull(DocumentsContract.renameDocument(
+                        getApplication<Application>().contentResolver, uri, targetName
+                    )) { "Não foi possível renomear o arquivo." }
+                    hiddenExtensions.edit().remove(uri.toString()).apply {
+                        if (!hidden) putString(result.toString(), extension)
+                    }.commit()
+                    result to targetName
+                }
+                fileList.replace(uri, newUri, newName)
+                fileTags.remove(uri.toString())?.let { fileTags[newUri.toString()] = it }
+                if (selectedUri == uri) {
+                    selectedUri = newUri
+                    if (pendingUri == uri) pendingUri = newUri
+                    _uiState.update { it.copy(filename = newName, filePath = displayFilePath(newUri)) }
+                }
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(getApplication(),
+                    e.message ?: "Não foi possível renomear o arquivo.", android.widget.Toast.LENGTH_LONG).show()
+            } finally {
+                renamingFile = false
+            }
+        }
+    }
+
+    private fun detectFileExtension(uri: Uri): String {
+        val context = getApplication<Application>()
+        val image = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        context.contentResolver.openInputStream(uri)?.use {
+            android.graphics.BitmapFactory.decodeStream(it, null, image)
+        }
+        val mime = image.outMimeType ?: run {
+            val retriever = android.media.MediaMetadataRetriever()
+            try {
+                retriever.setDataSource(context, uri)
+                retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
+            } finally {
+                retriever.release()
+            }
+        }
+        return requireNotNull(android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mime)) {
+            "Não foi possível identificar a extensão do arquivo."
+        }
+    }
+
     private var fileSizeJob: Job? = null
 
     private fun updateFileSize(uri: Uri) {

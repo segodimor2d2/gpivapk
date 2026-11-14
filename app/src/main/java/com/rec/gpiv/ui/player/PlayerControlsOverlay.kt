@@ -40,6 +40,7 @@ fun PlayerControlsOverlay(
     onOpenFolder: () -> Unit,
     onRefreshFiles: () -> Unit,
     onShareFile: () -> Unit,
+    onToggleFileHidden: () -> Unit,
     onMoveFile: () -> Unit,
     onOpenThumbnails: () -> Unit,
     onPreviousFile: () -> Unit,
@@ -1161,6 +1162,12 @@ fun PlayerControlsOverlay(
                             onClick = { ahpConfirmationVisible = true }
                         )
                     }
+
+                    StatusText(
+                        text = "<",
+                        backgroundColor = if (uiState.filename?.startsWith(".") == true) Color(0x9900994C) else Color.Transparent,
+                        modifier = Modifier.clickable(onClick = onToggleFileHidden)
+                    )
 
                     StatusText(
                         text = "ff",

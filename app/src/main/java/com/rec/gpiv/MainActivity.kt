@@ -223,6 +223,7 @@ class MainActivity : ComponentActivity() {
                         },
                         onRefreshFiles = viewModel::refreshFiles,
                         onShareFile = ::shareCurrentFile,
+                        onToggleFileHidden = viewModel::toggleCurrentFileHidden,
                         onMoveFile = { openStorageBrowser(forMove = true) },
                         onOpenThumbnails = viewModel::openThumbnailGallery,
                         onCloseThumbnails = viewModel::closeThumbnailGallery,
