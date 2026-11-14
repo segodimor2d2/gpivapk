@@ -8,7 +8,7 @@ object LocalFolderFiles {
         val children = directory.listFiles().orEmpty()
         val candidates = children.asSequence().flatMap { child ->
             if (includeSubfolders && child.isDirectory) {
-                val files = child.listFiles().orEmpty().filter { it.isFile && it.name != "gpivtags.csv" }
+                val files = child.listFiles().orEmpty().filter { it.isFile && it.name != "gpivtags.csv" && !FileEligibility.isMarkdown(it.name) }
                 (if (maxFilesPerSubfolder != null) {
                     FileNameOrder.sorted(files, File::getName, File::lastModified).take(maxFilesPerSubfolder)
                 } else files).asSequence()
@@ -16,6 +16,6 @@ object LocalFolderFiles {
                 sequenceOf(child)
             }
         }
-        return candidates.filter { it.isFile && it.name != "gpivtags.csv" }.toList()
+        return candidates.filter { it.isFile && it.name != "gpivtags.csv" && !FileEligibility.isMarkdown(it.name) }.toList()
     }
 }

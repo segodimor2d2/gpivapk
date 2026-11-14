@@ -9,6 +9,20 @@ import org.junit.rules.TemporaryFolder
 class LocalFolderFilesTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
 
+    @Test fun excludesMarkdownBeforeApplyingSubfolderLimit() {
+        val root = temporaryFolder.root
+        temporaryFolder.newFile("notes.md")
+        temporaryFolder.newFile("README.MD")
+        temporaryFolder.newFile("video.mp4")
+        temporaryFolder.newFolder("child")
+        temporaryFolder.newFile("child/20261113120000.Md")
+        temporaryFolder.newFile("child/20260101120000.jpg")
+
+        assertEquals(listOf("video.mp4"), LocalFolderFiles.list(root, false).map { it.name })
+        assertEquals(setOf("video.mp4", "20260101120000.jpg"),
+            LocalFolderFiles.list(root, true, 1).map { it.name }.toSet())
+    }
+
     @Test fun limitsEachImmediateSubfolderInPlayerOrder() {
         val root = temporaryFolder.root
         temporaryFolder.newFile("root.jpg")

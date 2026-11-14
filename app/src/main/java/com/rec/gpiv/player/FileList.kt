@@ -276,7 +276,7 @@ class FileList(
                         continue
                     }
 
-                    if (name == "gpivtags.csv") {
+                    if (name == "gpivtags.csv" || FileEligibility.isMarkdown(name)) {
 
                         println(
                             "FileList: ignorando arquivo de tags = $name"

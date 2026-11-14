@@ -11,6 +11,7 @@ import kotlinx.coroutines.ensureActive
 import com.rec.gpiv.model.PlayerUiState
 import com.rec.gpiv.model.OperationStatus
 import com.rec.gpiv.data.FolderRepository
+import com.rec.gpiv.player.FileEligibility
 import com.rec.gpiv.player.FileItem
 import com.rec.gpiv.player.FileList
 import com.rec.gpiv.player.MpvNative
@@ -607,6 +608,9 @@ class PlayerViewModel(
         incomingFileJob?.cancel()
         incomingFileJob = viewModelScope.launch {
             val localFile = withContext(Dispatchers.IO) { folderRepository.findLocalFile(uri) }
+            val incomingName = localFile?.name ?: tagFiles.getFileName(uri)
+            if (FileEligibility.isMarkdown(incomingName) ||
+                FileEligibility.isMarkdown(uri.lastPathSegment.orEmpty())) return@launch
             // Limpa a pasta anterior para nunca abrir outro arquivo com o mesmo nome.
             fileList.clear()
             _uiState.update { it.copy(fileTag = null, tags = emptyList(), fileIndex = -1, fileCount = 0) }
@@ -750,6 +754,9 @@ class PlayerViewModel(
         val filename =
             fileFromList?.name
                 ?: if (uri.scheme == "file") java.io.File(requireNotNull(uri.path)).name else tagFiles.getFileName(uri)
+
+        if (FileEligibility.isMarkdown(filename) ||
+            FileEligibility.isMarkdown(uri.lastPathSegment.orEmpty())) return
 
         println(
             "PlayerViewModel: URI recebida = $uri"
