@@ -485,6 +485,7 @@ class PlayerViewModel(
             updateFileSize(current.uri)
             _uiState.update { it.copy(
                 filename = current.name,
+                filePath = displayFilePath(current.uri),
                 fileIndex = fileList.currentIndex(),
                 fileCount = fileList.size(),
                 fileTag = if (tagsEnabled) tagFiles.readFileTag(folder, current.uri) else null
@@ -494,13 +495,32 @@ class PlayerViewModel(
         }
     }
 
+    private fun displayFilePath(uri: Uri): String {
+        val path = if (uri.scheme == "file") uri.path ?: uri.toString()
+        else if (uri.authority == "com.android.externalstorage.documents") {
+            val id = runCatching { DocumentsContract.getDocumentId(uri) }.getOrNull()
+            if (id != null && id.contains(':')) {
+                val volume = id.substringBefore(':')
+                val root = if (volume == "primary") "/storage/emulated/0" else "/storage/$volume"
+                "$root/${id.substringAfter(':')}"
+            } else uri.toString()
+        } else uri.toString()
+
+        val folder = path.substringBeforeLast('/', "")
+        return when {
+            folder == "/storage/emulated/0" -> "/"
+            folder.startsWith("/storage/emulated/0/") -> folder.removePrefix("/storage/emulated/0")
+            else -> folder.ifEmpty { "/" }
+        }
+    }
+
     private fun clearCurrentFile() {
         player.pause()
         selectedUri = null
         pendingUri = null
         markerController.clear()
         _uiState.update { it.copy(
-            filename = null, fileSizeBytes = null, fileTag = null, fileIndex = -1, fileCount = 0,
+            filename = null, filePath = null, fileSizeBytes = null, fileTag = null, fileIndex = -1, fileCount = 0,
             playing = false, loading = false, position = 0.0, duration = 0.0,
             currentFrame = 0L, previousKeyframeFrame = null,
             markerASet = false, markerBSet = false
@@ -691,6 +711,7 @@ class PlayerViewModel(
         _uiState.value =
             _uiState.value.copy(
                 filename = filename,
+                filePath = displayFilePath(loadUri),
                 fileTag = if (tagsEnabled) fileTags[loadUri.toString()] else null,
                 fileIndex = fileList.currentIndex(),
                 fileCount = fileList.size(),
@@ -762,6 +783,7 @@ class PlayerViewModel(
                     _uiState.value =
                         _uiState.value.copy(
                             filename = currentFile.name,
+                            filePath = displayFilePath(currentFile.uri),
                             fileTag = fileTag,
                             fileIndex = fileList.currentIndex(),
                             fileCount = fileList.size()
@@ -860,6 +882,7 @@ class PlayerViewModel(
             } else {
                 _uiState.value = _uiState.value.copy(
                     filename = "Nenhum arquivo",
+                    filePath = null,
                     fileSizeBytes = null,
                     fileTag = null,
                     playing = false,
@@ -891,6 +914,7 @@ class PlayerViewModel(
         } else {
             _uiState.value = _uiState.value.copy(
                 filename = "Nenhum arquivo",
+                    filePath = null,
                     fileSizeBytes = null,
                 fileTag = null,
                 playing = false,
@@ -935,6 +959,7 @@ class PlayerViewModel(
         _uiState.value =
             _uiState.value.copy(
                 filename = file.name,
+                filePath = displayFilePath(file.uri),
                 fileTag = fileTag,
                 fileIndex = fileList.currentIndex(),
                 fileCount = fileList.size(),

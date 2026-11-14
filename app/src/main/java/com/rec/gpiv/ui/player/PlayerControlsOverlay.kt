@@ -183,8 +183,6 @@ fun PlayerControlsOverlay(
                         )
                 ) {
 
-
-
                     StatusText(
                         text = "${uiState.fileIndex + 1} / ${uiState.fileCount}",
                         modifier = Modifier.clickable {
@@ -194,11 +192,9 @@ fun PlayerControlsOverlay(
                     )
 
                     StatusText(
-                        text = "${uiState.filename ?: "+ + + +"}",
-                        modifier = Modifier
-                            .clickable {
-                                onOpenVideo()
-                            }
+                        text = "${uiState.filePath ?: "--"}",
+                        maxLines = 2,
+                        modifier = Modifier.clickable { onMoveFile() }
                     )
 
                     StatusText(
@@ -211,9 +207,17 @@ fun PlayerControlsOverlay(
                         modifier = Modifier.clickable(onClick = onShareFile)
                     )
 
+
                 }
 
-
+                StatusText(
+                    text = uiState.filename ?: "+ + +",
+                    maxLines = 2,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onOpenVideo() }
+                )
 
                 if (controlSubRowD) {
 
@@ -1159,11 +1163,6 @@ fun PlayerControlsOverlay(
                     }
 
                     StatusText(
-                        text = ">",
-                        modifier = Modifier.clickable { onMoveFile() }
-                    )
-
-                    StatusText(
                         text = "ff",
                         backgroundColor =
                             if (controlSubRowA) {
@@ -1343,14 +1342,17 @@ private fun CompactButton(
 private fun StatusText(
     text: String,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Color.Black.copy(alpha = 0.0f)
+    backgroundColor: Color = Color.Black.copy(alpha = 0.0f),
+    maxLines: Int = 1,
+    textAlign: TextAlign = TextAlign.Start
 ) {
 
     Text(
         text = text,
         fontSize = 16.sp,
         color = Color.White,
-        maxLines = 1,
+        maxLines = maxLines,
+        textAlign = textAlign,
 
         style = LocalTextStyle.current.copy(
             shadow = Shadow(
