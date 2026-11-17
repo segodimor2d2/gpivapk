@@ -159,13 +159,13 @@ fun showTerminalFileBrowser(
         }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
     }
 
-    action("tgs", row = folderActions, onClick = onSelectDocumentTree)
-    action("o+", row = folderActions, onClick = onSelectFolderWithSubfolders)
-    action("o3", row = folderActions, onClick = onSelectFolderWithThreeFilesPerSubfolder)
-    onPickFile?.let { action("v", row = folderActions, onClick = it) }
-    action("x", row = folderActions) {}
-    action("o", row = folderActions, onClick = onSelectFolder)
+    action("TGS", row = folderActions, onClick = onSelectDocumentTree)
+    action("O+", row = folderActions, onClick = onSelectFolderWithSubfolders)
+    action("O3", row = folderActions, onClick = onSelectFolderWithThreeFilesPerSubfolder)
+    onPickFile?.let { action("VV", row = folderActions, onClick = it) }
+    action("OO", row = folderActions, onClick = onSelectFolder)
     parent?.let { pastaPai -> action("../", row = folderActions, dismiss = false) { onOpen(pastaPai) } }
+    action("X", row = folderActions) {}
 
     val layout = LinearLayout(dialog.context).apply {
         orientation = LinearLayout.VERTICAL

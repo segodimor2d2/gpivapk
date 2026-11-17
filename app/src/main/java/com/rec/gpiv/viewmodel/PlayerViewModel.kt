@@ -912,6 +912,10 @@ class PlayerViewModel(
     private fun moveToTrash(uri: Uri): Boolean =
         trashManager.moveToTrash(uri)
 
+    suspend fun localParentDirectory(uri: Uri): java.io.File? = withContext(Dispatchers.IO) {
+        folderRepository.findLocalFile(uri)?.parentFile
+    }
+
     suspend fun moveCurrentFile(uri: Uri, directory: java.io.File): String {
         if (selectedUri != uri) return "O arquivo aberto mudou. Selecione o destino novamente."
         val result = withContext(Dispatchers.IO) {

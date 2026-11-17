@@ -110,14 +110,14 @@ class MainActivity : ComponentActivity() {
     private val storageSettingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
-        if (hasStorageAccess()) showStorageBrowser(browserDirectory)
+        if (hasStorageAccess()) showInitialStorageBrowser()
         else showNotice("Ative o acesso a todos os arquivos para navegar pelas pastas.")
     }
 
     private val storagePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) {
-        if (hasStorageAccess()) showStorageBrowser(browserDirectory)
+        if (hasStorageAccess()) showInitialStorageBrowser()
         else showNotice("O acesso ao armazenamento não foi autorizado.")
     }
 
@@ -128,7 +128,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (hasStorageAccess()) {
-            showStorageBrowser(browserDirectory)
+            showInitialStorageBrowser()
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             AlertDialog.Builder(this)
                 .setTitle("Acesso a todos os arquivos")
@@ -146,6 +146,15 @@ class MainActivity : ComponentActivity() {
         } else {
             storagePermissionLauncher.launch(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE))
+        }
+    }
+
+    private fun showInitialStorageBrowser() {
+        val source = moveSource
+        lifecycleScope.launch {
+            val directory = source?.let { viewModel.localParentDirectory(it) } ?: browserDirectory
+            if (source != moveSource || isFinishing || isDestroyed) return@launch
+            showStorageBrowser(directory)
         }
     }
 
