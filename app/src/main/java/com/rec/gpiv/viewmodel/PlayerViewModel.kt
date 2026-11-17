@@ -565,8 +565,10 @@ class PlayerViewModel(
         }
     }
 
-    private fun displayFilePath(uri: Uri): String {
-        val path = if (uri.scheme == "file") uri.path ?: uri.toString()
+    fun currentFilePath(): String? = selectedUri?.let(::resolveFilePath)
+
+    private fun resolveFilePath(uri: Uri): String =
+        if (uri.scheme == "file") uri.path ?: uri.toString()
         else if (uri.authority == "com.android.externalstorage.documents") {
             val id = runCatching { DocumentsContract.getDocumentId(uri) }.getOrNull()
             if (id != null && id.contains(':')) {
@@ -576,7 +578,8 @@ class PlayerViewModel(
             } else uri.toString()
         } else uri.toString()
 
-        val folder = path.substringBeforeLast('/', "")
+    private fun displayFilePath(uri: Uri): String {
+        val folder = resolveFilePath(uri).substringBeforeLast('/', "")
         return when {
             folder == "/storage/emulated/0" -> "/"
             folder.startsWith("/storage/emulated/0/") -> folder.removePrefix("/storage/emulated/0")

@@ -40,6 +40,7 @@ fun PlayerControlsOverlay(
     onOpenFolder: () -> Unit,
     onRefreshFiles: () -> Unit,
     onShareFile: () -> Unit,
+    onCopyFilePath: () -> Unit,
     onToggleFileHidden: () -> Unit,
     onMoveFile: () -> Unit,
     onOpenThumbnails: () -> Unit,
@@ -1167,6 +1168,14 @@ fun PlayerControlsOverlay(
                         text = "<",
                         backgroundColor = if (uiState.filename?.startsWith(".") == true) Color(0x9900994C) else Color.Transparent,
                         modifier = Modifier.clickable(onClick = onToggleFileHidden)
+                    )
+
+                    StatusText(
+                        text = "cc",
+                        modifier = Modifier.clickable(
+                            enabled = uiState.filename != null,
+                            onClick = onCopyFilePath
+                        )
                     )
 
                     StatusText(

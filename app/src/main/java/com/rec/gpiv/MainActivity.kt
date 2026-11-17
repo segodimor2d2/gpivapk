@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -47,6 +48,15 @@ class MainActivity : ComponentActivity() {
         if (isFinishing || isDestroyed) return
         val current = notice ?: BlackNotice(findViewById(android.R.id.content)).also { notice = it }
         current.show(message)
+    }
+
+    private fun copyCurrentFilePath() {
+        val path = viewModel.currentFilePath() ?: return
+        getSystemService(ClipboardManager::class.java)
+            .setPrimaryClip(ClipData.newPlainText("Caminho do arquivo", path))
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            showNotice("Caminho copiado.")
+        }
     }
 
     private fun shareCurrentFile() {
@@ -232,6 +242,7 @@ class MainActivity : ComponentActivity() {
                         },
                         onRefreshFiles = viewModel::refreshFiles,
                         onShareFile = ::shareCurrentFile,
+                        onCopyFilePath = ::copyCurrentFilePath,
                         onToggleFileHidden = viewModel::toggleCurrentFileHidden,
                         onMoveFile = { openStorageBrowser(forMove = true) },
                         onOpenThumbnails = viewModel::openThumbnailGallery,
