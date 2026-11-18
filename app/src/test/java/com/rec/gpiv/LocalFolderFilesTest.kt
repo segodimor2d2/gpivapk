@@ -26,7 +26,7 @@ class LocalFolderFilesTest {
     @Test fun limitsEachImmediateSubfolderInPlayerOrder() {
         val root = temporaryFolder.root
         temporaryFolder.newFile("root.jpg")
-        for (folder in listOf("child", "sibling")) {
+        for (folder in listOf("sibling", "child")) {
             temporaryFolder.newFolder(folder)
             temporaryFolder.newFile("$folder/gpivtags.csv")
             temporaryFolder.newFolder(folder, "deeper")
@@ -38,12 +38,11 @@ class LocalFolderFilesTest {
         temporaryFolder.newFolder("small")
         temporaryFolder.newFile("small/only.jpg")
 
-        val paths = LocalFolderFiles.list(root, true, 3).map { it.relativeTo(root).path }.toSet()
+        val paths = LocalFolderFiles.list(root, true, 3).map { it.relativeTo(root).path }
 
-        assertEquals(setOf("root.jpg", "small/only.jpg") +
-            listOf("child", "sibling").flatMap { folder ->
-                (3..5).map { day -> "$folder/2026010${day}120000.jpg" }
-            }, paths)
+        val childFiles = (5 downTo 3).map { day -> "child/2026010${day}120000.jpg" }
+        val siblingFiles = (5 downTo 3).map { day -> "sibling/2026010${day}120000.jpg" }
+        assertEquals(childFiles + siblingFiles + "small/only.jpg" + "root.jpg", paths)
         assertEquals(12, LocalFolderFiles.list(root, true).size)
     }
 

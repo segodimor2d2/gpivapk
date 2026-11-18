@@ -419,7 +419,12 @@ class FileList(
         localMaxFilesPerSubfolder = maxFilesPerSubfolder
         val items = LocalFolderFiles.list(directory, includeSubfolders, maxFilesPerSubfolder)
             .map { FileItem(Uri.fromFile(it), it.name, it.lastModified()) }
-        files.addAll(FileNameOrder.sorted(items, FileItem::name, FileItem::modifiedTime))
+        val ordered = if (includeSubfolders && maxFilesPerSubfolder != null) {
+            items
+        } else {
+            FileNameOrder.sorted(items, FileItem::name, FileItem::modifiedTime)
+        }
+        files.addAll(ordered)
         return files.isNotEmpty()
     }
 

@@ -5,7 +5,14 @@ import java.io.File
 /** Arquivos da pasta e, opcionalmente, de suas subpastas imediatas. */
 object LocalFolderFiles {
     fun list(directory: File, includeSubfolders: Boolean, maxFilesPerSubfolder: Int? = null): List<File> {
-        val children = directory.listFiles().orEmpty()
+        val entries = directory.listFiles().orEmpty().toList()
+        val children = if (includeSubfolders && maxFilesPerSubfolder != null) {
+            val (subfolders, rootFiles) = entries.partition(File::isDirectory)
+            subfolders.sortedBy { it.name.lowercase() } +
+                FileNameOrder.sorted(rootFiles, File::getName, File::lastModified)
+        } else {
+            entries
+        }
         val candidates = children.asSequence().flatMap { child ->
             if (includeSubfolders && child.isDirectory) {
                 val files = child.listFiles().orEmpty().filter { it.isFile && it.name != "gpivtags.csv" && !FileEligibility.isMarkdown(it.name) }
